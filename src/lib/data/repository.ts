@@ -56,6 +56,7 @@ export interface AppetiteRepository {
   rebuildProjection(): Promise<void>;
   importFixture(fixture: FixtureSnapshot): Promise<void>;
   clearAll(): Promise<void>;
+  deleteAll(): Promise<void>;
 }
 
 function requestResult<T>(request: IDBRequest<T>): Promise<T> {
@@ -192,6 +193,20 @@ export class IndexedDbRepository implements AppetiteRepository {
     const transaction = database.transaction([...allStoreNames], 'readwrite');
     for (const storeName of allStoreNames) transaction.objectStore(storeName).clear();
     await transactionDone(transaction);
+  }
+
+  async deleteAll(): Promise<void> {
+    await this.clearAll();
+    const database = await this.databasePromise;
+    database?.close();
+    this.databasePromise = null;
+    this.readyPromise = null;
+    await new Promise<void>((resolve, reject) => {
+      const request = this.factory.deleteDatabase(DATABASE_NAME);
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error ?? new Error('Could not delete private app storage'));
+      request.onblocked = () => reject(new Error('Private app storage is still open'));
+    });
   }
 
   close(): void {

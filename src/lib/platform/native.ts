@@ -70,6 +70,13 @@ export async function nativeRequest<T>(
   return (await window.hungerNative.request(command, payload)) as T;
 }
 
+export async function completeNativeDelete(): Promise<boolean> {
+  const capabilities = await nativeCapabilities();
+  if (!capabilities?.commands.includes('privacy.completeDelete')) return false;
+  await nativeRequest('privacy.completeDelete');
+  return true;
+}
+
 export function resetNativeCapabilityCacheForTests(): void {
   capabilitiesPromise = null;
 }
