@@ -24,9 +24,10 @@ The implementation source of truth remains, in priority order:
   inspect them, add the approved files to the same slice, and rerun normally.
 - Domain modules accept explicit time and IDs and do not import Svelte or
   browser globals.
-- Browser scenarios use the real IndexedDB repository. Long histories enter
-  through a versioned, development-only fixture boundary and are then read by
-  normal application code.
+- Browser scenarios use the real IndexedDB repository. Its append-only event
+  store is authoritative; cached records are written only by deterministic
+  playback. Long histories enter through a versioned, development-only fixture
+  boundary as events and are then read by normal application code.
 - No commit may add remote private-data transport, third-party runtime scripts,
   calories, weight targets, streaks, diagnoses, causal claims, or moral labels.
 - `bun run verify:change` is the local completion gate. The hosted `Verify` and
@@ -49,8 +50,8 @@ Verification:
 
 Deliver the first-launch journey and real application shell:
 
-- typed schema and IndexedDB repository for `Program`, `EatingEpisode`,
-  settings, insights, experiments, and photos;
+- typed append-only IndexedDB events plus deterministic projections for
+  `Program`, `EatingEpisode`, settings, insights, experiments, and photos;
 - deterministic clock and ID boundaries used by tests;
 - four-step onboarding with an exploratory unified scale;
 - local-only/privacy and safety explanations with reminders optional;
@@ -73,7 +74,8 @@ Deliver the smallest useful recording loop:
 - finish it with the identical-direction after scale;
 - optional reason, occasion, 140-character note, and local processed photo;
 - open-episode collision choices and four-hour unfinished behavior;
-- Today history plus episode review, edit, delete, and physical photo removal;
+- Today history plus episode review, event-based edit/delete, and projected
+  photo removal;
 - transactional saving/error states that retain form values.
 
 Tracer bullets:

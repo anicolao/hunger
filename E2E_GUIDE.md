@@ -111,9 +111,13 @@ Repository-managed fonts prevent host font drift.
   state before every scenario.
 - Exercise the real IndexedDB adapter. Do not replace it with an in-memory
   store for ordinary E2E tests.
-- Seed long histories through a versioned E2E fixture import at the storage
-  boundary, then verify them through the normal UI. The import hook must be
-  tree-shaken or disabled in production builds.
+- Treat the append-only `events` store as the only source of truth. Entity
+  stores are disposable projections and may only be cleared and rewritten by
+  deterministic event playback.
+- Seed long histories through a versioned E2E fixture import that translates
+  fixtures into source events, force a replay, then verify the projection
+  through the normal UI. The import/replay hook must be tree-shaken or disabled
+  in production builds.
 - Block every external request. An MVP test must never upload a photo, call an
   analytics endpoint, or touch production data.
 - Block service workers in normal scenarios to avoid stale assets. Use one
@@ -191,8 +195,8 @@ viewport without an accidental nested scroll region.
 - Display completed and unfinished entries in local-time order.
 - Edit a mistaken score and recompute derived content.
 - Abandon a forgotten open entry without inventing an after score.
-- Delete an entry and its photo physically, then verify it is absent after
-  reload and export.
+- Append a deletion tombstone, then verify the entry and photo are absent from
+  the replayed projection after reload and from export.
 
 ### 005 — First-week insight
 

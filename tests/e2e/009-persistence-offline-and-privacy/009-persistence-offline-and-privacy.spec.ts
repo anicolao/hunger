@@ -19,6 +19,17 @@ test('private records migrate, survive offline, and can be physically cleared', 
     { before: 3, after: 6, localHour: 18 }, { before: 5, after: 7, localHour: 20 }
   ]);
   await importFixture(page, legacy);
+  const replay = await page.evaluate(() => window.__HUNGER_E2E__?.replayEvents());
+  expect(replay).toEqual({
+    eventCount: 5,
+    eventTypes: [
+      'program/started',
+      'episode/started',
+      'episode/started',
+      'episode/started',
+      'episode/started'
+    ]
+  });
   await page.goto('/settings');
   await expect(page.getByText('4 local eating moments.')).toBeVisible();
   await page.evaluate(async () => { if ('serviceWorker' in navigator) await navigator.serviceWorker.ready; });
@@ -31,6 +42,7 @@ test('private records migrate, survive offline, and can be physically cleared', 
     description: 'Version-one records migrate through the real repository and reopen without a network',
     verifications: [
       { spec: 'The offline shell reports its real state and retains all four local moments', check: async () => { await expect(page.getByText('App ready offline')).toBeVisible(); await expect(page.getByText('4 local eating moments.')).toBeVisible(); } },
+      { spec: 'Five immutable source events replay into the same program and four episode projections', check: async () => expect(replay?.eventCount).toBe(5) },
       { spec: 'Privacy copy names browser-profile visibility and provides export access', check: async () => { await expect(page.getByText(/not end-to-end encrypted/)).toBeVisible(); await expect(page.getByRole('link', { name: 'Export profile and data' })).toBeVisible(); } }
     ]
   });

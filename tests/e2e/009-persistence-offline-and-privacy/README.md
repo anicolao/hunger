@@ -9,6 +9,7 @@ Legacy local records remain useful offline, while deletion is deliberate and com
 **Verifications:**
 
 - [x] The offline shell reports its real state and retains all four local moments
+- [x] Five immutable source events replay into the same program and four episode projections
 - [x] Privacy copy names browser-profile visibility and provides export access
 
 ## Delete-all enumerates every private category and stays disabled without confirmation

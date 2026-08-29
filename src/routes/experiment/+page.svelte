@@ -38,7 +38,11 @@
 
   async function persist(record: ExperimentRecord) {
     const plainRecord = JSON.parse(JSON.stringify(record)) as ExperimentRecord;
-    await getRepository().saveExperiment(plainRecord);
+    await getRepository().append({
+      type: 'experiment/changed',
+      occurredAt: runtime.now(),
+      payload: { experiment: plainRecord }
+    });
     experiments = await getRepository().listExperiments(record.programId);
   }
 

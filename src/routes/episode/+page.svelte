@@ -48,17 +48,24 @@
     status = 'saving';
     const repository = getRepository();
     try {
-      let photoId = episode.photoId;
-      if (photo) {
-        await repository.savePhoto(photo);
-        photoId = photo.id;
-      }
+      const now = runtime.now();
       const updated = updateEpisode(
         episode,
-        { beforeLevel, afterLevel, reason, occasion, note, photoId },
-        runtime.now()
+        { beforeLevel, afterLevel, reason, occasion, note, photoId: photo?.id ?? episode.photoId },
+        now
       );
-      await repository.saveEpisode(updated);
+      if (photo) {
+        await repository.append(
+          { type: 'photo/stored', occurredAt: now, payload: { photo } },
+          { type: 'episode/changed', occurredAt: now, payload: { episode: updated } }
+        );
+      } else {
+        await repository.append({
+          type: 'episode/changed',
+          occurredAt: now,
+          payload: { episode: updated }
+        });
+      }
       episode = updated;
       editing = false;
       message = 'Check-in updated. Your observations may update too.';
@@ -71,7 +78,11 @@
 
   async function removeEpisode() {
     if (!episode || !deleteUnderstood) return;
-    await getRepository().deleteEpisode(episode.id);
+    await getRepository().append({
+      type: 'episode/deleted',
+      occurredAt: runtime.now(),
+      payload: { episodeId: episode.id }
+    });
     await goto(`${base}/?deleted=episode`, { replaceState: true });
   }
 
@@ -144,7 +155,7 @@
       {#if confirmingDelete}
         <div class="confirmation" role="dialog" aria-modal="true" aria-labelledby="delete-title">
           <h2 id="delete-title">Delete this check-in?</h2>
-          <p>{displayDate(episode.startedAt)} will be physically removed with its photo. This cannot be undone.</p>
+          <p>{displayDate(episode.startedAt)} will be removed from your current records and exports. Its local source events remain until you delete everything.</p>
           <label><input type="checkbox" bind:checked={deleteUnderstood} /> I understand this cannot be undone</label>
           <button class="danger wide" disabled={!deleteUnderstood} onclick={removeEpisode}>Delete this check-in</button>
           <button class="secondary wide" onclick={() => (confirmingDelete = false)}>Keep this check-in</button>
