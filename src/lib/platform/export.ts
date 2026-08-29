@@ -1,5 +1,6 @@
 import type { EatingEpisode, ExperimentRecord, Program } from '../data/schema';
 import type { AppetiteProfile } from '../domain/profile';
+import { nativeCapabilities, nativeRequest } from './native';
 
 export interface AppetiteExport { exportVersion: 1; exportedAt: number; program: Program; profile: AppetiteProfile; episodes: Array<Omit<EatingEpisode, 'photoId'> & { hasLocalPhoto: boolean }>; experiments: ExperimentRecord[]; }
 
@@ -16,4 +17,18 @@ export function downloadText(filename: string, mediaType: string, content: strin
   const url = URL.createObjectURL(new Blob([content], { type: mediaType }));
   const link = document.createElement('a'); link.href = url; link.download = filename; link.click();
   setTimeout(() => URL.revokeObjectURL(url), 0);
+}
+
+export async function shareExport(
+  filename: 'appetite-profile.json' | 'appetite-profile.html',
+  mediaType: 'application/json' | 'text/html',
+  content: string
+): Promise<'native-ios' | 'browser-download'> {
+  const capabilities = await nativeCapabilities();
+  if (capabilities?.commands.includes('export.share')) {
+    await nativeRequest('export.share', { filename, mimeType: mediaType, content });
+    return 'native-ios';
+  }
+  downloadText(filename, mediaType, content);
+  return 'browser-download';
 }
