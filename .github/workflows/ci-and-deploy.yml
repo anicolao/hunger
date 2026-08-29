@@ -1,0 +1,186 @@
+name: Verify and deploy
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      update_snapshots:
+        description: Generate Linux screenshot baselines as a downloadable artifact
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: verify-and-deploy-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    name: Verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31
+
+      - name: Install dependencies
+        run: nix develop --command bun install --frozen-lockfile
+
+      - name: Check types and Svelte components
+        run: nix develop --command bun run check
+
+      - name: Run browser scenarios
+        id: browser-tests
+        shell: bash
+        env:
+          CI: "true"
+          UPDATE_SNAPSHOTS: ${{ github.event.inputs.update_snapshots || 'false' }}
+        run: |
+          if [[ "$UPDATE_SNAPSHOTS" == "true" ]]; then
+            nix develop --command bun run test:e2e:update-snapshots
+            echo "generated=true" >> "$GITHUB_OUTPUT"
+          elif find tests/e2e -path '*/screenshots/*-linux.png' -print -quit | grep -q .; then
+            nix develop --command bun run test:e2e
+          else
+            nix develop --command bun run test:e2e:update-snapshots
+            echo "generated=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Upload generated Linux screenshot baselines
+        if: steps.browser-tests.outputs.generated == 'true'
+        uses: actions/upload-artifact@v6
+        with:
+          name: linux-screenshot-baselines-${{ github.run_id }}
+          path: tests/e2e/**/screenshots/*-linux.png
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: playwright-report-${{ github.run_id }}
+          path: playwright-report/
+          if-no-files-found: ignore
+          retention-days: 7
+
+      - name: Build static application
+        run: nix develop --command bun run build
+
+      - name: Require reviewed Linux screenshot baselines
+        if: steps.browser-tests.outputs.generated == 'true' && github.event_name != 'workflow_dispatch'
+        shell: bash
+        run: |
+          echo "Linux screenshot baselines were missing."
+          echo "Review the linux-screenshot-baselines artifact, commit the approved images, and rerun CI."
+          exit 1
+
+  deploy:
+    name: Deploy preview
+    needs: verify
+    if: >-
+      github.event_name != 'workflow_dispatch' &&
+      (github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31
+
+      - name: Install dependencies
+        run: nix develop --command bun install --frozen-lockfile
+
+      - name: Select deployment path
+        id: preview
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          if [[ "$EVENT_NAME" == "pull_request" ]]; then
+            echo "base_path=/hunger/pr${PR_NUMBER}" >> "$GITHUB_OUTPUT"
+            echo "destination=pr${PR_NUMBER}" >> "$GITHUB_OUTPUT"
+            echo "url=https://anicolao.github.io/hunger/pr${PR_NUMBER}/" >> "$GITHUB_OUTPUT"
+          else
+            echo "base_path=/hunger" >> "$GITHUB_OUTPUT"
+            echo "destination=." >> "$GITHUB_OUTPUT"
+            echo "url=https://anicolao.github.io/hunger/" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Build static application for GitHub Pages
+        env:
+          PUBLIC_BASE_PATH: ${{ steps.preview.outputs.base_path }}
+          VITE_GIT_HASH: ${{ github.sha }}
+        run: nix develop --command bun run build
+
+      - name: Publish retained preview
+        uses: peaceiris/actions-gh-pages@v4.1.0
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_branch: gh-pages
+          publish_dir: ./build
+          destination_dir: ${{ steps.preview.outputs.destination }}
+          keep_files: true
+          enable_jekyll: false
+
+      - name: Add preview to workflow summary
+        env:
+          PREVIEW_URL: ${{ steps.preview.outputs.url }}
+        run: echo "## [Open the deployed preview]($PREVIEW_URL)" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Add preview link to pull request
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v8
+        env:
+          PREVIEW_URL: ${{ steps.preview.outputs.url }}
+        with:
+          script: |
+            const marker = '<!-- hunger-pr-preview -->';
+            const body = `${marker}
+            ## Preview deployment
+
+            ✅ This pull request is available at [${process.env.PREVIEW_URL}](${process.env.PREVIEW_URL}).
+
+            The URL is retained for this PR number and is updated after every successful verification run.
+
+            _Deployed commit: \`${context.sha.slice(0, 7)}\`_`;
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              per_page: 100
+            });
+            const existing = comments.find((comment) =>
+              comment.user.type === 'Bot' && comment.body?.includes(marker)
+            );
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body
+              });
+            }
