@@ -158,6 +158,11 @@
     font-size: 12px;
   }
 
+  @media (max-height: 500px) and (orientation: landscape) and (max-width: 959px) {
+    .content-frame { padding-bottom: 0; }
+    .bottom-nav { position: static; }
+  }
+
   @media (min-width: 960px) {
     .app-frame {
       display: grid;

@@ -11,3 +11,7 @@ bun run check
 bun run test:unit
 bun run test:e2e
 bun run build
+if rg -q '__HUNGER_E2E__|data-e2e-fixture' build; then
+  echo 'Development fixture boundary leaked into the production build.' >&2
+  exit 1
+fi
