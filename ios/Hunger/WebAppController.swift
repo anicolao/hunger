@@ -15,6 +15,7 @@ final class WebAppController: NSObject, ObservableObject {
     @Published private(set) var state: WebAppState = .idle
 
     private var started = false
+    private var bridge: NativeBridge?
     private var recoveryAttempts = 0
     private var lastSafeURL = PersistenceConstants.rootURL
     private let maximumRecoveryAttempts = 2
@@ -65,6 +66,17 @@ final class WebAppController: NSObject, ObservableObject {
             forURLScheme: PersistenceConstants.scheme
         )
 
+        let bridge = NativeBridge(
+            uiTestEvidenceEnabled: ProcessInfo.processInfo.arguments.contains("--bridge-ui-test")
+        )
+        configuration.userContentController.addUserScript(NativeBridge.bootstrapScript)
+        configuration.userContentController.addScriptMessageHandler(
+            bridge,
+            contentWorld: .page,
+            name: NativeBridgeConstants.handlerName
+        )
+        self.bridge = bridge
+
         let rules = """
         [
           {"trigger":{"url-filter":"^https?://.*"},"action":{"type":"block"}},
@@ -74,6 +86,14 @@ final class WebAppController: NSObject, ObservableObject {
         let ruleList = try await compileRuleList(rules)
         configuration.userContentController.add(ruleList)
         return configuration
+    }
+
+    func sendForegroundLifecycle() async {
+        guard state == .ready, let webView, let bridge else { return }
+        await bridge.sendLifecycle([
+            "reason": "foreground",
+            "occurredAt": Int(Date().timeIntervalSince1970 * 1000)
+        ], to: webView)
     }
 
     private func compileRuleList(_ source: String) async throws -> WKContentRuleList {

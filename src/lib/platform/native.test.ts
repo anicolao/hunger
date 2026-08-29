@@ -1,0 +1,57 @@
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import {
+  installNativeLifecycleBoundary,
+  nativeCapabilities,
+  nativeRequest,
+  resetNativeCapabilityCacheForTests
+} from './native';
+
+describe('native platform boundary', () => {
+  afterEach(() => {
+    resetNativeCapabilityCacheForTests();
+    vi.unstubAllGlobals();
+  });
+
+  it('negotiates and allowlists a versioned capability before dispatch', async () => {
+    const request = vi.fn(async (command: string) => ({
+      version: 1,
+      platform: 'ios',
+      commands: command === 'capabilities.get' ? ['capabilities.get', 'example.status'] : []
+    }));
+    vi.stubGlobal('window', { hungerNative: { request } });
+
+    expect(await nativeCapabilities()).toEqual({
+      version: 1,
+      platform: 'ios',
+      commands: ['capabilities.get', 'example.status']
+    });
+    await nativeRequest('example.status');
+    await expect(nativeRequest('events.read')).rejects.toThrow('Native capability is unavailable');
+    expect(request).toHaveBeenCalledTimes(2);
+  });
+
+  it('falls back when the bridge is absent or returns the wrong protocol', async () => {
+    vi.stubGlobal('window', {});
+    expect(await nativeCapabilities()).toBeNull();
+
+    resetNativeCapabilityCacheForTests();
+    vi.stubGlobal('window', {
+      hungerNative: { request: async () => ({ version: 2, platform: 'ios', commands: [] }) }
+    });
+    expect(await nativeCapabilities()).toBeNull();
+  });
+
+  it('installs one fixed lifecycle event adapter', () => {
+    const dispatchEvent = vi.fn();
+    const fakeWindow: Record<string, unknown> = { dispatchEvent };
+    vi.stubGlobal('window', fakeWindow);
+    vi.stubGlobal('CustomEvent', class { constructor(public type: string, public init: unknown) {} });
+
+    installNativeLifecycleBoundary();
+    const adapter = fakeWindow.__hungerNativeLifecycle as (event: object) => void;
+    adapter({ reason: 'foreground', occurredAt: 123 });
+
+    expect(dispatchEvent).toHaveBeenCalledOnce();
+    expect(Object.getOwnPropertyDescriptor(fakeWindow, '__hungerNativeLifecycle')?.writable).toBe(false);
+  });
+});
