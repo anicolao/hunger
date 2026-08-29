@@ -1,0 +1,122 @@
+import {
+  DATABASE_NAME,
+  DATABASE_VERSION,
+  initialSettings,
+  storeNames,
+  type AppSettings,
+  type EatingEpisode,
+  type ExperimentRecord,
+  type InsightSnapshot,
+  type PhotoRecord,
+  type Program,
+  type StoreName
+} from './schema';
+
+type StoreRecord = Program | EatingEpisode | InsightSnapshot | ExperimentRecord | PhotoRecord | AppSettings;
+
+export interface AppetiteRepository {
+  getProgram(): Promise<Program | null>;
+  saveProgram(program: Program): Promise<void>;
+  getSettings(): Promise<AppSettings>;
+  saveSettings(settings: AppSettings): Promise<void>;
+  clearAll(): Promise<void>;
+}
+
+function requestResult<T>(request: IDBRequest<T>): Promise<T> {
+  return new Promise((resolve, reject) => {
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error ?? new Error('IndexedDB request failed'));
+  });
+}
+
+function transactionDone(transaction: IDBTransaction): Promise<void> {
+  return new Promise((resolve, reject) => {
+    transaction.oncomplete = () => resolve();
+    transaction.onerror = () => reject(transaction.error ?? new Error('IndexedDB transaction failed'));
+    transaction.onabort = () => reject(transaction.error ?? new Error('IndexedDB transaction aborted'));
+  });
+}
+
+export class IndexedDbRepository implements AppetiteRepository {
+  private databasePromise: Promise<IDBDatabase> | null = null;
+
+  constructor(private readonly factory: IDBFactory = indexedDB) {}
+
+  async getProgram(): Promise<Program | null> {
+    const records = await this.getAll<Program>('programs');
+    return records.sort((left, right) => right.startedAt - left.startedAt)[0] ?? null;
+  }
+
+  async saveProgram(program: Program): Promise<void> {
+    await this.put('programs', program);
+  }
+
+  async getSettings(): Promise<AppSettings> {
+    const database = await this.open();
+    const transaction = database.transaction('settings', 'readonly');
+    const stored = await requestResult<AppSettings | undefined>(
+      transaction.objectStore('settings').get('settings')
+    );
+    await transactionDone(transaction);
+    return stored ?? { ...initialSettings };
+  }
+
+  async saveSettings(settings: AppSettings): Promise<void> {
+    await this.put('settings', settings);
+  }
+
+  async clearAll(): Promise<void> {
+    const database = await this.open();
+    const transaction = database.transaction([...storeNames], 'readwrite');
+    for (const storeName of storeNames) transaction.objectStore(storeName).clear();
+    await transactionDone(transaction);
+  }
+
+  close(): void {
+    void this.databasePromise?.then((database) => database.close());
+    this.databasePromise = null;
+  }
+
+  private async getAll<T extends StoreRecord>(storeName: StoreName): Promise<T[]> {
+    const database = await this.open();
+    const transaction = database.transaction(storeName, 'readonly');
+    const records = await requestResult<T[]>(transaction.objectStore(storeName).getAll());
+    await transactionDone(transaction);
+    return records;
+  }
+
+  private async put(storeName: StoreName, value: StoreRecord): Promise<void> {
+    const database = await this.open();
+    const transaction = database.transaction(storeName, 'readwrite');
+    transaction.objectStore(storeName).put(value);
+    await transactionDone(transaction);
+  }
+
+  private open(): Promise<IDBDatabase> {
+    if (this.databasePromise) return this.databasePromise;
+
+    this.databasePromise = new Promise((resolve, reject) => {
+      const request = this.factory.open(DATABASE_NAME, DATABASE_VERSION);
+      request.onupgradeneeded = () => {
+        const database = request.result;
+        for (const storeName of storeNames) {
+          if (!database.objectStoreNames.contains(storeName)) {
+            database.createObjectStore(storeName, { keyPath: 'id' });
+          }
+        }
+      };
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error ?? new Error('Could not open private app storage'));
+      request.onblocked = () => reject(new Error('Private app storage is open in another tab'));
+    });
+
+    return this.databasePromise;
+  }
+}
+
+let repository: IndexedDbRepository | null = null;
+
+export function getRepository(): IndexedDbRepository {
+  repository ??= new IndexedDbRepository();
+  return repository;
+}

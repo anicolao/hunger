@@ -41,6 +41,9 @@ jobs:
       - name: Check types and Svelte components
         run: nix develop --command bun run check
 
+      - name: Run domain unit tests
+        run: nix develop --command bun run test:unit
+
       - name: Run browser scenarios
         id: browser-tests
         shell: bash
@@ -51,11 +54,15 @@ jobs:
           if [[ "$UPDATE_SNAPSHOTS" == "true" ]]; then
             nix develop --command bun run test:e2e:update-snapshots
             echo "generated=true" >> "$GITHUB_OUTPUT"
-          elif find tests/e2e -path '*/screenshots/*-linux.png' -print -quit | grep -q .; then
-            nix develop --command bun run test:e2e
-          else
+          elif [[ "${{ github.event_name }}" == "pull_request" ]]; then
             nix develop --command bun run test:e2e:update-snapshots
-            echo "generated=true" >> "$GITHUB_OUTPUT"
+            if git status --porcelain -- tests/e2e | grep -q -- '-linux.png'; then
+              echo "generated=true" >> "$GITHUB_OUTPUT"
+            else
+              nix develop --command bun run test:e2e
+            fi
+          else
+            nix develop --command bun run test:e2e
           fi
 
       - name: Upload generated Linux screenshot baselines
