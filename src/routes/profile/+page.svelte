@@ -24,7 +24,11 @@
     progress = getProgramProgress(program.startedAt, runtime.now());
     if (progress.complete && program.status !== 'complete') {
       program = { ...program, status: 'complete' };
-      await repository.saveProgram(program);
+      await repository.append({
+        type: 'program/status-changed',
+        occurredAt: runtime.now(),
+        payload: { program }
+      });
     }
     episodes = await repository.listEpisodes(program.id);
     experiments = await repository.listExperiments(program.id);

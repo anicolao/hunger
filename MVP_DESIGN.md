@@ -227,8 +227,9 @@ Today shows, in this order:
 4. “moments noticed today,” not a quota or streak; and
 5. recent complete and incomplete episodes.
 
-An episode can be corrected or deleted. Delete physically removes its record
-and photo. Derived insights and profile sections recompute immediately.
+An episode can be corrected or deleted. Delete appends a tombstone that removes
+its materialized record and photo from the current app and exports. Derived
+insights and profile sections recompute immediately.
 
 ### 7.5 Insights
 
@@ -407,8 +408,28 @@ to eat through discomfort.
 
 ## 11. Data model
 
-IndexedDB is canonical. Records are small, local, versioned, and physically
-deletable.
+An append-only, versioned IndexedDB event sequence is canonical. The record
+types below are materialized read models produced by deterministic playback.
+Their IndexedDB stores are disposable caches: application commands append
+events and never edit projection records. Opening the repository and every
+successful append rebuilds those caches from the complete sequence.
+
+```ts
+interface AppetiteEvent<Type extends string, Payload> {
+  sequence: number;
+  id: string;
+  type: Type;
+  occurredAt: number;
+  version: 1;
+  payload: Payload;
+}
+```
+
+The event vocabulary covers program activation/status, settings changes,
+episode start/change/delete, local photo storage, insight snapshots, and
+experiment changes. A schema-v2 installation is migrated once by translating
+its final records into an initial event sequence; subsequent playback never
+consults those old mutable records as authority.
 
 ### Program
 
@@ -490,8 +511,10 @@ explain what happened. A photo failure must never lose a sensation score.
 
 - SvelteKit 5, TypeScript strict mode, Bun, static adapter.
 - Installable PWA with no required account or server.
-- IndexedDB behind a typed repository interface.
-- Svelte state derived from repository records; no Redux requirement.
+- IndexedDB behind a typed append-only repository interface.
+- One pure event projector and disposable read caches for all application
+  records; no route or component may write a projection store.
+- Svelte state loaded from projected repository records; no Redux requirement.
 - Pure TypeScript modules for progression, insights, experiments, exports, and
   migrations.
 - Plain Svelte-scoped CSS and a small global token/reset layer.
@@ -502,8 +525,10 @@ explain what happened. A photo failure must never lose a sensation score.
 flowchart LR
     UI[Svelte routes and components] --> APP[Application services]
     APP --> DOMAIN[Pure domain rules]
-    APP --> REPO[Typed repository]
-    REPO --> IDB[(IndexedDB)]
+    APP --> REPO[Typed append-only repository]
+    REPO --> EVENTS[(Canonical events)]
+    EVENTS --> PLAY[Deterministic playback]
+    PLAY --> CACHE[(Disposable read caches)]
     APP --> PHOTO[Photo processor]
     PHOTO --> IDB
     APP --> REMIND[Reminder adapter]
@@ -584,9 +609,12 @@ why it is useful. Denial does not block any feature.
 - Strip photo metadata before storage.
 - Export JSON and a human-readable summary; exclude photos unless the user
   explicitly includes them.
-- Delete one episode physically, including its blob.
+- Deleting one episode appends a tombstone that removes the episode and its
+  photo from the current projection and every export. Because the source log
+  is immutable, prior local events remain until the user chooses Delete all.
 - Delete all data clears IndexedDB, Cache Storage, scheduled native reminders,
-  and program preferences, then verifies the stores are empty.
+  program preferences, source events, and projection caches, then verifies the
+  stores are empty.
 - Explain that browser storage is not end-to-end encrypted and may be visible
   to someone with access to the device/browser profile.
 - Use a restrictive Content Security Policy and no third-party scripts in the
@@ -662,7 +690,7 @@ features.
 ### Slice 6 — Profile, privacy, offline, and safety completion
 
 - Assemble day-30 Profile and exports.
-- Complete offline shell, schema migration, quota errors, true deletion,
+- Complete offline shell, event migration, quota errors, explicit deletion,
   reminder adapter, support path, and responsive/accessibility audit.
 - Prove scenarios `008–012` and the production static build.
 
@@ -673,7 +701,7 @@ The MVP is complete when:
 - a new user can understand and complete a before check-in in roughly ten
   seconds without scale-direction confusion;
 - paired entries survive reload and offline reopening and remain editable and
-  physically deletable;
+  removable by an event tombstone;
 - every eligible fixed first-week fixture produces the expected structured
   observation with visible evidence;
 - no ineligible fixture produces a personalized claim;

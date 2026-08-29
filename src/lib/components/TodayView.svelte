@@ -28,7 +28,12 @@
 
   async function markUnfinished() {
     if (!openEpisode) return;
-    await getRepository().saveEpisode(markEpisodeUnfinished(openEpisode, runtime.now()));
+    const now = runtime.now();
+    await getRepository().append({
+      type: 'episode/changed',
+      occurredAt: now,
+      payload: { episode: markEpisodeUnfinished(openEpisode, now) }
+    });
     episodes = await getRepository().listEpisodes(program.id);
   }
 

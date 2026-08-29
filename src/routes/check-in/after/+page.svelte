@@ -42,19 +42,34 @@
     status = 'saving';
     errorMessage = '';
     const repository = getRepository();
-    let photoId = episode.photoId;
     try {
+      const now = runtime.now();
+      const completed = completeEpisode(episode, level, now, {
+        reason,
+        occasion,
+        note,
+        photoId: photo?.id ?? episode.photoId
+      });
       if (photo) {
         try {
-          await repository.savePhoto(photo);
-          photoId = photo.id;
+          await repository.append(
+            { type: 'photo/stored', occurredAt: now, payload: { photo } },
+            { type: 'episode/changed', occurredAt: now, payload: { episode: completed } }
+          );
         } catch {
-          photoId = episode.photoId;
+          await repository.append({
+            type: 'episode/changed',
+            occurredAt: now,
+            payload: { episode: { ...completed, photoId: episode.photoId } }
+          });
         }
+      } else {
+        await repository.append({
+          type: 'episode/changed',
+          occurredAt: now,
+          payload: { episode: completed }
+        });
       }
-      await repository.saveEpisode(
-        completeEpisode(episode, level, runtime.now(), { reason, occasion, note, photoId })
-      );
       await goto(`${base}/?saved=complete`, { replaceState: true });
     } catch (error) {
       errorMessage = error instanceof Error ? error.message : 'Your check-in could not be completed.';

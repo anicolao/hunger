@@ -44,12 +44,20 @@
 
     try {
       const repository = getRepository();
-      await repository.saveProgram(program);
       const settings = await repository.getSettings();
-      await repository.saveSettings({
-        ...settings,
-        reminderWindows: reminderChoice === 'setup' ? ['09:00', '18:00'] : []
-      });
+      await repository.append(
+        { type: 'program/started', occurredAt: program.startedAt, payload: { program } },
+        {
+          type: 'settings/changed',
+          occurredAt: program.startedAt,
+          payload: {
+            settings: {
+              ...settings,
+              reminderWindows: reminderChoice === 'setup' ? ['09:00', '18:00'] : []
+            }
+          }
+        }
+      );
       await goto(`${base}/`, { replaceState: true });
     } catch (error) {
       errorMessage = error instanceof Error ? error.message : 'Your program could not be started.';

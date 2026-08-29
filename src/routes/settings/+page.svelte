@@ -37,7 +37,12 @@
 
   async function saveSettings(updated: AppSettings) {
     const plain = { ...updated, reminderWindows: [...updated.reminderWindows] };
-    await getRepository().saveSettings(plain); settings = plain;
+    await getRepository().append({
+      type: 'settings/changed',
+      occurredAt: runtime.now(),
+      payload: { settings: plain }
+    });
+    settings = plain;
   }
   async function toggleReminderPause() { if (settings) await saveSettings({ ...settings, remindersPaused: !settings.remindersPaused }); }
   async function toggleWindow(window: string) {
@@ -52,7 +57,16 @@
     await saveSettings({ ...settings, remindersPaused: false, permissionState: 'unsupported' });
     reminderMessage = result.explanation;
   }
-  async function pauseProgram() { if (!program) return; const updated: Program = { ...program, status: 'paused' }; await getRepository().saveProgram(updated); program = updated; }
+  async function pauseProgram() {
+    if (!program) return;
+    const updated: Program = { ...program, status: 'paused' };
+    await getRepository().append({
+      type: 'program/status-changed',
+      occurredAt: runtime.now(),
+      payload: { program: updated }
+    });
+    program = updated;
+  }
   async function dismissSupport() { if (settings) await saveSettings({ ...settings, dismissedSupport: true }); }
   async function deleteEverything() {
     if (!deleteConfirmed) return;
@@ -100,7 +114,7 @@
 
   <dialog bind:this={deleteDialog} onclose={() => deleteConfirmed = false}>
     <form method="dialog"><button class="close" aria-label="Close delete dialog">×</button></form>
-    <h2>Delete everything on this device?</h2><p>This physically removes check-ins, photos, insights, experiments, settings, reminders, and cached app data. It cannot be undone.</p>
+    <h2>Delete everything on this device?</h2><p>This physically removes source events, check-ins, photos, insights, experiments, settings, reminders, and cached app data. It cannot be undone.</p>
     <label class="confirm"><input type="checkbox" bind:checked={deleteConfirmed} />I understand this cannot be undone</label>
     <button class="danger-button" disabled={!deleteConfirmed || deleting} onclick={deleteEverything}>{deleting ? 'Deleting…' : 'Delete everything'}</button>
   </dialog>

@@ -31,25 +31,36 @@
     status = 'saving';
     errorMessage = '';
     const repository = getRepository();
-    let storedPhotoId: string | null = null;
     try {
-      if (photo) {
-        try {
-          await repository.savePhoto(photo);
-          storedPhotoId = photo.id;
-        } catch {
-          storedPhotoId = null;
-        }
-      }
+      const now = runtime.now();
       const episode = createOpenEpisode({
         id: runtime.createId(),
         programId: program.id,
         level,
-        now: runtime.now(),
+        now,
         timeZone: runtime.timeZone(),
-        context: { occasion, photoId: storedPhotoId }
+        context: { occasion, photoId: photo?.id ?? null }
       });
-      await repository.saveEpisode(episode);
+      if (photo) {
+        try {
+          await repository.append(
+            { type: 'photo/stored', occurredAt: now, payload: { photo } },
+            { type: 'episode/started', occurredAt: now, payload: { episode } }
+          );
+        } catch {
+          await repository.append({
+            type: 'episode/started',
+            occurredAt: now,
+            payload: { episode: { ...episode, photoId: null } }
+          });
+        }
+      } else {
+        await repository.append({
+          type: 'episode/started',
+          occurredAt: now,
+          payload: { episode }
+        });
+      }
       await goto(`${base}/?saved=before`, { replaceState: true });
     } catch (error) {
       errorMessage = error instanceof Error ? error.message : 'Your selection could not be saved.';
@@ -59,7 +70,12 @@
 
   async function markUnfinished() {
     if (!existing) return;
-    await getRepository().saveEpisode(markEpisodeUnfinished(existing, runtime.now()));
+    const now = runtime.now();
+    await getRepository().append({
+      type: 'episode/changed',
+      occurredAt: now,
+      payload: { episode: markEpisodeUnfinished(existing, now) }
+    });
     existing = null;
   }
 </script>

@@ -84,7 +84,9 @@ product:
 - SvelteKit 5, strict TypeScript, Bun, and `@sveltejs/adapter-static`;
 - a static installable PWA with a thin native shell only if scheduled local
   notifications are required for the pilot;
-- IndexedDB for local-first structured data and compressed photo blobs;
+- an append-only IndexedDB event sequence as the local source of truth;
+- disposable IndexedDB read-model caches rebuilt by deterministic playback;
+- local compressed photo blobs carried by the corresponding source events;
 - pure, versioned insight and experiment functions—no generative model;
 - plain Svelte-scoped CSS with global design tokens;
 - Vitest for scale, projection, insight, experiment, and migration rules;
@@ -95,8 +97,10 @@ product:
   validation before a change lands.
 
 Unlike the two realtime reference apps, Learn Your Appetite does not need a
-cloud event stream for its first hypothesis. Canonical records stay simple and
-deletable; domain calculations remain pure and replayable from fixed fixtures.
+cloud event stream for its first hypothesis. It does retain their core event
+sourcing rule locally: user actions append immutable, versioned events, and
+all `Program`, `EatingEpisode`, insight, experiment, photo, and settings records
+are materialized projections. Application code cannot write those caches.
 
 ## Documentation
 

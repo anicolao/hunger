@@ -7,7 +7,7 @@ import {
 } from '../helpers/app-fixture';
 import { TestStepHelper } from '../helpers/test-step-helper';
 
-test('Today supports unfinished, correction, and physical deletion', async ({ page, context }, testInfo) => {
+test('Today supports unfinished, correction, and event-based deletion', async ({ page, context }, testInfo) => {
   const steps = new TestStepHelper(page, testInfo);
   steps.setMetadata(
     'Today, correction, and incomplete episodes',
@@ -50,7 +50,7 @@ test('Today supports unfinished, correction, and physical deletion', async ({ pa
   await expect(page.getByText(/observations may update too/)).toBeVisible();
 
   await steps.step('corrected-episode', {
-    description: 'A correction updates the canonical episode',
+    description: 'A correction appends an event and updates the episode projection',
     verifications: [
       {
         spec: 'The corrected values and full phrases replace the mistaken values',

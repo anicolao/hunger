@@ -44,15 +44,22 @@
     ]) {
       const id = `${program.id}-${result.id}`;
       if (!snapshots.some((snapshot) => snapshot.id === id)) {
-        await repository.saveInsightSnapshot({
-          id,
-          programId: program.id,
-          shownAt: runtime.now(),
-          algorithmVersion: result.algorithmVersion,
-          copyVersion: 1,
-          result,
-          feedback: null,
-          sourceChanged: false
+        const shownAt = runtime.now();
+        await repository.append({
+          type: 'insight/snapshot-recorded',
+          occurredAt: shownAt,
+          payload: {
+            snapshot: {
+              id,
+              programId: program.id,
+              shownAt,
+              algorithmVersion: result.algorithmVersion,
+              copyVersion: 1,
+              result,
+              feedback: null,
+              sourceChanged: false
+            }
+          }
         });
       }
     }
@@ -72,7 +79,11 @@
       result: JSON.parse(JSON.stringify(snapshot.result)) as AnyInsightResult,
       feedback
     };
-    await getRepository().saveInsightSnapshot(updated);
+    await getRepository().append({
+      type: 'insight/snapshot-recorded',
+      occurredAt: runtime.now(),
+      payload: { snapshot: updated }
+    });
     snapshots = snapshots.map((item) => (item.id === updated.id ? updated : item));
   }
 

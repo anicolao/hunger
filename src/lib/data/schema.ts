@@ -1,5 +1,5 @@
 export const DATABASE_NAME = 'learn-your-appetite';
-export const DATABASE_VERSION = 2;
+export const DATABASE_VERSION = 3;
 export const SCHEMA_VERSION = 2;
 
 export type ProgramStatus = 'active' | 'paused' | 'complete';
@@ -120,3 +120,7 @@ export const storeNames = [
 ] as const;
 
 export type StoreName = (typeof storeNames)[number];
+
+export const EVENT_STORE_NAME = 'events' as const;
+export const METADATA_STORE_NAME = 'metadata' as const;
+export const allStoreNames = [...storeNames, EVENT_STORE_NAME, METADATA_STORE_NAME] as const;
