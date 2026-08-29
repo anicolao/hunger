@@ -74,7 +74,7 @@
     transform: translateY(-150%);
   }
 
-  .skip-link:focus {
+  .skip-link:focus-visible {
     transform: translateY(0);
   }
 

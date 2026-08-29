@@ -26,6 +26,8 @@ export interface AppetiteRepository {
   deleteEpisode(id: string): Promise<void>;
   savePhoto(photo: PhotoRecord): Promise<void>;
   getPhoto(id: string): Promise<PhotoRecord | null>;
+  listInsightSnapshots(programId: string): Promise<InsightSnapshot[]>;
+  saveInsightSnapshot(snapshot: InsightSnapshot): Promise<void>;
   clearAll(): Promise<void>;
 }
 
@@ -107,6 +109,16 @@ export class IndexedDbRepository implements AppetiteRepository {
 
   async getPhoto(id: string): Promise<PhotoRecord | null> {
     return (await this.get<PhotoRecord>('photos', id)) ?? null;
+  }
+
+  async listInsightSnapshots(programId: string): Promise<InsightSnapshot[]> {
+    return (await this.getAll<InsightSnapshot>('insights'))
+      .filter((snapshot) => snapshot.programId === programId)
+      .sort((left, right) => right.shownAt - left.shownAt);
+  }
+
+  async saveInsightSnapshot(snapshot: InsightSnapshot): Promise<void> {
+    await this.put('insights', snapshot);
   }
 
   async clearAll(): Promise<void> {
