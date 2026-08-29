@@ -158,6 +158,11 @@ viewport without an accidental nested scroll region.
 
 ### 001 — Shell and onboarding
 
+- First scaffold increment: load the responsive public landing state and prove
+  the 30-day promise, unified scale direction, learning loop, local-first
+  framing, keyboard focus, target sizes, and deterministic build marker.
+- Keep this scenario and its walkthrough as onboarding is implemented; extend
+  it rather than replacing the landing tracer bullet.
 - Load a clean install and show the 30-day promise.
 - Explain the unified scale, learning-not-restriction framing, local storage,
   and safety boundary.

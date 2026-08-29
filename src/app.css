@@ -1,0 +1,65 @@
+@import '@fontsource/atkinson-hyperlegible/400.css';
+@import '@fontsource/atkinson-hyperlegible/700.css';
+
+:root {
+  font-family: 'Atkinson Hyperlegible', system-ui, sans-serif;
+  color: #25312d;
+  background: #f7f4ee;
+  font-synthesis: none;
+  --canvas: #f7f4ee;
+  --surface: #ffffff;
+  --ink: #25312d;
+  --ink-muted: #596862;
+  --primary: #236b61;
+  --primary-hover: #18594f;
+  --primary-soft: #ddebe7;
+  --accent-soft: #f9e6d4;
+  --accent-ink: #6e3814;
+  --border: #d7ded9;
+  --focus: #0b5fff;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  min-width: 320px;
+  scroll-behavior: smooth;
+}
+
+body {
+  min-width: 320px;
+  min-height: 100vh;
+  margin: 0;
+  background: var(--canvas);
+}
+
+button,
+a {
+  font: inherit;
+}
+
+a {
+  color: inherit;
+}
+
+:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
