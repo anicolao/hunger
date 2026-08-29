@@ -1,0 +1,74 @@
+name: Hunger
+
+options:
+  bundleIdPrefix: com.anicolao
+  deploymentTarget:
+    iOS: "17.0"
+  createIntermediateGroups: true
+  groupSortPosition: top
+
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    SWIFT_STRICT_CONCURRENCY: targeted
+    IPHONEOS_DEPLOYMENT_TARGET: "17.0"
+    TARGETED_DEVICE_FAMILY: "1,2"
+    CURRENT_PROJECT_VERSION: "1"
+    MARKETING_VERSION: "0.1.0"
+
+targets:
+  Hunger:
+    type: application
+    platform: iOS
+    sources:
+      - path: Hunger
+        excludes:
+          - Resources
+      - path: Hunger/Resources/WebApp
+        type: folder
+        buildPhase: resources
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.anicolao.hunger
+        PRODUCT_NAME: Hunger
+        PRODUCT_MODULE_NAME: Hunger
+        GENERATE_INFOPLIST_FILE: true
+        INFOPLIST_KEY_CFBundleDisplayName: Learn Your Appetite
+        INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.healthcare-fitness
+        INFOPLIST_KEY_UIApplicationSceneManifest_Generation: true
+        INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents: true
+        INFOPLIST_KEY_UILaunchScreen_Generation: true
+        INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone: UIInterfaceOrientationPortrait
+        INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad: UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight
+        CODE_SIGN_STYLE: Automatic
+        DEVELOPMENT_ASSET_PATHS: ""
+    scheme:
+      gatherCoverageData: true
+      testTargets:
+        - HungerTests
+        - HungerUITests
+
+  HungerTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - HungerTests
+    dependencies:
+      - target: Hunger
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.anicolao.hunger.tests
+        GENERATE_INFOPLIST_FILE: true
+
+  HungerUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - HungerUITests
+    dependencies:
+      - target: Hunger
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.anicolao.hunger.uitests
+        GENERATE_INFOPLIST_FILE: true
+        TEST_TARGET_NAME: Hunger

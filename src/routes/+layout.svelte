@@ -6,7 +6,10 @@
 
   let { children } = $props();
 
-  onMount(() => { installE2EFixtureBoundary(); void registerOfflineShell(); });
+  onMount(() => {
+    installE2EFixtureBoundary();
+    if (import.meta.env.VITE_NATIVE_SHELL !== 'ios') void registerOfflineShell();
+  });
 </script>
 
 {@render children()}
