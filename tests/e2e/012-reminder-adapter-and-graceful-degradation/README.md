@@ -4,7 +4,7 @@ Reminder settings taper with the program and accurately describe browser capabil
 
 ## A user-selected window becomes an in-app prompt with an explicit capability limit
 
-![A user-selected window becomes an in-app prompt with an explicit capability limit](./screenshots/000-honest-browser-reminder-desktop-darwin.png)
+![A user-selected window becomes an in-app prompt with an explicit capability limit](./screenshots/000-honest-browser-reminder-phone-darwin.png)
 
 **Verifications:**
 

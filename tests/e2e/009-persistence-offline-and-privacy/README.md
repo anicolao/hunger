@@ -4,7 +4,7 @@ Legacy local records remain useful offline, while deletion is deliberate and com
 
 ## Version-one records migrate through the real repository and reopen without a network
 
-![Version-one records migrate through the real repository and reopen without a network](./screenshots/000-private-and-offline-desktop-darwin.png)
+![Version-one records migrate through the real repository and reopen without a network](./screenshots/000-private-and-offline-phone-darwin.png)
 
 **Verifications:**
 
@@ -13,7 +13,7 @@ Legacy local records remain useful offline, while deletion is deliberate and com
 
 ## Delete-all enumerates every private category and stays disabled without confirmation
 
-![Delete-all enumerates every private category and stays disabled without confirmation](./screenshots/001-deliberate-delete-all-desktop-darwin.png)
+![Delete-all enumerates every private category and stays disabled without confirmation](./screenshots/001-deliberate-delete-all-phone-darwin.png)
 
 **Verifications:**
 

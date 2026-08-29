@@ -4,7 +4,8 @@ This plan turns the approved product, UX, and end-to-end contracts into a
 reviewable sequence of tracer-bullet commits. Each commit must leave the
 application usable, keep all earlier scenarios passing, and include the domain
 rules, real IndexedDB path, accessible UI, unit coverage, Playwright journey,
-walkthrough, and reviewed phone/desktop screenshots needed for its capability.
+phone-first walkthrough, and reviewed phone/desktop screenshots needed for its
+capability.
 
 The implementation source of truth remains, in priority order:
 

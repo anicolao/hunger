@@ -4,7 +4,7 @@ The finite program ends with an evidence-labelled profile that remains locally a
 
 ## Day 30 ends the guide and assembles only evidence-supported sections
 
-![Day 30 ends the guide and assembles only evidence-supported sections](./screenshots/000-supported-day-30-profile-desktop-darwin.png)
+![Day 30 ends the guide and assembles only evidence-supported sections](./screenshots/000-supported-day-30-profile-phone-darwin.png)
 
 **Verifications:**
 
@@ -14,7 +14,7 @@ The finite program ends with an evidence-labelled profile that remains locally a
 
 ## Readable and structured exports are explicit and exclude photos by default
 
-![Readable and structured exports are explicit and exclude photos by default](./screenshots/001-private-export-desktop-darwin.png)
+![Readable and structured exports are explicit and exclude photos by default](./screenshots/001-private-export-phone-darwin.png)
 
 **Verifications:**
 

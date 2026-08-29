@@ -4,7 +4,7 @@ Activation, a paired moment, an experiment offer, and Profile remain keyboard-op
 
 ## The complete paired loop works from the keyboard in a short landscape viewport
 
-![The complete paired loop works from the keyboard in a short landscape viewport](./screenshots/000-keyboard-landscape-check-in-desktop-darwin.png)
+![The complete paired loop works from the keyboard in a short landscape viewport](./screenshots/000-keyboard-landscape-check-in-phone-darwin.png)
 
 **Verifications:**
 
@@ -14,7 +14,7 @@ Activation, a paired moment, an experiment offer, and Profile remain keyboard-op
 
 ## The progressive Profile reflows at tablet width after a keyboard-started experiment
 
-![The progressive Profile reflows at tablet width after a keyboard-started experiment](./screenshots/001-tablet-profile-reflow-desktop-darwin.png)
+![The progressive Profile reflows at tablet width after a keyboard-started experiment](./screenshots/001-tablet-profile-reflow-phone-darwin.png)
 
 **Verifications:**
 

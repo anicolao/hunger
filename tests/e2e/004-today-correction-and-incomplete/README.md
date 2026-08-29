@@ -4,7 +4,7 @@ Recent moments remain editable and deletable, while an abandoned check-in never 
 
 ## Today distinguishes complete and deliberately unfinished moments
 
-![Today distinguishes complete and deliberately unfinished moments](./screenshots/000-complete-and-unfinished-history-desktop-darwin.png)
+![Today distinguishes complete and deliberately unfinished moments](./screenshots/000-complete-and-unfinished-history-phone-darwin.png)
 
 **Verifications:**
 
@@ -13,7 +13,7 @@ Recent moments remain editable and deletable, while an abandoned check-in never 
 
 ## A correction updates the canonical episode
 
-![A correction updates the canonical episode](./screenshots/001-corrected-episode-desktop-darwin.png)
+![A correction updates the canonical episode](./screenshots/001-corrected-episode-phone-darwin.png)
 
 **Verifications:**
 

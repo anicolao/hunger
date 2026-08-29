@@ -4,7 +4,7 @@ Elapsed program stages survive gaps, while a fixed eight-pair history produces a
 
 ## Elapsed time reaches personal patterns without a streak or reset
 
-![Elapsed time reaches personal patterns without a streak or reset](./screenshots/000-week-four-today-desktop-darwin.png)
+![Elapsed time reaches personal patterns without a streak or reset](./screenshots/000-week-four-today-phone-darwin.png)
 
 **Verifications:**
 
@@ -13,7 +13,7 @@ Elapsed program stages survive gaps, while a fixed eight-pair history produces a
 
 ## The strongest supported association is ranked first with exact evidence
 
-![The strongest supported association is ranked first with exact evidence](./screenshots/001-recurring-rate-pattern-desktop-darwin.png)
+![The strongest supported association is ranked first with exact evidence](./screenshots/001-recurring-rate-pattern-phone-darwin.png)
 
 **Verifications:**
 

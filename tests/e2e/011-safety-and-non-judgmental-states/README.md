@@ -4,7 +4,7 @@ Repeated high-discomfort endings prompt options, never a diagnosis or alarm.
 
 ## A calm card offers pause, dismissal, and outside support after repeated discomfort
 
-![A calm card offers pause, dismissal, and outside support after repeated discomfort](./screenshots/000-quiet-support-card-desktop-darwin.png)
+![A calm card offers pause, dismissal, and outside support after repeated discomfort](./screenshots/000-quiet-support-card-phone-darwin.png)
 
 **Verifications:**
 
