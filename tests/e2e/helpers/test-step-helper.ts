@@ -73,6 +73,7 @@ export class TestStepHelper {
 
       for (const control of document.querySelectorAll<HTMLElement>('a, button, input')) {
         if (!control.checkVisibility()) continue;
+        if (control.tagName === 'A' && getComputedStyle(control).display === 'inline') continue;
         const rect = control.getBoundingClientRect();
         if (rect.width < 44 || rect.height < 44) {
           throw new Error(

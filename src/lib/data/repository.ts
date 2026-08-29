@@ -28,7 +28,9 @@ export interface AppetiteRepository {
   getPhoto(id: string): Promise<PhotoRecord | null>;
   listInsightSnapshots(programId: string): Promise<InsightSnapshot[]>;
   saveInsightSnapshot(snapshot: InsightSnapshot): Promise<void>;
-  importFixture(fixture: { program: Program; episodes: EatingEpisode[]; settings?: AppSettings }): Promise<void>;
+  listExperiments(programId: string): Promise<ExperimentRecord[]>;
+  saveExperiment(experiment: ExperimentRecord): Promise<void>;
+  importFixture(fixture: { program: Program; episodes: EatingEpisode[]; settings?: AppSettings; experiments?: ExperimentRecord[] }): Promise<void>;
   clearAll(): Promise<void>;
 }
 
@@ -122,11 +124,22 @@ export class IndexedDbRepository implements AppetiteRepository {
     await this.put('insights', snapshot);
   }
 
-  async importFixture(fixture: { program: Program; episodes: EatingEpisode[]; settings?: AppSettings }): Promise<void> {
+  async listExperiments(programId: string): Promise<ExperimentRecord[]> {
+    return (await this.getAll<ExperimentRecord>('experiments'))
+      .filter((experiment) => experiment.programId === programId)
+      .sort((left, right) => right.startedAt - left.startedAt);
+  }
+
+  async saveExperiment(experiment: ExperimentRecord): Promise<void> {
+    await this.put('experiments', experiment);
+  }
+
+  async importFixture(fixture: { program: Program; episodes: EatingEpisode[]; settings?: AppSettings; experiments?: ExperimentRecord[] }): Promise<void> {
     await this.clearAll();
     await this.saveProgram(fixture.program);
     if (fixture.settings) await this.saveSettings(fixture.settings);
     for (const episode of fixture.episodes) await this.saveEpisode(episode);
+    for (const experiment of fixture.experiments ?? []) await this.saveExperiment(experiment);
   }
 
   async clearAll(): Promise<void> {

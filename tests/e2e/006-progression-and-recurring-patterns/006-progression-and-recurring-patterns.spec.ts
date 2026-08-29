@@ -73,7 +73,7 @@ test('elapsed weeks unlock a conservatively gated recurring pattern', async ({ p
         spec: 'The disclosure names fixed gates and exposes all eight source episodes',
         check: async () => {
           await expect(recurring.getByText(/fixed sample and 25-point difference gates/)).toBeVisible();
-          await expect(recurring.getByRole('link')).toHaveCount(8);
+          await expect(recurring.locator('details li a')).toHaveCount(8);
         }
       }
     ]
