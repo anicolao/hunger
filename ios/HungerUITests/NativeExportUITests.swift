@@ -22,7 +22,14 @@ final class NativeExportUITests: XCTestCase {
         attachment.lifetime = .keepAlways
         add(attachment)
 
-        shareSheet.swipeDown()
+        let closeShareSheet = app.buttons.matching(
+            NSPredicate(format: "label == 'Close'")
+        ).firstMatch
+        if closeShareSheet.waitForExistence(timeout: 2) {
+            closeShareSheet.tap()
+        } else {
+            shareSheet.swipeDown()
+        }
         XCTAssertTrue(
             element(label: "Private export closed and temporary file removed.", in: app)
                 .waitForExistence(timeout: 10)
