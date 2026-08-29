@@ -11,6 +11,7 @@ import {
   type Program,
   type StoreName
 } from './schema';
+import { migrateEpisode, migrateProgram } from './migrations';
 
 type StoreRecord = Program | EatingEpisode | InsightSnapshot | ExperimentRecord | PhotoRecord | AppSettings;
 
@@ -56,7 +57,8 @@ export class IndexedDbRepository implements AppetiteRepository {
 
   async getProgram(): Promise<Program | null> {
     const records = await this.getAll<Program>('programs');
-    return records.sort((left, right) => right.startedAt - left.startedAt)[0] ?? null;
+    const record = records.sort((left, right) => right.startedAt - left.startedAt)[0];
+    return record ? migrateProgram(record) : null;
   }
 
   async saveProgram(program: Program): Promise<void> {
@@ -79,7 +81,7 @@ export class IndexedDbRepository implements AppetiteRepository {
 
   async listEpisodes(programId: string): Promise<EatingEpisode[]> {
     const episodes = await this.getAll<EatingEpisode>('episodes');
-    return episodes
+    return episodes.map(migrateEpisode)
       .filter((episode) => episode.programId === programId)
       .sort((left, right) => right.startedAt - left.startedAt);
   }

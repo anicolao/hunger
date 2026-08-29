@@ -80,7 +80,7 @@ test('elapsed weeks unlock a conservatively gated recurring pattern', async ({ p
   });
 
   await page.goto('/settings');
-  await expect(page.getByText(/Week 4 · Experiment reminder only/)).toBeVisible();
+  await expect(page.getByText(/Week 4 · Only pending completion prompts/)).toBeVisible();
   await page.getByRole('button', { name: 'Pause reminders' }).click();
   await expect(page.getByText('Week 4 · Paused')).toBeVisible();
 

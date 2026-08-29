@@ -1,6 +1,6 @@
 export const DATABASE_NAME = 'learn-your-appetite';
-export const DATABASE_VERSION = 1;
-export const SCHEMA_VERSION = 1;
+export const DATABASE_VERSION = 2;
+export const SCHEMA_VERSION = 2;
 
 export type ProgramStatus = 'active' | 'paused' | 'complete';
 
