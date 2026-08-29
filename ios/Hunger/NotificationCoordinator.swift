@@ -1,7 +1,7 @@
 import Foundation
-import UserNotifications
+@preconcurrency import UserNotifications
 
-enum NotificationAuthorization: String, Equatable {
+enum NotificationAuthorization: String, Equatable, Sendable {
     case notDetermined = "not_determined"
     case denied
     case authorized
@@ -58,7 +58,11 @@ final class NotificationCoordinator: NotificationCoordinating {
     }
 
     func authorizationStatus() async -> NotificationAuthorization {
-        Self.map((await center.notificationSettings()).authorizationStatus)
+        await withCheckedContinuation { continuation in
+            center.getNotificationSettings { settings in
+                continuation.resume(returning: Self.map(settings.authorizationStatus))
+            }
+        }
     }
 
     func requestAuthorization() async throws -> NotificationAuthorization {
