@@ -22,6 +22,7 @@
           gnused
           git
           jq
+          ripgrep
         ];
 
         darwinInputs = lib.optionals pkgs.stdenv.hostPlatform.isDarwin (with pkgs; [
