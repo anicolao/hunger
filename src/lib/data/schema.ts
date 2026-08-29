@@ -57,13 +57,24 @@ export interface ExperimentRecord {
   id: string;
   programId: string;
   insightId: string;
-  kind: string;
+  kind: 'eat-earlier-noticing' | 'midway-pause' | 'name-body-hunger' | 'slow-first-minutes';
   startedAt: number;
-  endedAt: number;
+  endedAt: number | null;
   baselineEpisodeIds: string[];
-  target: unknown;
+  target: {
+    label: string;
+    measure: 'uncomfortable-ending-rate' | 'comfortable-ending-rate';
+    direction: 'lower' | 'higher';
+    days: 7;
+  };
   status: 'active' | 'paused' | 'stopped' | 'complete';
-  result: unknown | null;
+  result: {
+    state: 'changed' | 'similar' | 'learning';
+    baselineCount: number;
+    baselineTotal: number;
+    experimentCount: number;
+    experimentTotal: number;
+  } | null;
   algorithmVersion: number;
 }
 

@@ -1,11 +1,12 @@
 import { getRepository } from '$lib/data/repository';
-import type { AppSettings, EatingEpisode, Program } from '$lib/data/schema';
+import type { AppSettings, EatingEpisode, ExperimentRecord, Program } from '$lib/data/schema';
 
 export interface E2EFixture {
   version: 1;
   program: Program;
   episodes: EatingEpisode[];
   settings?: AppSettings;
+  experiments?: ExperimentRecord[];
 }
 
 export function installE2EFixtureBoundary() {

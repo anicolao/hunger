@@ -144,6 +144,9 @@
                 </div>
               {/if}
               <p class="evidence-count">{rendered.evidence}</p>
+              {#if isPattern(result) && result.eligibleExperiment}
+                <a class="experiment-link" href={`${base}/experiment?insight=${encodeURIComponent(result.id)}`}>Try a 7-day noticing experiment</a>
+              {/if}
               <details>
                 <summary>Why you're seeing this</summary>
                 <p>{rendered.explanation}</p>
@@ -204,6 +207,7 @@
   .rate-bars span { min-width: 2px; height: 12px; border-radius: 999px; display: block; background: var(--primary); }
   .rate-bars span:last-child { background: var(--accent); }
   .evidence-count { font-weight: 700; }
+  .experiment-link { min-height: 44px; width: fit-content; display: inline-flex; align-items: center; color: var(--primary); font-weight: 700; }
   details { border-top: 1px solid var(--border); }
   summary { min-height: 48px; display: flex; align-items: center; color: var(--primary); font-weight: 700; cursor: pointer; }
   ul { padding-left: 22px; }
