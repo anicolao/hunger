@@ -18,6 +18,7 @@
 		7DFE925D0F5047CD8BCCF0BE /* WebAppController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D34C6026A91A314EDBD770D /* WebAppController.swift */; };
 		A69D5526AE089F02B8709AC6 /* NotificationCoordinatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66BA4F8CB2F11B770459F130 /* NotificationCoordinatorTests.swift */; };
 		AC48FD4CF79701D29B6D871D /* OfflineAssetTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 727D6CF79965B3FA7DD6B17D /* OfflineAssetTests.swift */; };
+		B24459134BC4598C742192BA /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 1D114E723F7DE52C98A15C21 /* PrivacyInfo.xcprivacy */; };
 		B4FB59D13896A0FAA9651240 /* NotificationCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 58EDCAA62A8608DB2C911331 /* NotificationCoordinator.swift */; };
 		C72B7AA53A90C875CFE6F01F /* NativeBridgeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0DB75BDB61D9CC584E21938 /* NativeBridgeTests.swift */; };
 		D1A1E2D2BBFAE0BF3AC2B094 /* ShareCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80459EAFA764C6EC4B5288C0 /* ShareCoordinator.swift */; };
@@ -49,6 +50,7 @@
 		0E1686C573E2A86FB521175D /* NativeExportUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeExportUITests.swift; sourceTree = "<group>"; };
 		137D9604EE777F89B09051E1 /* OfflineAssetSchemeHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OfflineAssetSchemeHandler.swift; sourceTree = "<group>"; };
 		171B50D6B677DFCE6DDF903B /* WebApp */ = {isa = PBXFileReference; lastKnownFileType = folder; name = WebApp; path = Hunger/Resources/WebApp; sourceTree = SOURCE_ROOT; };
+		1D114E723F7DE52C98A15C21 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		3D34C6026A91A314EDBD770D /* WebAppController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebAppController.swift; sourceTree = "<group>"; };
 		448330F30F66E468C95D40EE /* Hunger.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Hunger.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		4DD9E5C7F6980888369A3F35 /* NativeBridgeUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeBridgeUITests.swift; sourceTree = "<group>"; };
@@ -99,6 +101,7 @@
 				58EDCAA62A8608DB2C911331 /* NotificationCoordinator.swift */,
 				137D9604EE777F89B09051E1 /* OfflineAssetSchemeHandler.swift */,
 				577602F759F5A2343F471C95 /* PersistenceConstants.swift */,
+				1D114E723F7DE52C98A15C21 /* PrivacyInfo.xcprivacy */,
 				80459EAFA764C6EC4B5288C0 /* ShareCoordinator.swift */,
 				3D34C6026A91A314EDBD770D /* WebAppController.swift */,
 				EDE13728BB88DFD33A4702D5 /* WebAppView.swift */,
@@ -239,6 +242,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				B24459134BC4598C742192BA /* PrivacyInfo.xcprivacy in Resources */,
 				25E3CDA93C49F9C02AE40976 /* WebApp in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

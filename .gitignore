@@ -6,6 +6,7 @@
 .svelte-kit/
 build/
 .derived-data/
+.artifacts/
 ios/Hunger/Resources/WebApp/
 coverage/
 node_modules/
