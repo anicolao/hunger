@@ -69,6 +69,27 @@ final class NativeBridgeTests: XCTestCase {
         }
     }
 
+    func testAcceptsOnlyAuditedPrivateExportPayloads() throws {
+        let request = try NativeBridgeValidator.decode(body: [
+            "version": 1,
+            "id": "export-1",
+            "command": "export.share",
+            "payload": [
+                "filename": "appetite-profile.json",
+                "mimeType": "application/json",
+                "content": "{\"exportVersion\":1}"
+            ]
+        ], source: trusted)
+        XCTAssertEqual(
+            request.payload,
+            .export(ValidatedExport(
+                filename: "appetite-profile.json",
+                mimeType: "application/json",
+                content: "{\"exportVersion\":1}"
+            ))
+        )
+    }
+
     func testRejectsOversizedAndMalformedIdentifiers() {
         assertRejected(
             changing: "id",

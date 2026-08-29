@@ -5,7 +5,8 @@ import WebKit
 enum NativeBridgeConstants {
     static let handlerName = "hungerNativeV1"
     static let version = 1
-    static let maximumRequestBytes = 16 * 1024
+    static let maximumRequestBytes = ExportValidator.maximumBytes + 4 * 1024
+    static let maximumStandardRequestBytes = 16 * 1024
     static let maximumIdentifierBytes = 64
 }
 
@@ -16,6 +17,7 @@ enum NativeBridgeCommand: String, CaseIterable {
     case notificationReplace = "notifications.replaceSchedule"
     case notificationCancel = "notifications.cancelAll"
     case openNotificationSettings = "app.openNotificationSettings"
+    case exportShare = "export.share"
 }
 
 struct NativeBridgeSource: Equatable {
@@ -41,6 +43,7 @@ struct NativeBridgeRequest: Equatable {
 enum NativeBridgePayload: Equatable {
     case empty
     case reminderSchedule(windows: [String], cadence: String)
+    case export(ValidatedExport)
 }
 
 enum NativeBridgeValidationError: String, Error, Equatable {
@@ -104,7 +107,27 @@ enum NativeBridgeValidator {
             }
             _ = try NotificationSchedule.plan(for: windows)
             decodedPayload = .reminderSchedule(windows: windows, cadence: cadence)
+        case .exportShare:
+            guard Set(payload.keys) == Set(["filename", "mimeType", "content"]),
+                  let filename = payload["filename"] as? String,
+                  let mimeType = payload["mimeType"] as? String,
+                  let content = payload["content"] as? String
+            else {
+                throw NativeBridgeValidationError.invalidPayload
+            }
+            do {
+                decodedPayload = .export(try ExportValidator.validate(
+                    filename: filename,
+                    mimeType: mimeType,
+                    content: content
+                ))
+            } catch {
+                throw NativeBridgeValidationError.invalidPayload
+            }
         default:
+            guard bytes.count <= NativeBridgeConstants.maximumStandardRequestBytes else {
+                throw NativeBridgeValidationError.requestTooLarge
+            }
             guard payload.isEmpty else {
                 throw NativeBridgeValidationError.invalidPayload
             }
@@ -118,12 +141,15 @@ enum NativeBridgeValidator {
 final class NativeBridge: NSObject, WKScriptMessageHandlerWithReply {
     private let uiTestEvidenceEnabled: Bool
     private let notifications: NotificationCoordinating
+    private let shareCoordinator: ShareCoordinating
 
     init(
         notifications: NotificationCoordinating = NotificationCoordinator(),
+        shareCoordinator: ShareCoordinating = ShareCoordinator(),
         uiTestEvidenceEnabled: Bool = false
     ) {
         self.notifications = notifications
+        self.shareCoordinator = shareCoordinator
         self.uiTestEvidenceEnabled = uiTestEvidenceEnabled
     }
 
@@ -219,6 +245,12 @@ final class NativeBridge: NSObject, WKScriptMessageHandlerWithReply {
                 return ["opened": false]
             }
             return ["opened": await UIApplication.shared.open(url)]
+        case .exportShare:
+            guard case let .export(export) = request.payload else {
+                throw NativeBridgeValidationError.invalidPayload
+            }
+            try await shareCoordinator.share(export)
+            return ["shared": true]
         }
     }
 

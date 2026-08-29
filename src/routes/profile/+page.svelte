@@ -7,7 +7,7 @@
   import type { EatingEpisode, ExperimentRecord, Program } from '$lib/data/schema';
   import { buildProfile, type AppetiteProfile } from '$lib/domain/profile';
   import { getProgramProgress, type ProgramProgress } from '$lib/domain/progression';
-  import { buildExport, downloadText, exportHtml, exportJson } from '$lib/platform/export';
+  import { buildExport, exportHtml, exportJson, shareExport } from '$lib/platform/export';
   import { runtime } from '$lib/platform/runtime';
 
   let program = $state<Program | null>(null);
@@ -16,6 +16,7 @@
   let profile = $state<AppetiteProfile | null>(null);
   let progress = $state<ProgramProgress | null>(null);
   let ready = $state(false);
+  let exportMessage = $state('');
 
   onMount(async () => {
     const repository = getRepository();
@@ -36,11 +37,13 @@
     ready = true;
   });
 
-  function download(format: 'json' | 'html') {
+  async function download(format: 'json' | 'html') {
     if (!program || !profile) return;
     const data = buildExport(program, profile, episodes, experiments, runtime.now());
-    if (format === 'json') downloadText('appetite-profile.json', 'application/json', exportJson(data));
-    else downloadText('appetite-profile.html', 'text/html', exportHtml(data));
+    const destination = format === 'json'
+      ? await shareExport('appetite-profile.json', 'application/json', exportJson(data))
+      : await shareExport('appetite-profile.html', 'text/html', exportHtml(data));
+    exportMessage = destination === 'native-ios' ? 'Private export closed and temporary file removed.' : '';
   }
 </script>
 
@@ -79,6 +82,7 @@
         <h2>Keep a private copy</h2>
         <p>Download a readable summary or structured data. Photos are excluded by default.</p>
         <div><button onclick={() => download('html')}>Download readable profile</button><button class="secondary" onclick={() => download('json')}>Download JSON</button></div>
+        {#if exportMessage}<p role="status">{exportMessage}</p>{/if}
       </section>
     </div>
   </AppShell>
