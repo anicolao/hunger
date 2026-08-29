@@ -1,5 +1,18 @@
 <script lang="ts">
   import { base } from '$app/paths';
+  import { onMount } from 'svelte';
+  import AppShell from '$lib/components/AppShell.svelte';
+  import TodayView from '$lib/components/TodayView.svelte';
+  import { getRepository } from '$lib/data/repository';
+  import type { Program } from '$lib/data/schema';
+
+  let program = $state<Program | null>(null);
+  let loaded = $state(false);
+
+  onMount(async () => {
+    program = await getRepository().getProgram();
+    loaded = true;
+  });
 
   const steps = [
     {
@@ -28,7 +41,12 @@
   />
 </svelte:head>
 
-<div class="site-shell" data-status="ready" data-e2e-layout>
+{#if program}
+  <AppShell active="today">
+    <TodayView {program} />
+  </AppShell>
+{:else}
+<div class="site-shell" data-status={loaded ? 'ready' : 'loading'} data-e2e-layout>
   <header class="site-header">
     <a class="brand" href={`${base}/`} aria-label="Learn Your Appetite home">
       <svg viewBox="0 0 40 40" aria-hidden="true">
@@ -109,6 +127,7 @@
         <p><strong>Only a sensation is required.</strong> Context, notes, and photos stay optional.</p>
         <p><strong>Every insight shows its evidence.</strong> Sparse data is labelled “Still learning.”</p>
         <p><strong>Your records stay local.</strong> The MVP needs no account or cloud food history.</p>
+        <a class="begin-action" href={`${base}/onboarding`}>Begin the 30-day program</a>
       </div>
     </section>
   </main>
@@ -118,6 +137,7 @@
     <span data-testid="build-marker">Build {import.meta.env.VITE_GIT_HASH}</span>
   </footer>
 </div>
+{/if}
 
 <style>
   .site-shell {
@@ -503,6 +523,19 @@
     display: block;
     margin-bottom: 3px;
     color: var(--ink);
+  }
+
+  .begin-action {
+    min-height: 52px;
+    padding: 0 20px;
+    border-radius: 12px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    background: var(--primary);
+    font-weight: 700;
+    text-decoration: none;
   }
 
   footer {
