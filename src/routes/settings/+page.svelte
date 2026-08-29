@@ -9,6 +9,7 @@
   import { reminderCadence } from '$lib/domain/reminders';
   import { supportEligible } from '$lib/domain/support';
   import { clearDeviceCaches } from '$lib/platform/offline';
+  import { completeNativeDelete } from '$lib/platform/native';
   import { cancelNativeReminders, configureReminders } from '$lib/platform/reminders';
   import { runtime } from '$lib/platform/runtime';
 
@@ -79,7 +80,8 @@
   async function dismissSupport() { if (settings) await saveSettings({ ...settings, dismissedSupport: true }); }
   async function deleteEverything() {
     if (!deleteConfirmed) return;
-    deleting = true; await getRepository().clearAll(); await clearDeviceCaches();
+    deleting = true; await getRepository().deleteAll(); await clearDeviceCaches();
+    await completeNativeDelete();
     location.href = `${base}/`;
   }
 </script>

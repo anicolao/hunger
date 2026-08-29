@@ -18,6 +18,7 @@ enum NativeBridgeCommand: String, CaseIterable {
     case notificationCancel = "notifications.cancelAll"
     case openNotificationSettings = "app.openNotificationSettings"
     case exportShare = "export.share"
+    case privacyCompleteDelete = "privacy.completeDelete"
 }
 
 struct NativeBridgeSource: Equatable {
@@ -251,6 +252,10 @@ final class NativeBridge: NSObject, WKScriptMessageHandlerWithReply {
             }
             try await shareCoordinator.share(export)
             return ["shared": true]
+        case .privacyCompleteDelete:
+            await notifications.cancelAll()
+            try shareCoordinator.removeTemporaryExports()
+            return ["deleted": true]
         }
     }
 

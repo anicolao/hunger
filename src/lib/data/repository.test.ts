@@ -93,6 +93,23 @@ describe('IndexedDbRepository', () => {
     repository.close();
   });
 
+  it('physically deletes the database after clearing the event-backed model', async () => {
+    const factory = new IDBFactory();
+    const repository = new IndexedDbRepository(factory, eventIds());
+    await repository.append({
+      type: 'program/started',
+      occurredAt: program.startedAt,
+      payload: { program }
+    });
+
+    await repository.deleteAll();
+
+    const reopened = new IndexedDbRepository(factory, eventIds());
+    expect(await reopened.getProgram()).toBeNull();
+    expect(await reopened.listEvents()).toEqual([]);
+    reopened.close();
+  });
+
   it('converts the prior mutable stores into source events once', async () => {
     const factory = new IDBFactory();
     const legacyDatabase = await openLegacyDatabase(factory);

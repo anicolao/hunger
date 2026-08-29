@@ -90,6 +90,19 @@ final class NativeBridgeTests: XCTestCase {
         )
     }
 
+    func testAcceptsOnlyAnEmptyPrivateDeletionPayload() throws {
+        var body = validBody()
+        body["command"] = "privacy.completeDelete"
+        let request = try NativeBridgeValidator.decode(body: body, source: trusted)
+        XCTAssertEqual(request.command, .privacyCompleteDelete)
+        XCTAssertEqual(request.payload, .empty)
+
+        body["payload"] = ["database": "learn-your-appetite"]
+        XCTAssertThrowsError(try NativeBridgeValidator.decode(body: body, source: trusted)) {
+            XCTAssertEqual($0 as? NativeBridgeValidationError, .invalidPayload)
+        }
+    }
+
     func testRejectsOversizedAndMalformedIdentifiers() {
         assertRejected(
             changing: "id",

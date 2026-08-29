@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
+  completeNativeDelete,
   installNativeLifecycleBoundary,
   nativeCapabilities,
   nativeRequest,
@@ -53,5 +54,19 @@ describe('native platform boundary', () => {
 
     expect(dispatchEvent).toHaveBeenCalledOnce();
     expect(Object.getOwnPropertyDescriptor(fakeWindow, '__hungerNativeLifecycle')?.writable).toBe(false);
+  });
+
+  it('completes native cleanup only when the negotiated command is available', async () => {
+    const request = vi.fn(async (command: string) => command === 'capabilities.get'
+      ? { version: 1, platform: 'ios', commands: ['privacy.completeDelete'] }
+      : { deleted: true });
+    vi.stubGlobal('window', { hungerNative: { request } });
+
+    expect(await completeNativeDelete()).toBe(true);
+    expect(request).toHaveBeenLastCalledWith('privacy.completeDelete', {});
+
+    resetNativeCapabilityCacheForTests();
+    vi.stubGlobal('window', {});
+    expect(await completeNativeDelete()).toBe(false);
   });
 });
