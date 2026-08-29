@@ -139,13 +139,14 @@
             ${lib.getExe iosBuildWeb}
             ${lib.getExe iosGenerate}
             destination="''${IOS_DESTINATION:-platform=iOS Simulator,name=iPhone 17,OS=latest}"
+            only_testing="''${IOS_ONLY_TESTING:-Hunger${testTarget}}"
             set -o pipefail
             xcodebuild test \
               -project "$repo_root/ios/Hunger.xcodeproj" \
               -scheme Hunger \
               -destination "$destination" \
               -derivedDataPath "$repo_root/.derived-data/ios" \
-              -only-testing:Hunger${testTarget} \
+              -only-testing:"$only_testing" \
               CODE_SIGNING_ALLOWED=NO \
               | xcbeautify
           '';

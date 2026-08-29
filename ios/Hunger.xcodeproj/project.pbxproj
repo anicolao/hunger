@@ -11,10 +11,13 @@
 		151FED507278E11C09B0FEB6 /* HungerApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 696A4F58E11658F79C01B40B /* HungerApp.swift */; };
 		25E3CDA93C49F9C02AE40976 /* WebApp in Resources */ = {isa = PBXBuildFile; fileRef = 171B50D6B677DFCE6DDF903B /* WebApp */; };
 		344BABA8A635767792ED50D5 /* NativeBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = E163D5A5F623DA49FD1C6C49 /* NativeBridge.swift */; };
+		582C75C43A3AEC7F88AB655A /* NativeReminderUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E078E13AF0F471B08F252654 /* NativeReminderUITests.swift */; };
 		6894A3F306CDA3F744F3CA2D /* OfflineAssetSchemeHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 137D9604EE777F89B09051E1 /* OfflineAssetSchemeHandler.swift */; };
 		730D57B64E5F89E5DA3BB06B /* OfflineEventPersistenceUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5650725E5A0C21804D957826 /* OfflineEventPersistenceUITests.swift */; };
 		7DFE925D0F5047CD8BCCF0BE /* WebAppController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D34C6026A91A314EDBD770D /* WebAppController.swift */; };
+		A69D5526AE089F02B8709AC6 /* NotificationCoordinatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66BA4F8CB2F11B770459F130 /* NotificationCoordinatorTests.swift */; };
 		AC48FD4CF79701D29B6D871D /* OfflineAssetTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 727D6CF79965B3FA7DD6B17D /* OfflineAssetTests.swift */; };
+		B4FB59D13896A0FAA9651240 /* NotificationCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 58EDCAA62A8608DB2C911331 /* NotificationCoordinator.swift */; };
 		C72B7AA53A90C875CFE6F01F /* NativeBridgeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0DB75BDB61D9CC584E21938 /* NativeBridgeTests.swift */; };
 		E53557290FA01FCCD5D995CF /* NavigationPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8FEB9725A9AD6069AB91EE20 /* NavigationPolicy.swift */; };
 		EB46671E1EB1EB14D3120FA1 /* PersistenceConstants.swift in Sources */ = {isa = PBXBuildFile; fileRef = 577602F759F5A2343F471C95 /* PersistenceConstants.swift */; };
@@ -46,11 +49,14 @@
 		4DD9E5C7F6980888369A3F35 /* NativeBridgeUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeBridgeUITests.swift; sourceTree = "<group>"; };
 		5650725E5A0C21804D957826 /* OfflineEventPersistenceUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OfflineEventPersistenceUITests.swift; sourceTree = "<group>"; };
 		577602F759F5A2343F471C95 /* PersistenceConstants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersistenceConstants.swift; sourceTree = "<group>"; };
+		58EDCAA62A8608DB2C911331 /* NotificationCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationCoordinator.swift; sourceTree = "<group>"; };
+		66BA4F8CB2F11B770459F130 /* NotificationCoordinatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationCoordinatorTests.swift; sourceTree = "<group>"; };
 		696A4F58E11658F79C01B40B /* HungerApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HungerApp.swift; sourceTree = "<group>"; };
 		727D6CF79965B3FA7DD6B17D /* OfflineAssetTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OfflineAssetTests.swift; sourceTree = "<group>"; };
 		8FEB9725A9AD6069AB91EE20 /* NavigationPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavigationPolicy.swift; sourceTree = "<group>"; };
 		9E4BEFE817612E5358BFFA7F /* HungerTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = HungerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		D0DB75BDB61D9CC584E21938 /* NativeBridgeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeBridgeTests.swift; sourceTree = "<group>"; };
+		E078E13AF0F471B08F252654 /* NativeReminderUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeReminderUITests.swift; sourceTree = "<group>"; };
 		E163D5A5F623DA49FD1C6C49 /* NativeBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeBridge.swift; sourceTree = "<group>"; };
 		EDE13728BB88DFD33A4702D5 /* WebAppView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebAppView.swift; sourceTree = "<group>"; };
 		F698B86F852F554637C4FDDB /* HungerUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = HungerUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -82,6 +88,7 @@
 				696A4F58E11658F79C01B40B /* HungerApp.swift */,
 				E163D5A5F623DA49FD1C6C49 /* NativeBridge.swift */,
 				8FEB9725A9AD6069AB91EE20 /* NavigationPolicy.swift */,
+				58EDCAA62A8608DB2C911331 /* NotificationCoordinator.swift */,
 				137D9604EE777F89B09051E1 /* OfflineAssetSchemeHandler.swift */,
 				577602F759F5A2343F471C95 /* PersistenceConstants.swift */,
 				3D34C6026A91A314EDBD770D /* WebAppController.swift */,
@@ -94,6 +101,7 @@
 			isa = PBXGroup;
 			children = (
 				D0DB75BDB61D9CC584E21938 /* NativeBridgeTests.swift */,
+				66BA4F8CB2F11B770459F130 /* NotificationCoordinatorTests.swift */,
 				727D6CF79965B3FA7DD6B17D /* OfflineAssetTests.swift */,
 			);
 			path = HungerTests;
@@ -113,6 +121,7 @@
 			isa = PBXGroup;
 			children = (
 				4DD9E5C7F6980888369A3F35 /* NativeBridgeUITests.swift */,
+				E078E13AF0F471B08F252654 /* NativeReminderUITests.swift */,
 				5650725E5A0C21804D957826 /* OfflineEventPersistenceUITests.swift */,
 			);
 			path = HungerUITests;
@@ -230,6 +239,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				EE223BBCFE5110E4B578F186 /* NativeBridgeUITests.swift in Sources */,
+				582C75C43A3AEC7F88AB655A /* NativeReminderUITests.swift in Sources */,
 				730D57B64E5F89E5DA3BB06B /* OfflineEventPersistenceUITests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -241,6 +251,7 @@
 				151FED507278E11C09B0FEB6 /* HungerApp.swift in Sources */,
 				344BABA8A635767792ED50D5 /* NativeBridge.swift in Sources */,
 				E53557290FA01FCCD5D995CF /* NavigationPolicy.swift in Sources */,
+				B4FB59D13896A0FAA9651240 /* NotificationCoordinator.swift in Sources */,
 				6894A3F306CDA3F744F3CA2D /* OfflineAssetSchemeHandler.swift in Sources */,
 				EB46671E1EB1EB14D3120FA1 /* PersistenceConstants.swift in Sources */,
 				7DFE925D0F5047CD8BCCF0BE /* WebAppController.swift in Sources */,
@@ -253,6 +264,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				C72B7AA53A90C875CFE6F01F /* NativeBridgeTests.swift in Sources */,
+				A69D5526AE089F02B8709AC6 /* NotificationCoordinatorTests.swift in Sources */,
 				AC48FD4CF79701D29B6D871D /* OfflineAssetTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

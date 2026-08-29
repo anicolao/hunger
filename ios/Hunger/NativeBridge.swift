@@ -1,4 +1,5 @@
 import Foundation
+import UIKit
 import WebKit
 
 enum NativeBridgeConstants {
@@ -10,6 +11,11 @@ enum NativeBridgeConstants {
 
 enum NativeBridgeCommand: String, CaseIterable {
     case capabilitiesGet = "capabilities.get"
+    case notificationStatus = "notifications.authorizationStatus"
+    case notificationRequest = "notifications.requestAuthorization"
+    case notificationReplace = "notifications.replaceSchedule"
+    case notificationCancel = "notifications.cancelAll"
+    case openNotificationSettings = "app.openNotificationSettings"
 }
 
 struct NativeBridgeSource: Equatable {
@@ -29,6 +35,12 @@ struct NativeBridgeSource: Equatable {
 struct NativeBridgeRequest: Equatable {
     let id: String
     let command: NativeBridgeCommand
+    let payload: NativeBridgePayload
+}
+
+enum NativeBridgePayload: Equatable {
+    case empty
+    case reminderSchedule(windows: [String], cadence: String)
 }
 
 enum NativeBridgeValidationError: String, Error, Equatable {
@@ -76,18 +88,42 @@ enum NativeBridgeValidator {
         else {
             throw NativeBridgeValidationError.unknownCommand
         }
-        guard let payload = object["payload"] as? [String: Any], payload.isEmpty else {
+        guard let payload = object["payload"] as? [String: Any] else {
             throw NativeBridgeValidationError.invalidPayload
         }
-        return NativeBridgeRequest(id: id, command: command)
+        let decodedPayload: NativeBridgePayload
+        switch command {
+        case .notificationReplace:
+            guard Set(payload.keys) == Set(["windows", "cadence"]),
+                  let windows = payload["windows"] as? [String],
+                  let cadence = payload["cadence"] as? String,
+                  !cadence.isEmpty,
+                  cadence.lengthOfBytes(using: .utf8) <= 160
+            else {
+                throw NativeBridgeValidationError.invalidPayload
+            }
+            _ = try NotificationSchedule.plan(for: windows)
+            decodedPayload = .reminderSchedule(windows: windows, cadence: cadence)
+        default:
+            guard payload.isEmpty else {
+                throw NativeBridgeValidationError.invalidPayload
+            }
+            decodedPayload = .empty
+        }
+        return NativeBridgeRequest(id: id, command: command, payload: decodedPayload)
     }
 }
 
 @MainActor
 final class NativeBridge: NSObject, WKScriptMessageHandlerWithReply {
     private let uiTestEvidenceEnabled: Bool
+    private let notifications: NotificationCoordinating
 
-    init(uiTestEvidenceEnabled: Bool = false) {
+    init(
+        notifications: NotificationCoordinating = NotificationCoordinator(),
+        uiTestEvidenceEnabled: Bool = false
+    ) {
+        self.notifications = notifications
         self.uiTestEvidenceEnabled = uiTestEvidenceEnabled
     }
 
@@ -135,32 +171,77 @@ final class NativeBridge: NSObject, WKScriptMessageHandlerWithReply {
         )
         do {
             let request = try NativeBridgeValidator.decode(body: message.body, source: source)
-            switch request.command {
-            case .capabilitiesGet:
-                replyHandler([
-                    "ok": true,
-                    "id": request.id,
-                    "value": [
-                        "version": NativeBridgeConstants.version,
-                        "platform": "ios",
-                        "commands": NativeBridgeCommand.allCases.map(\.rawValue)
-                    ]
-                ], nil)
+            if request.command == .capabilitiesGet {
+                replyHandler(success(id: request.id, value: [
+                    "version": NativeBridgeConstants.version,
+                    "platform": "ios",
+                    "commands": NativeBridgeCommand.allCases.map(\.rawValue)
+                ]), nil)
                 addUITestEvidenceIfNeeded(to: message.webView)
+                return
+            }
+            Task { @MainActor in
+                do {
+                    let value = try await dispatch(request)
+                    replyHandler(self.success(id: request.id, value: value), nil)
+                } catch let error as NativeBridgeValidationError {
+                    replyHandler(self.failure(id: request.id, error: error), nil)
+                } catch {
+                    replyHandler(self.failure(id: request.id, code: "native_error"), nil)
+                }
             }
         } catch let error as NativeBridgeValidationError {
             let id = (message.body as? [String: Any])?["id"] as? String ?? "invalid"
-            replyHandler([
-                "ok": false,
-                "id": id,
-                "error": [
-                    "code": error.rawValue,
-                    "message": "The native request was rejected."
-                ]
-            ], nil)
+            replyHandler(failure(id: id, error: error), nil)
         } catch {
             replyHandler(nil, "native_error")
         }
+    }
+
+    private func dispatch(_ request: NativeBridgeRequest) async throws -> [String: Any] {
+        switch request.command {
+        case .capabilitiesGet:
+            return [:]
+        case .notificationStatus:
+            return ["status": await notifications.authorizationStatus().rawValue]
+        case .notificationRequest:
+            return ["status": try await notifications.requestAuthorization().rawValue]
+        case .notificationReplace:
+            guard case let .reminderSchedule(windows, _) = request.payload else {
+                throw NativeBridgeValidationError.invalidPayload
+            }
+            return ["scheduled": try await notifications.replaceSchedule(windows: windows)]
+        case .notificationCancel:
+            await notifications.cancelAll()
+            return ["cancelled": true]
+        case .openNotificationSettings:
+            guard let url = URL(string: UIApplication.openNotificationSettingsURLString) else {
+                return ["opened": false]
+            }
+            return ["opened": await UIApplication.shared.open(url)]
+        }
+    }
+
+    private func success(id: String, value: Any) -> [String: Any] {
+        ["ok": true, "id": id, "value": value]
+    }
+
+    private func failure(
+        id: String,
+        error: NativeBridgeValidationError
+    ) -> [String: Any] {
+        failure(id: id, code: error.rawValue)
+    }
+
+    private func failure(id: String, code: String) -> [String: Any] {
+        [
+            "ok": false,
+            "id": id,
+            "error": [
+                "code": code,
+                "message": "The native request was rejected."
+            ]
+        ]
     }
 
     func sendLifecycle(_ event: [String: Any], to webView: WKWebView) async {
