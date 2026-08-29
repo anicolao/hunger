@@ -77,7 +77,7 @@ export class TestStepHelper {
         const rect = control.getBoundingClientRect();
         if (rect.width < 44 || rect.height < 44) {
           throw new Error(
-            `${control.tagName} target is ${rect.width.toFixed(1)}×${rect.height.toFixed(1)}px`
+            `${control.tagName} ${JSON.stringify(control.innerText || control.getAttribute('aria-label') || '')} target is ${rect.width.toFixed(1)}×${rect.height.toFixed(1)}px`
           );
         }
       }

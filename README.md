@@ -1,15 +1,15 @@
 # Learn Your Appetite
 
-Learn Your Appetite is a planned 30-day program for noticing hunger, fullness,
+Learn Your Appetite is a 30-day program for noticing hunger, fullness,
 and eating context without counting calories. A check-in takes about ten
 seconds; the product earns its place by turning those check-ins into useful,
 personal observations and one small experiment at a time.
 
 > Notice → Understand → Experiment → Learn
 
-This repository contains the product sources, MVP design, and the first static
-SvelteKit application slice: a responsive landing page that explains the
-30-day promise, unified scale, learning loop, and local-first principles.
+This repository contains the complete static MVP: onboarding, paired local
+check-ins, explainable insights, one noticing experiment, a day-30 Profile,
+offline support, private exports and deletion, reminders, and safety controls.
 
 ## The MVP promise
 
@@ -75,10 +75,10 @@ It deliberately excludes calorie and nutrient databases, recipes, weight-loss
 targets, social features, wearables, coaching, an AI chat interface, elaborate
 journaling, and physiological or diagnostic claims.
 
-## Planned technical foundation
+## Technical foundation
 
 The neighboring `food` and `games/jaipur` apps establish the workspace's
-preferred delivery contract. The proposed MVP follows it where it fits this
+preferred delivery contract. The implemented MVP follows it where it fits this
 product:
 
 - SvelteKit 5, strict TypeScript, Bun, and `@sveltejs/adapter-static`;
@@ -106,6 +106,8 @@ deletable; domain calculations remain pure and replayable from fixed fixtures.
   responsive behavior, accessibility, copy, and generated screen mockups
 - [E2E_GUIDE.md](E2E_GUIDE.md) — acceptance scenarios and deterministic browser
   test contract
+- [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) — coherent commit sequence,
+  tracer bullets, and MVP completion gate
 
 ## Source material
 
