@@ -2,13 +2,22 @@
   import { onMount } from 'svelte';
   import '../app.css';
   import { installE2EFixtureBoundary } from '$lib/platform/e2e';
+  import {
+    installNativeLifecycleBoundary,
+    nativeCapabilities
+  } from '$lib/platform/native';
   import { registerOfflineShell } from '$lib/platform/offline';
 
   let { children } = $props();
 
   onMount(() => {
     installE2EFixtureBoundary();
-    if (import.meta.env.VITE_NATIVE_SHELL !== 'ios') void registerOfflineShell();
+    if (import.meta.env.VITE_NATIVE_SHELL === 'ios') {
+      installNativeLifecycleBoundary();
+      void nativeCapabilities();
+    } else {
+      void registerOfflineShell();
+    }
   });
 </script>
 
