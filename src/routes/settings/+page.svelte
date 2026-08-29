@@ -14,6 +14,7 @@
 
 <svelte:head><title>Settings — Learn Your Appetite</title></svelte:head>
 
+<span id="scale" class="scale-anchor" aria-hidden="true"></span>
 {#if ready}
   <AppShell active="settings">
     <div class="settings-page" data-status="ready">
@@ -29,6 +30,7 @@
 {/if}
 
 <style>
+  .scale-anchor { position: absolute; }
   h1 { margin: 0 0 28px; font-size: 38px; }
   section { padding: 18px 0; border-top: 1px solid var(--border); }
   h2 { margin: 0; font-size: 19px; }
