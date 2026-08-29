@@ -142,6 +142,22 @@ bun run verify:change
 
 The development server runs at `http://127.0.0.1:5190`.
 
+## Deployments
+
+Every pull request is verified and published to a retained GitHub Pages path at
+`https://anicolao.github.io/hunger/pr<PR number>/`. The deployment workflow
+creates or updates a clearly marked comment on the pull request so its preview
+is always one click away. A new preview replaces the prior build for that PR;
+previews for other open PRs remain intact.
+
+After a change lands on `main`, the same verified static build is published to
+`https://anicolao.github.io/hunger/`.
+
+Linux visual baselines are reviewed artifacts, not silently accepted by CI.
+When a new scenario has no Linux baseline, the first run uploads candidate
+screenshots and asks the contributor to inspect and commit them. Later runs
+compare against those committed images with a zero-pixel tolerance.
+
 ## Safety boundary
 
 Learn Your Appetite is a self-reflection tool, not medical care and not an
