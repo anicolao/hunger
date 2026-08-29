@@ -19,6 +19,13 @@ export interface AppetiteRepository {
   saveProgram(program: Program): Promise<void>;
   getSettings(): Promise<AppSettings>;
   saveSettings(settings: AppSettings): Promise<void>;
+  listEpisodes(programId: string): Promise<EatingEpisode[]>;
+  getEpisode(id: string): Promise<EatingEpisode | null>;
+  getOpenEpisode(programId: string): Promise<EatingEpisode | null>;
+  saveEpisode(episode: EatingEpisode): Promise<void>;
+  deleteEpisode(id: string): Promise<void>;
+  savePhoto(photo: PhotoRecord): Promise<void>;
+  getPhoto(id: string): Promise<PhotoRecord | null>;
   clearAll(): Promise<void>;
 }
 
@@ -65,6 +72,43 @@ export class IndexedDbRepository implements AppetiteRepository {
     await this.put('settings', settings);
   }
 
+  async listEpisodes(programId: string): Promise<EatingEpisode[]> {
+    const episodes = await this.getAll<EatingEpisode>('episodes');
+    return episodes
+      .filter((episode) => episode.programId === programId)
+      .sort((left, right) => right.startedAt - left.startedAt);
+  }
+
+  async getEpisode(id: string): Promise<EatingEpisode | null> {
+    return (await this.get<EatingEpisode>('episodes', id)) ?? null;
+  }
+
+  async getOpenEpisode(programId: string): Promise<EatingEpisode | null> {
+    return (await this.listEpisodes(programId)).find((episode) => episode.status === 'open') ?? null;
+  }
+
+  async saveEpisode(episode: EatingEpisode): Promise<void> {
+    await this.put('episodes', episode);
+  }
+
+  async deleteEpisode(id: string): Promise<void> {
+    const episode = await this.getEpisode(id);
+    const database = await this.open();
+    const stores: StoreName[] = episode?.photoId ? ['episodes', 'photos'] : ['episodes'];
+    const transaction = database.transaction(stores, 'readwrite');
+    transaction.objectStore('episodes').delete(id);
+    if (episode?.photoId) transaction.objectStore('photos').delete(episode.photoId);
+    await transactionDone(transaction);
+  }
+
+  async savePhoto(photo: PhotoRecord): Promise<void> {
+    await this.put('photos', photo);
+  }
+
+  async getPhoto(id: string): Promise<PhotoRecord | null> {
+    return (await this.get<PhotoRecord>('photos', id)) ?? null;
+  }
+
   async clearAll(): Promise<void> {
     const database = await this.open();
     const transaction = database.transaction([...storeNames], 'readwrite');
@@ -83,6 +127,14 @@ export class IndexedDbRepository implements AppetiteRepository {
     const records = await requestResult<T[]>(transaction.objectStore(storeName).getAll());
     await transactionDone(transaction);
     return records;
+  }
+
+  private async get<T extends StoreRecord>(storeName: StoreName, id: IDBValidKey): Promise<T | undefined> {
+    const database = await this.open();
+    const transaction = database.transaction(storeName, 'readonly');
+    const record = await requestResult<T | undefined>(transaction.objectStore(storeName).get(id));
+    await transactionDone(transaction);
+    return record;
   }
 
   private async put(storeName: StoreName, value: StoreRecord): Promise<void> {

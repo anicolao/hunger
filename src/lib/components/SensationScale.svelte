@@ -4,10 +4,12 @@
   let {
     value = null,
     legend = 'How does your body feel?',
+    name = 'sensation-level',
     onselect
   }: {
     value?: number | null;
     legend?: string;
+    name?: string;
     onselect: (level: number) => void;
   } = $props();
 
@@ -26,7 +28,7 @@
       <label class:selected={value === sensation.level}>
         <input
           type="radio"
-          name="sensation-level"
+          {name}
           value={sensation.level}
           checked={value === sensation.level}
           aria-label={`${sensation.level}, ${sensation.phrase}`}
