@@ -94,6 +94,32 @@ jobs:
           echo "Review the linux-screenshot-baselines artifact, commit the approved images, and rerun CI."
           exit 1
 
+  verify-ios:
+    name: Verify iOS shell
+    runs-on: macos-15
+    timeout-minutes: 60
+    env:
+      CI: "true"
+      IOS_DESTINATION: platform=iOS Simulator,name=iPhone 16 Pro,OS=latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31
+
+      - name: Verify packaged offline iOS shell
+        run: nix run .#ios-verify
+
+      - name: Upload iOS results and release audit
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: ios-verification-${{ github.run_id }}
+          path: .artifacts/ios/
+          if-no-files-found: warn
+          retention-days: 7
+
   deploy:
     name: Deploy preview
     needs: verify

@@ -16,6 +16,7 @@
           bash
           bun
           coreutils
+          diffutils
           findutils
           gnugrep
           gnused
@@ -140,12 +141,17 @@
             ${lib.getExe iosGenerate}
             destination="''${IOS_DESTINATION:-platform=iOS Simulator,name=iPhone 17,OS=latest}"
             only_testing="''${IOS_ONLY_TESTING:-Hunger${testTarget}}"
+            artifact_root="$repo_root/.artifacts/ios"
+            result_bundle="$artifact_root/${testTarget}.xcresult"
+            mkdir -p "$artifact_root"
+            rm -rf "$result_bundle"
             set -o pipefail
             xcodebuild test \
               -project "$repo_root/ios/Hunger.xcodeproj" \
               -scheme Hunger \
               -destination "$destination" \
               -derivedDataPath "$repo_root/.derived-data/ios" \
+              -resultBundlePath "$result_bundle" \
               -only-testing:"$only_testing" \
               CODE_SIGNING_ALLOWED=NO \
               | xcbeautify
@@ -154,6 +160,97 @@
 
         iosTestUnit = iosXcodeTest "Tests";
         iosTestUi = iosXcodeTest "UITests";
+
+        iosBuildRelease = pkgs.writeShellApplication {
+          name = "hunger-ios-build-release";
+          runtimeInputs = commonInputs ++ darwinInputs;
+          text = ''
+            ${darwinGuard}
+            ${repoGuard}
+            ${lib.getExe iosBuildWeb}
+            ${lib.getExe iosGenerate}
+            artifact_root="$repo_root/.artifacts/ios"
+            result_bundle="$artifact_root/ReleaseBuild.xcresult"
+            mkdir -p "$artifact_root"
+            rm -rf "$result_bundle"
+            set -o pipefail
+            xcodebuild build \
+              -project "$repo_root/ios/Hunger.xcodeproj" \
+              -scheme Hunger \
+              -configuration Release \
+              -destination "generic/platform=iOS Simulator" \
+              -derivedDataPath "$repo_root/.derived-data/ios" \
+              -resultBundlePath "$result_bundle" \
+              CODE_SIGNING_ALLOWED=NO \
+              | xcbeautify
+          '';
+        };
+
+        iosAuditRelease = pkgs.writeShellApplication {
+          name = "hunger-ios-audit-release";
+          runtimeInputs = commonInputs ++ darwinInputs;
+          text = ''
+            ${darwinGuard}
+            ${repoGuard}
+            ${lib.getExe iosBuildRelease}
+
+            app_root="$repo_root/.derived-data/ios/Build/Products/Release-iphonesimulator/Hunger.app"
+            web_root="$app_root/WebApp"
+            artifact_root="$repo_root/.artifacts/ios"
+            if [[ ! -d "$app_root" || ! -d "$web_root" ]]; then
+              echo "Release app or packaged WebApp resources were not produced." >&2
+              exit 1
+            fi
+            if [[ ! -f "$app_root/PrivacyInfo.xcprivacy" ]]; then
+              echo "PrivacyInfo.xcprivacy is missing from the Release app." >&2
+              exit 1
+            fi
+
+            expected_files="$(mktemp)"
+            actual_files="$(mktemp)"
+            remote_urls="$(mktemp)"
+            trap 'rm -f "$expected_files" "$actual_files" "$remote_urls"' EXIT
+            jq -r '.files[].path' "$web_root/asset-manifest.json" | LC_ALL=C sort > "$expected_files"
+            (
+              cd "$web_root"
+              find . -type f ! -name asset-manifest.json -print \
+                | sed 's#^\./##' \
+                | LC_ALL=C sort
+            ) > "$actual_files"
+            if ! diff -u "$expected_files" "$actual_files"; then
+              echo "Release web resources do not match their integrity manifest." >&2
+              exit 1
+            fi
+
+            if find "$web_root" -type f \( -name '*.map' -o -name 'service-worker.js' -o -name 'manifest.webmanifest' -o -name '404.html' \) | rg -q .; then
+              echo "A development-only resource leaked into the Release app." >&2
+              exit 1
+            fi
+            if rg -q '__HUNGER_E2E__|data-e2e-fixture|serviceWorker\.register' "$web_root"; then
+              echo "A fixture or service-worker symbol leaked into the Release app." >&2
+              exit 1
+            fi
+            rg -o --no-filename 'https?://[^"[:space:]<>]+' "$web_root" | LC_ALL=C sort -u > "$remote_urls" || true
+            while IFS= read -r url; do
+              case "$url" in
+                http://www.w3.org/1999/xhtml|http://www.w3.org/2000/svg|https://svelte.dev/e/*) ;;
+                *) echo "Unexpected remote URL in Release payload: $url" >&2; exit 1 ;;
+              esac
+            done < "$remote_urls"
+            if rg -q 'aps-environment|UIBackgroundModes|com\.apple\.developer\.networking' \
+              "$repo_root/ios/Hunger.xcodeproj/project.pbxproj"; then
+              echo "An unexpected background, push, or networking entitlement is configured." >&2
+              exit 1
+            fi
+
+            cp "$web_root/asset-manifest.json" "$artifact_root/release-asset-manifest.json"
+            (
+              cd "$app_root"
+              find . -type f -print | sed 's#^\./##' | LC_ALL=C sort
+            ) > "$artifact_root/release-app-files.txt"
+            echo "Audited offline Release app at $app_root"
+          '';
+        };
 
         iosVerify = pkgs.writeShellApplication {
           name = "hunger-ios-verify";
@@ -169,6 +266,7 @@
             git diff --exit-code -- ios/Hunger.xcodeproj
             ${lib.getExe iosTestUnit}
             ${lib.getExe iosTestUi}
+            ${lib.getExe iosAuditRelease}
             git diff --check
           '';
         };
@@ -178,6 +276,8 @@
           ios-generate = flake-utils.lib.mkApp { drv = iosGenerate; };
           ios-test-unit = flake-utils.lib.mkApp { drv = iosTestUnit; };
           ios-test-ui = flake-utils.lib.mkApp { drv = iosTestUi; };
+          ios-build-release = flake-utils.lib.mkApp { drv = iosBuildRelease; };
+          ios-audit-release = flake-utils.lib.mkApp { drv = iosAuditRelease; };
           ios-verify = flake-utils.lib.mkApp { drv = iosVerify; };
         };
 
