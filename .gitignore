@@ -5,6 +5,8 @@
 !.env.example
 .svelte-kit/
 build/
+.derived-data/
+ios/Hunger/Resources/WebApp/
 coverage/
 node_modules/
 playwright-report/
