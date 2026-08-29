@@ -1,0 +1,31 @@
+{
+  "name": "learn-your-appetite",
+  "private": true,
+  "version": "0.1.0",
+  "license": "GPL-3.0-only",
+  "type": "module",
+  "scripts": {
+    "dev": "vite dev --host 127.0.0.1 --port 5190 --strictPort",
+    "dev:e2e": "vite dev --host 127.0.0.1 --port 5190 --strictPort",
+    "build": "vite build",
+    "preview": "vite preview --host 127.0.0.1 --port 4190 --strictPort",
+    "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
+    "test:e2e": "playwright test",
+    "test:e2e:update-snapshots": "playwright test --update-snapshots",
+    "verify:change": "bash scripts/verify-change.sh"
+  },
+  "dependencies": {
+    "@fontsource/atkinson-hyperlegible": "^5.2.8"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.61.1",
+    "@sveltejs/adapter-static": "^3.0.10",
+    "@sveltejs/kit": "^2.49.1",
+    "@sveltejs/vite-plugin-svelte": "^6.2.1",
+    "@types/node": "^25.0.6",
+    "svelte": "^5.45.6",
+    "svelte-check": "^4.3.4",
+    "typescript": "^5.9.3",
+    "vite": "^7.2.6"
+  }
+}

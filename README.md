@@ -7,8 +7,9 @@ personal observations and one small experiment at a time.
 
 > Notice → Understand → Experiment → Learn
 
-This repository currently contains the product sources and MVP design. The
-application has not yet been scaffolded.
+This repository contains the product sources, MVP design, and the first static
+SvelteKit application slice: a responsive landing page that explains the
+30-day promise, unified scale, learning loop, and local-first principles.
 
 ## The MVP promise
 
@@ -131,14 +132,15 @@ pdfinfo HungerandFullnessScaleJul2023.pdf
 pdftotext -layout hunger-and-fullness-signals.pdf -
 ```
 
-Once the application scaffold lands, its Bun and browser dependencies should
-be added to the same locked Nix shell and the standard commands will be:
+The same locked shell includes Bun and Playwright for application development:
 
 ```sh
 bun install --frozen-lockfile
 bun run dev
 bun run verify:change
 ```
+
+The development server runs at `http://127.0.0.1:5190`.
 
 ## Safety boundary
 
