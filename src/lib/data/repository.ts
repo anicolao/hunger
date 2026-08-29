@@ -28,6 +28,7 @@ export interface AppetiteRepository {
   getPhoto(id: string): Promise<PhotoRecord | null>;
   listInsightSnapshots(programId: string): Promise<InsightSnapshot[]>;
   saveInsightSnapshot(snapshot: InsightSnapshot): Promise<void>;
+  importFixture(fixture: { program: Program; episodes: EatingEpisode[]; settings?: AppSettings }): Promise<void>;
   clearAll(): Promise<void>;
 }
 
@@ -119,6 +120,13 @@ export class IndexedDbRepository implements AppetiteRepository {
 
   async saveInsightSnapshot(snapshot: InsightSnapshot): Promise<void> {
     await this.put('insights', snapshot);
+  }
+
+  async importFixture(fixture: { program: Program; episodes: EatingEpisode[]; settings?: AppSettings }): Promise<void> {
+    await this.clearAll();
+    await this.saveProgram(fixture.program);
+    if (fixture.settings) await this.saveSettings(fixture.settings);
+    for (const episode of fixture.episodes) await this.saveEpisode(episode);
   }
 
   async clearAll(): Promise<void> {

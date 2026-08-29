@@ -12,13 +12,22 @@
     renderInsight,
     type InsightResult
   } from '$lib/domain/insights';
+  import {
+    generatePatternInsights,
+    renderPattern,
+    type AnyInsightResult,
+    type PatternInsightResult
+  } from '$lib/domain/patterns';
   import { runtime } from '$lib/platform/runtime';
 
   let program = $state<Program | null>(null);
   let episodes = $state<EatingEpisode[]>([]);
   let snapshots = $state<InsightSnapshot[]>([]);
   let ready = $state(false);
-  let results = $derived(generateEarlyInsights(episodes));
+  let results = $derived<AnyInsightResult[]>([
+    ...generatePatternInsights(episodes),
+    ...generateEarlyInsights(episodes)
+  ].slice(0, 3));
   let pairedCount = $derived(pairedEpisodes(episodes).length);
   let remaining = $derived(remainingForFirstInsight(episodes));
 
@@ -29,7 +38,10 @@
     episodes = await repository.listEpisodes(program.id);
     snapshots = await repository.listInsightSnapshots(program.id);
 
-    for (const result of generateEarlyInsights(episodes)) {
+    for (const result of [
+      ...generatePatternInsights(episodes),
+      ...generateEarlyInsights(episodes)
+    ]) {
       const id = `${program.id}-${result.id}`;
       if (!snapshots.some((snapshot) => snapshot.id === id)) {
         await repository.saveInsightSnapshot({
@@ -48,20 +60,34 @@
     ready = true;
   });
 
-  function snapshotFor(result: InsightResult): InsightSnapshot | undefined {
+  function snapshotFor(result: AnyInsightResult): InsightSnapshot | undefined {
     return snapshots.find((snapshot) => snapshot.id.endsWith(result.id));
   }
 
-  async function recordFeedback(result: InsightResult, feedback: 'helpful' | 'not-for-me') {
+  async function recordFeedback(result: AnyInsightResult, feedback: 'helpful' | 'not-for-me') {
     const snapshot = snapshotFor(result);
     if (!snapshot) return;
     const updated: InsightSnapshot = {
       ...snapshot,
-      result: JSON.parse(JSON.stringify(snapshot.result)) as InsightResult,
+      result: JSON.parse(JSON.stringify(snapshot.result)) as AnyInsightResult,
       feedback
     };
     await getRepository().saveInsightSnapshot(updated);
     snapshots = snapshots.map((item) => (item.id === updated.id ? updated : item));
+  }
+
+  function isPattern(result: AnyInsightResult): result is PatternInsightResult {
+    return !['typical-start', 'typical-end'].includes(result.kind);
+  }
+
+  function renderAny(result: AnyInsightResult) {
+    if (!isPattern(result)) return renderInsight(result as InsightResult);
+    const rendered = renderPattern(result);
+    return {
+      ...rendered,
+      evidence: `Based on ${result.sampleSize} paired check-ins`,
+      explanation: `${result.strength === 'early' ? 'Early observation' : 'Recurring pattern'}. The two groups met the fixed sample and 25-point difference gates.`
+    };
   }
 
   function episodeFor(id: string): EatingEpisode | undefined {
@@ -99,17 +125,24 @@
       {:else}
         <div class="insight-list">
           {#each results as result, index}
-            {@const rendered = renderInsight(result)}
+            {@const rendered = renderAny(result)}
             {@const snapshot = snapshotFor(result)}
             <article class:primary={index === 0}>
               <span class="badge">{result.strength === 'early' ? 'Early observation' : 'Recurring pattern'}</span>
               <h2>{rendered.title}</h2>
               <p class="finding">{rendered.finding}</p>
-              <div class="range" aria-label={`Observed values from ${result.metrics.minimum} to ${result.metrics.maximum}, middle ${result.metrics.median}`}>
-                <span style={`left: ${(result.metrics.minimum - 1) / 9 * 100}%`}></span>
-                <strong style={`left: ${(result.metrics.median - 1) / 9 * 100}%`}>{result.metrics.median}</strong>
-                <span style={`left: ${(result.metrics.maximum - 1) / 9 * 100}%`}></span>
-              </div>
+              {#if !isPattern(result)}
+                <div class="range" aria-label={`Observed values from ${result.metrics.minimum} to ${result.metrics.maximum}, middle ${result.metrics.median}`}>
+                  <span style={`left: ${(result.metrics.minimum - 1) / 9 * 100}%`}></span>
+                  <strong style={`left: ${(result.metrics.median - 1) / 9 * 100}%`}>{result.metrics.median}</strong>
+                  <span style={`left: ${(result.metrics.maximum - 1) / 9 * 100}%`}></span>
+                </div>
+              {:else}
+                <div class="rate-bars" aria-label={`${result.metrics.primaryCount} of ${result.metrics.primaryTotal} compared with ${result.metrics.comparisonCount} of ${result.metrics.comparisonTotal}`}>
+                  <span style={`width: ${result.metrics.primaryCount / result.metrics.primaryTotal * 100}%`}></span>
+                  <span style={`width: ${result.metrics.comparisonCount / result.metrics.comparisonTotal * 100}%`}></span>
+                </div>
+              {/if}
               <p class="evidence-count">{rendered.evidence}</p>
               <details>
                 <summary>Why you're seeing this</summary>
@@ -166,6 +199,10 @@
   .range span, .range strong { position: absolute; top: -6px; transform: translateX(-50%); }
   .range span { width: 10px; height: 10px; border-radius: 50%; background: var(--primary); }
   .range strong { top: 7px; color: var(--primary); }
+  .rate-bars { margin: 24px 0 18px; display: grid; gap: 8px; }
+  .rate-bars::before, .rate-bars::after { color: var(--ink-muted); font-size: 12px; }
+  .rate-bars span { min-width: 2px; height: 12px; border-radius: 999px; display: block; background: var(--primary); }
+  .rate-bars span:last-child { background: var(--accent); }
   .evidence-count { font-weight: 700; }
   details { border-top: 1px solid var(--border); }
   summary { min-height: 48px; display: flex; align-items: center; color: var(--primary); font-weight: 700; cursor: pointer; }
