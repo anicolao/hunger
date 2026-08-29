@@ -66,7 +66,18 @@ final class WebAppController: NSObject, ObservableObject {
             forURLScheme: PersistenceConstants.scheme
         )
 
+        let notifications: NotificationCoordinating
+#if DEBUG
+        if ProcessInfo.processInfo.arguments.contains("--notification-ui-test") {
+            notifications = InMemoryNotificationCoordinator()
+        } else {
+            notifications = NotificationCoordinator()
+        }
+#else
+        notifications = NotificationCoordinator()
+#endif
         let bridge = NativeBridge(
+            notifications: notifications,
             uiTestEvidenceEnabled: ProcessInfo.processInfo.arguments.contains("--bridge-ui-test")
         )
         configuration.userContentController.addUserScript(NativeBridge.bootstrapScript)

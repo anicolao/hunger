@@ -9,7 +9,7 @@
   import { reminderCadence } from '$lib/domain/reminders';
   import { supportEligible } from '$lib/domain/support';
   import { clearDeviceCaches } from '$lib/platform/offline';
-  import { configureBrowserReminders } from '$lib/platform/reminders';
+  import { cancelNativeReminders, configureReminders } from '$lib/platform/reminders';
   import { runtime } from '$lib/platform/runtime';
 
   let program = $state<Program | null>(null);
@@ -44,7 +44,12 @@
     });
     settings = plain;
   }
-  async function toggleReminderPause() { if (settings) await saveSettings({ ...settings, remindersPaused: !settings.remindersPaused }); }
+  async function toggleReminderPause() {
+    if (!settings) return;
+    const pausing = !settings.remindersPaused;
+    await saveSettings({ ...settings, remindersPaused: pausing });
+    if (pausing && await cancelNativeReminders()) reminderMessage = 'Private iOS reminders are paused.';
+  }
   async function toggleWindow(window: string) {
     if (!settings) return;
     const windows = settings.reminderWindows.includes(window) ? settings.reminderWindows.filter((item) => item !== window) : [...settings.reminderWindows, window];
@@ -53,8 +58,12 @@
   async function enableReminders() {
     if (!settings || !program) return;
     const cadence = reminderCadence(getProgramProgress(program.startedAt, runtime.now()).week, false);
-    const result = configureBrowserReminders(settings.reminderWindows, cadence);
-    await saveSettings({ ...settings, remindersPaused: false, permissionState: 'unsupported' });
+    const result = await configureReminders(settings.reminderWindows, cadence);
+    await saveSettings({
+      ...settings,
+      remindersPaused: false,
+      permissionState: result.capability === 'native-ios' ? result.permissionState : 'unsupported'
+    });
     reminderMessage = result.explanation;
   }
   async function pauseProgram() {

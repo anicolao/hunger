@@ -20,7 +20,7 @@ final class NativeBridgeTests: XCTestCase {
 
         XCTAssertEqual(
             request,
-            NativeBridgeRequest(id: "request-123", command: .capabilitiesGet)
+            NativeBridgeRequest(id: "request-123", command: .capabilitiesGet, payload: .empty)
         )
     }
 
@@ -46,6 +46,26 @@ final class NativeBridgeTests: XCTestCase {
         unknown["extra"] = true
         XCTAssertThrowsError(try NativeBridgeValidator.decode(body: unknown, source: trusted)) {
             XCTAssertEqual($0 as? NativeBridgeValidationError, .invalidRequest)
+        }
+    }
+
+    func testAcceptsOnlyKnownReminderWindowsAndPayloadFields() throws {
+        let request = try NativeBridgeValidator.decode(body: [
+            "version": 1,
+            "id": "reminder-1",
+            "command": "notifications.replaceSchedule",
+            "payload": ["windows": ["morning", "evening"], "cadence": "up to twice daily"]
+        ], source: trusted)
+        XCTAssertEqual(
+            request.payload,
+            .reminderSchedule(windows: ["morning", "evening"], cadence: "up to twice daily")
+        )
+
+        for windows in [[], ["night"], ["morning", "morning"]] {
+            var body = validBody()
+            body["command"] = "notifications.replaceSchedule"
+            body["payload"] = ["windows": windows, "cadence": "daily"]
+            XCTAssertThrowsError(try NativeBridgeValidator.decode(body: body, source: trusted))
         }
     }
 
