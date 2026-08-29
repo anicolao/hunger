@@ -88,7 +88,8 @@ product:
 - pure, versioned insight and experiment functions—no generative model;
 - plain Svelte-scoped CSS with global design tokens;
 - Vitest for scale, projection, insight, experiment, and migration rules;
-- deterministic Playwright vertical slices at phone and desktop sizes;
+- deterministic Playwright vertical slices with phone-first walkthroughs and
+  secondary desktop regression coverage;
 - semantic assertions plus zero-pixel visual baselines; and
 - one repository verifier that runs checks, tests, build, and whitespace
   validation before a change lands.

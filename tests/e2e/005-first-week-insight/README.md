@@ -4,7 +4,7 @@ The app makes no personal claim below its fixed gate, then explains the exact re
 
 ## Three pairs produce progress, not generic advice disguised as an insight
 
-![Three pairs produce progress, not generic advice disguised as an insight](./screenshots/000-still-learning-desktop-darwin.png)
+![Three pairs produce progress, not generic advice disguised as an insight](./screenshots/000-still-learning-phone-darwin.png)
 
 **Verifications:**
 
@@ -13,7 +13,7 @@ The app makes no personal claim below its fixed gate, then explains the exact re
 
 ## Four pairs unlock a transparent, feedback-ready early observation
 
-![Four pairs unlock a transparent, feedback-ready early observation](./screenshots/001-first-observation-desktop-darwin.png)
+![Four pairs unlock a transparent, feedback-ready early observation](./screenshots/001-first-observation-phone-darwin.png)
 
 **Verifications:**
 

@@ -7,8 +7,8 @@ UI and storage adapter.
 
 This contract adapts the strongest patterns in `../food` and
 `../games/jaipur`: numbered vertical slices, one atomic verification/screenshot
-step API, generated walkthroughs, fixed browser conditions, real persistence,
-multiple viewports, and reviewed pixel-exact baselines.
+step API, generated phone-first walkthroughs, fixed browser conditions, real
+persistence, multiple viewports, and reviewed pixel-exact baselines.
 
 ## Quality contract
 
@@ -82,8 +82,9 @@ The shared `TestStepHelper.step()` must perform one atomic documented step:
 5. record the step for the generated scenario `README.md`.
 
 Tests never manage screenshot counters or walkthrough text independently.
-Scenario walkthroughs are generated only from the canonical desktop run and
-must not be hand-edited.
+Scenario walkthroughs are generated only from the canonical phone run and must
+not be hand-edited. Desktop screenshots remain reviewed secondary regression
+evidence, but the documentation always presents the primary phone form factor.
 
 ## Browser projects
 
@@ -91,8 +92,8 @@ Run every core scenario in Chromium at:
 
 | Project | Viewport | Purpose |
 | --- | ---: | --- |
-| `phone` | 393 × 852 | Primary one-handed mobile experience |
-| `desktop` | 1280 × 900 | Wide responsive layout and canonical walkthrough |
+| `phone` | 393 × 852 | Primary one-handed experience and canonical walkthrough |
+| `desktop` | 1280 × 900 | Secondary wide responsive regression |
 
 Run the responsive/accessibility scenario additionally at:
 

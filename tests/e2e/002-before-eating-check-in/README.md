@@ -4,7 +4,7 @@ One keyboard-operable sensation selection creates a private open eating episode 
 
 ## The required path is one unambiguous sensation and one save
 
-![The required path is one unambiguous sensation and one save](./screenshots/000-before-sensation-desktop-darwin.png)
+![The required path is one unambiguous sensation and one save](./screenshots/000-before-sensation-phone-darwin.png)
 
 **Verifications:**
 
@@ -14,7 +14,7 @@ One keyboard-operable sensation selection creates a private open eating episode 
 
 ## Today preserves the open episode and makes completion the next action
 
-![Today preserves the open episode and makes completion the next action](./screenshots/001-pending-after-desktop-darwin.png)
+![Today preserves the open episode and makes completion the next action](./screenshots/001-pending-after-phone-darwin.png)
 
 **Verifications:**
 

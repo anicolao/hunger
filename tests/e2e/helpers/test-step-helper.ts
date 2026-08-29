@@ -50,7 +50,7 @@ export class TestStepHelper {
   }
 
   generateDocs() {
-    if (this.testInfo.project.name !== 'desktop' || process.platform !== 'darwin') return;
+    if (this.testInfo.project.name !== 'phone' || process.platform !== 'darwin') return;
     let content = `# ${this.title}\n\n${this.description}\n\n`;
     for (const step of this.steps) {
       content += `## ${step.title}\n\n![${step.title}](${step.image})\n\n`;

@@ -4,7 +4,7 @@ The identical-direction scale completes the open episode while self-described co
 
 ## Optional context enriches but never judges the same-scale answer
 
-![Optional context enriches but never judges the same-scale answer](./screenshots/000-after-with-context-desktop-darwin.png)
+![Optional context enriches but never judges the same-scale answer](./screenshots/000-after-with-context-phone-darwin.png)
 
 **Verifications:**
 
@@ -14,7 +14,7 @@ The identical-direction scale completes the open episode while self-described co
 
 ## Today shows one completed paired episode
 
-![Today shows one completed paired episode](./screenshots/001-paired-episode-complete-desktop-darwin.png)
+![Today shows one completed paired episode](./screenshots/001-paired-episode-complete-phone-darwin.png)
 
 **Verifications:**
 

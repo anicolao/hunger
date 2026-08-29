@@ -4,7 +4,7 @@ A new user can understand the promise and unified scale, decline optional remind
 
 ## The 30-day learning promise is clear
 
-![The 30-day learning promise is clear](./screenshots/000-landing-page-desktop-darwin.png)
+![The 30-day learning promise is clear](./screenshots/000-landing-page-phone-darwin.png)
 
 **Verifications:**
 
@@ -16,7 +16,7 @@ A new user can understand the promise and unified scale, decline optional remind
 
 ## Onboarding introduces one calm idea at a time
 
-![Onboarding introduces one calm idea at a time](./screenshots/001-onboarding-promise-desktop-darwin.png)
+![Onboarding introduces one calm idea at a time](./screenshots/001-onboarding-promise-phone-darwin.png)
 
 **Verifications:**
 
@@ -25,7 +25,7 @@ A new user can understand the promise and unified scale, decline optional remind
 
 ## The user explores one keyboard-operable scale
 
-![The user explores one keyboard-operable scale](./screenshots/002-one-unified-scale-desktop-darwin.png)
+![The user explores one keyboard-operable scale](./screenshots/002-one-unified-scale-phone-darwin.png)
 
 **Verifications:**
 
@@ -35,7 +35,7 @@ A new user can understand the promise and unified scale, decline optional remind
 
 ## Paired moments lead to evidence-backed patterns
 
-![Paired moments lead to evidence-backed patterns](./screenshots/003-learning-loop-desktop-darwin.png)
+![Paired moments lead to evidence-backed patterns](./screenshots/003-learning-loop-phone-darwin.png)
 
 **Verifications:**
 
@@ -43,7 +43,7 @@ A new user can understand the promise and unified scale, decline optional remind
 
 ## Private storage, optional context, and support stay visible
 
-![Private storage, optional context, and support stay visible](./screenshots/004-privacy-and-choice-desktop-darwin.png)
+![Private storage, optional context, and support stay visible](./screenshots/004-privacy-and-choice-phone-darwin.png)
 
 **Verifications:**
 
@@ -52,7 +52,7 @@ A new user can understand the promise and unified scale, decline optional remind
 
 ## Activation opens a persisted Day 1 Today state
 
-![Activation opens a persisted Day 1 Today state](./screenshots/005-today-day-one-desktop-darwin.png)
+![Activation opens a persisted Day 1 Today state](./screenshots/005-today-day-one-phone-darwin.png)
 
 **Verifications:**
 

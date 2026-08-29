@@ -4,7 +4,7 @@ A passed observation can offer one optional, stoppable, non-causal seven-day com
 
 ## The highest-priority supported pattern offers a fixed and fully optional practice
 
-![The highest-priority supported pattern offers a fixed and fully optional practice](./screenshots/000-supported-offer-desktop-darwin.png)
+![The highest-priority supported pattern offers a fixed and fully optional practice](./screenshots/000-supported-offer-phone-darwin.png)
 
 **Verifications:**
 
@@ -13,7 +13,7 @@ A passed observation can offer one optional, stoppable, non-causal seven-day com
 
 ## One record is active and remains freely pausable or stoppable
 
-![One record is active and remains freely pausable or stoppable](./screenshots/001-one-active-experiment-desktop-darwin.png)
+![One record is active and remains freely pausable or stoppable](./screenshots/001-one-active-experiment-phone-darwin.png)
 
 **Verifications:**
 
@@ -21,7 +21,7 @@ A passed observation can offer one optional, stoppable, non-causal seven-day com
 
 ## Completed results report only the predeclared measure with cautious language
 
-![Completed results report only the predeclared measure with cautious language](./screenshots/002-neutral-comparison-desktop-darwin.png)
+![Completed results report only the predeclared measure with cautious language](./screenshots/002-neutral-comparison-phone-darwin.png)
 
 **Verifications:**
 
