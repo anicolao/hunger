@@ -1,0 +1,1 @@
+const a="learn-your-appetite",o=3,n=2,i={id:"settings",remindersPaused:!1,reminderWindows:[],permissionState:"default",reducedPrompts:!1,includePhotosInExport:!1,dismissedSupport:!1,schemaVersion:2},s=["programs","episodes","insights","experiments","photos","settings"],e="events",t="metadata",r=[...s,e,t];export{a as D,e as E,t as M,n as S,r as a,o as b,i,s};
