@@ -525,6 +525,289 @@
           '';
         };
 
+        iosTestflightExternalPreflight = pkgs.writeShellApplication {
+          name = "hunger-ios-testflight-external-preflight";
+          runtimeInputs = commonInputs;
+          text = ''
+            ${darwinGuard}
+            ${repoGuard}
+            ${testflightCommon}
+            state_path="$repo_root/.artifacts/ios/testflight-bootstrap.json"
+            if [[ ! -f "$state_path" ]]; then
+              echo "Run: nix run .#ios-testflight-bootstrap" >&2
+              exit 1
+            fi
+            app_id="$(jq -r '.appId' "$state_path")"
+            latest_build="$(asc_request GET "/v1/builds?filter%5Bapp%5D=$app_id&sort=-uploadedDate&limit=1")"
+            build_id="$(jq -r '.data[0].id // empty' <<< "$latest_build")"
+            if [[ -z "$build_id" ]]; then
+              echo "No Hunger build is available in App Store Connect." >&2
+              exit 1
+            fi
+            beta_detail="$(asc_request GET "/v1/buildBetaDetails?filter%5Bbuild%5D=$build_id&limit=1")"
+            localizations="$(asc_request GET "/v1/betaAppLocalizations?filter%5Bapp%5D=$app_id&limit=200")"
+            related_localizations="$(asc_request GET "/v1/apps/$app_id/betaAppLocalizations?limit=200")"
+            build_localizations="$(asc_request GET "/v1/betaBuildLocalizations?filter%5Bbuild%5D=$build_id&limit=200")"
+            app_detail="$(asc_request GET "/v1/apps/$app_id")"
+            review_detail="$(asc_request GET "/v1/apps/$app_id/betaAppReviewDetail")"
+            submissions="$(asc_request GET "/v1/betaAppReviewSubmissions?filter%5Bbuild%5D=$build_id&limit=200")"
+            external_groups="$(asc_request GET "/v1/betaGroups?filter%5Bapp%5D=$app_id&filter%5BisInternalGroup%5D=false&limit=200")"
+
+            printf 'build_number=%s\n' "$(jq -r '.data[0].attributes.version' <<< "$latest_build")"
+            printf 'build_processing_state=%s\n' "$(jq -r '.data[0].attributes.processingState' <<< "$latest_build")"
+            printf 'external_build_state=%s\n' "$(jq -r '.data[0].attributes.externalBuildState // "NOT_VISIBLE"' <<< "$beta_detail")"
+            printf 'beta_localizations=%s\n' "$(jq '.data | length' <<< "$localizations")"
+            printf 'beta_localization_locales=%s\n' "$(jq -c '[.data[].attributes.locale]' <<< "$localizations")"
+            printf 'related_beta_localizations=%s\n' "$(jq '.data | length' <<< "$related_localizations")"
+            printf 'primary_locale=%s\n' "$(jq -r '.data.attributes.primaryLocale' <<< "$app_detail")"
+            printf 'beta_build_localizations=%s\n' "$(jq -c '[.data[].attributes.locale]' <<< "$build_localizations")"
+            printf 'complete_beta_localizations=%s\n' "$(jq '[.data[] | select((.attributes.description // "") != "" and (.attributes.feedbackEmail // "") != "")] | length' <<< "$localizations")"
+            printf 'review_contact_complete=%s\n' "$(jq '[.data.attributes.contactFirstName,.data.attributes.contactLastName,.data.attributes.contactPhone,.data.attributes.contactEmail] | all(. != null and . != "")' <<< "$review_detail")"
+            printf 'demo_account_required=%s\n' "$(jq -r '.data.attributes.demoAccountRequired // false' <<< "$review_detail")"
+            printf 'review_submissions=%s\n' "$(jq -c '[.data[].attributes.betaReviewState]' <<< "$submissions")"
+            printf 'external_groups=%s\n' "$(jq -c '[.data[] | {name:.attributes.name,publicLinkEnabled:.attributes.publicLinkEnabled,hasAccessToAllBuilds:.attributes.hasAccessToAllBuilds}]' <<< "$external_groups")"
+
+            player_config="''${HUNGER_TESTFLIGHT_SOURCE_CONFIG:-$HOME/.config/player/testflight.env}"
+            if [[ -f "$player_config" ]]; then
+              # shellcheck disable=SC1090
+              source "$player_config"
+              if [[ -n "''${PLAYER_ASC_APP_BUNDLE_ID:-}" ]]; then
+                player_bundle="$(url_encode "$PLAYER_ASC_APP_BUNDLE_ID")"
+                player_app="$(asc_request GET "/v1/apps?filter%5BbundleId%5D=$player_bundle&limit=1")"
+                player_app_id="$(jq -r '.data[0].id // empty' <<< "$player_app")"
+                if [[ -n "$player_app_id" ]]; then
+                  player_review="$(asc_request GET "/v1/apps/$player_app_id/betaAppReviewDetail")"
+                  printf 'reusable_player_review_contact=%s\n' "$(jq '[.data.attributes.contactFirstName,.data.attributes.contactLastName,.data.attributes.contactPhone,.data.attributes.contactEmail] | all(. != null and . != "")' <<< "$player_review")"
+                fi
+              fi
+            fi
+          '';
+        };
+
+        iosTestflightExternalSubmit = pkgs.writeShellApplication {
+          name = "hunger-ios-testflight-external-submit";
+          runtimeInputs = commonInputs;
+          text = ''
+            ${darwinGuard}
+            ${repoGuard}
+            ${testflightCommon}
+            metadata_path="$repo_root/ios/TestFlight/external-beta.json"
+            state_path="$repo_root/.artifacts/ios/testflight-bootstrap.json"
+            artifact_root="$repo_root/.artifacts/ios/testflight"
+            if [[ ! -f "$metadata_path" || ! -f "$state_path" ]]; then
+              echo "External beta metadata or App Store Connect bootstrap state is missing." >&2
+              exit 1
+            fi
+            if ! jq -e '
+              (.locale | type == "string" and length > 0) and
+              (.description | type == "string" and length > 0) and
+              (.feedbackEmail | type == "string" and test("@")) and
+              (.whatToTest | type == "string" and length > 0) and
+              (.reviewNotes | type == "string" and length > 0) and
+              (.externalGroup.name | type == "string" and length > 0) and
+              (.externalGroup.publicLinkLimit | type == "number" and . >= 1 and . <= 10000)
+            ' "$metadata_path" >/dev/null; then
+              echo "External beta metadata is incomplete or invalid." >&2
+              exit 1
+            fi
+
+            app_id="$(jq -r '.appId' "$state_path")"
+            locale="$(jq -r '.locale' "$metadata_path")"
+            description="$(jq -r '.description' "$metadata_path")"
+            feedback_email="$(jq -r '.feedbackEmail' "$metadata_path")"
+            what_to_test="$(jq -r '.whatToTest' "$metadata_path")"
+            review_notes="$(jq -r '.reviewNotes' "$metadata_path")"
+            group_name="$(jq -r '.externalGroup.name' "$metadata_path")"
+            app_detail="$(asc_request GET "/v1/apps/$app_id")"
+            primary_locale="$(jq -r '.data.attributes.primaryLocale' <<< "$app_detail")"
+            locales=("$primary_locale")
+            if [[ "$locale" != "$primary_locale" ]]; then
+              locales+=("$locale")
+            fi
+
+            latest_build="$(asc_request GET "/v1/builds?filter%5Bapp%5D=$app_id&sort=-uploadedDate&limit=1")"
+            build_id="$(jq -r '.data[0].id // empty' <<< "$latest_build")"
+            build_number="$(jq -r '.data[0].attributes.version // empty' <<< "$latest_build")"
+            processing_state="$(jq -r '.data[0].attributes.processingState // empty' <<< "$latest_build")"
+            if [[ -z "$build_id" || "$processing_state" != "VALID" ]]; then
+              echo "The latest Hunger build is not valid for beta review." >&2
+              exit 1
+            fi
+            beta_detail="$(asc_request GET "/v1/buildBetaDetails?filter%5Bbuild%5D=$build_id&limit=1")"
+            external_state="$(jq -r '.data[0].attributes.externalBuildState // "NOT_VISIBLE"' <<< "$beta_detail")"
+            case "$external_state" in
+              READY_FOR_BETA_SUBMISSION|WAITING_FOR_BETA_REVIEW|IN_BETA_REVIEW|BETA_APPROVED|READY_FOR_BETA_TESTING) ;;
+              *) echo "Build $build_number cannot enter beta review from state $external_state." >&2; exit 1 ;;
+            esac
+
+            player_config="''${HUNGER_TESTFLIGHT_SOURCE_CONFIG:-$HOME/.config/player/testflight.env}"
+            if [[ ! -f "$player_config" ]]; then
+              echo "The reusable Player App Store Connect handoff is missing." >&2
+              exit 1
+            fi
+            # shellcheck disable=SC1090
+            source "$player_config"
+            if [[ -z "''${PLAYER_ASC_APP_BUNDLE_ID:-}" ]]; then
+              echo "The Player handoff has no source bundle ID for review contact reuse." >&2
+              exit 1
+            fi
+            player_bundle="$(url_encode "$PLAYER_ASC_APP_BUNDLE_ID")"
+            player_app="$(asc_request GET "/v1/apps?filter%5BbundleId%5D=$player_bundle&limit=1")"
+            player_app_id="$(jq -r '.data[0].id // empty' <<< "$player_app")"
+            if [[ -z "$player_app_id" ]]; then
+              echo "The source Player app is unavailable in App Store Connect." >&2
+              exit 1
+            fi
+            player_review="$(asc_request GET "/v1/apps/$player_app_id/betaAppReviewDetail")"
+            if ! jq -e '[.data.attributes.contactFirstName,.data.attributes.contactLastName,.data.attributes.contactPhone,.data.attributes.contactEmail] | all(. != null and . != "")' <<< "$player_review" >/dev/null; then
+              echo "The source Player beta review contact is incomplete." >&2
+              exit 1
+            fi
+
+            review_detail="$(asc_request GET "/v1/apps/$app_id/betaAppReviewDetail")"
+            review_id="$(jq -r '.data.id' <<< "$review_detail")"
+            review_body="$(jq -nc \
+              --arg id "$review_id" \
+              --arg firstName "$(jq -r '.data.attributes.contactFirstName' <<< "$player_review")" \
+              --arg lastName "$(jq -r '.data.attributes.contactLastName' <<< "$player_review")" \
+              --arg phone "$(jq -r '.data.attributes.contactPhone' <<< "$player_review")" \
+              --arg email "$(jq -r '.data.attributes.contactEmail' <<< "$player_review")" \
+              --arg notes "$review_notes" \
+              '{data:{type:"betaAppReviewDetails",id:$id,attributes:{contactFirstName:$firstName,contactLastName:$lastName,contactPhone:$phone,contactEmail:$email,demoAccountRequired:false,notes:$notes}}}')"
+            asc_request PATCH "/v1/betaAppReviewDetails/$review_id" "$review_body" >/dev/null
+            echo "Updated private beta review contact and instructions."
+
+            app_localizations="$(asc_request GET "/v1/betaAppLocalizations?filter%5Bapp%5D=$app_id&limit=200")"
+            for localization_locale in "''${locales[@]}"; do
+              app_localization_id="$(jq -r --arg locale "$localization_locale" '.data[] | select(.attributes.locale == $locale) | .id' <<< "$app_localizations" | head -n 1)"
+              if [[ -z "$app_localization_id" ]]; then
+                app_localization_body="$(jq -nc \
+                  --arg locale "$localization_locale" --arg description "$description" --arg feedbackEmail "$feedback_email" --arg appId "$app_id" \
+                  '{data:{type:"betaAppLocalizations",attributes:{locale:$locale,description:$description,feedbackEmail:$feedbackEmail},relationships:{app:{data:{type:"apps",id:$appId}}}}}')"
+                app_localization="$(asc_request POST '/v1/betaAppLocalizations' "$app_localization_body")"
+                app_localization_id="$(jq -r '.data.id' <<< "$app_localization")"
+                echo "Created $localization_locale beta app information."
+              else
+                app_localization_body="$(jq -nc \
+                  --arg id "$app_localization_id" --arg description "$description" --arg feedbackEmail "$feedback_email" \
+                  '{data:{type:"betaAppLocalizations",id:$id,attributes:{description:$description,feedbackEmail:$feedbackEmail}}}')"
+                asc_request PATCH "/v1/betaAppLocalizations/$app_localization_id" "$app_localization_body" >/dev/null
+                echo "Updated $localization_locale beta app information."
+              fi
+            done
+
+            build_localizations="$(asc_request GET "/v1/betaBuildLocalizations?filter%5Bbuild%5D=$build_id&limit=200")"
+            for localization_locale in "''${locales[@]}"; do
+              build_localization_id="$(jq -r --arg locale "$localization_locale" '.data[] | select(.attributes.locale == $locale) | .id' <<< "$build_localizations" | head -n 1)"
+              if [[ -z "$build_localization_id" ]]; then
+                build_localization_body="$(jq -nc \
+                  --arg locale "$localization_locale" --arg whatsNew "$what_to_test" --arg buildId "$build_id" \
+                  '{data:{type:"betaBuildLocalizations",attributes:{locale:$locale,whatsNew:$whatsNew},relationships:{build:{data:{type:"builds",id:$buildId}}}}}')"
+                build_localization="$(asc_request POST '/v1/betaBuildLocalizations' "$build_localization_body")"
+                build_localization_id="$(jq -r '.data.id' <<< "$build_localization")"
+                echo "Created $localization_locale What to Test information."
+              else
+                build_localization_body="$(jq -nc \
+                  --arg id "$build_localization_id" --arg whatsNew "$what_to_test" \
+                  '{data:{type:"betaBuildLocalizations",id:$id,attributes:{whatsNew:$whatsNew}}}')"
+                asc_request PATCH "/v1/betaBuildLocalizations/$build_localization_id" "$build_localization_body" >/dev/null
+                echo "Updated $localization_locale What to Test information."
+              fi
+            done
+
+            external_groups="$(asc_request GET "/v1/betaGroups?filter%5Bapp%5D=$app_id&filter%5BisInternalGroup%5D=false&limit=200")"
+            group_id="$(jq -r --arg name "$group_name" '.data[] | select(.attributes.name == $name) | .id' <<< "$external_groups" | head -n 1)"
+            if [[ -z "$group_id" ]]; then
+              group_body="$(jq -nc --arg name "$group_name" --arg appId "$app_id" \
+                '{data:{type:"betaGroups",attributes:{name:$name,isInternalGroup:false,feedbackEnabled:true,hasAccessToAllBuilds:false},relationships:{app:{data:{type:"apps",id:$appId}}}}}')"
+              group="$(asc_request POST '/v1/betaGroups' "$group_body")"
+              group_id="$(jq -r '.data.id' <<< "$group")"
+              echo "Created the $group_name external group."
+            else
+              echo "Reusing the $group_name external group."
+            fi
+
+            group_builds="$(asc_request GET "/v1/betaGroups/$group_id/relationships/builds?limit=200")"
+            if ! jq -e --arg id "$build_id" '.data[] | select(.id == $id)' <<< "$group_builds" >/dev/null; then
+              build_link="$(jq -nc --arg id "$build_id" '{data:[{type:"builds",id:$id}]}')"
+              asc_request POST "/v1/betaGroups/$group_id/relationships/builds" "$build_link" >/dev/null
+              echo "Added build $build_number to the $group_name group."
+            fi
+
+            submissions="$(asc_request GET "/v1/betaAppReviewSubmissions?filter%5Bbuild%5D=$build_id&limit=200")"
+            submission_id="$(jq -r '.data[0].id // empty' <<< "$submissions")"
+            review_state="$(jq -r '.data[0].attributes.betaReviewState // empty' <<< "$submissions")"
+            if [[ -z "$submission_id" ]]; then
+              submission_body="$(jq -nc --arg buildId "$build_id" \
+                '{data:{type:"betaAppReviewSubmissions",relationships:{build:{data:{type:"builds",id:$buildId}}}}}')"
+              submission=""
+              submission_error="$(mktemp)"
+              if ! submission="$(asc_request POST '/v1/betaAppReviewSubmissions' "$submission_body" 2>"$submission_error")"; then
+                rm -f "$submission_error"
+                jq -r '.errors[]? | "Apple: \(.code) — \(.detail)"' <<< "$submission" >&2
+                echo "Apple did not accept build $build_number for beta review." >&2
+                exit 1
+              fi
+              rm -f "$submission_error"
+              submission_id="$(jq -r '.data.id' <<< "$submission")"
+              review_state="$(jq -r '.data.attributes.betaReviewState' <<< "$submission")"
+              echo "Submitted build $build_number for TestFlight Beta App Review."
+            else
+              echo "Build $build_number already has a beta review submission."
+            fi
+
+            mkdir -p "$artifact_root"
+            jq -n \
+              --arg appId "$app_id" --arg buildId "$build_id" --arg buildNumber "$build_number" \
+              --arg betaGroupId "$group_id" --arg submissionId "$submission_id" --arg betaReviewState "$review_state" \
+              --arg gitCommit "$(git rev-parse HEAD)" \
+              '{appId:$appId,buildId:$buildId,buildNumber:$buildNumber,betaGroupId:$betaGroupId,submissionId:$submissionId,betaReviewState:$betaReviewState,gitCommit:$gitCommit}' \
+              > "$artifact_root/external-review.json"
+            printf 'beta_review_state=%s\n' "$review_state"
+          '';
+        };
+
+        iosTestflightExternalPublish = pkgs.writeShellApplication {
+          name = "hunger-ios-testflight-external-publish";
+          runtimeInputs = commonInputs;
+          text = ''
+            ${darwinGuard}
+            ${repoGuard}
+            ${testflightCommon}
+            metadata_path="$repo_root/ios/TestFlight/external-beta.json"
+            state_path="$repo_root/.artifacts/ios/testflight-bootstrap.json"
+            app_id="$(jq -r '.appId' "$state_path")"
+            group_name="$(jq -r '.externalGroup.name' "$metadata_path")"
+            public_link_limit="$(jq -r '.externalGroup.publicLinkLimit' "$metadata_path")"
+            latest_build="$(asc_request GET "/v1/builds?filter%5Bapp%5D=$app_id&sort=-uploadedDate&limit=1")"
+            build_id="$(jq -r '.data[0].id // empty' <<< "$latest_build")"
+            build_number="$(jq -r '.data[0].attributes.version // empty' <<< "$latest_build")"
+            submissions="$(asc_request GET "/v1/betaAppReviewSubmissions?filter%5Bbuild%5D=$build_id&limit=200")"
+            review_state="$(jq -r '.data[0].attributes.betaReviewState // "NOT_SUBMITTED"' <<< "$submissions")"
+            if [[ "$review_state" != "APPROVED" ]]; then
+              echo "Build $build_number beta review state: $review_state"
+              echo "The public link will remain disabled until Apple approves the build." >&2
+              exit 2
+            fi
+            external_groups="$(asc_request GET "/v1/betaGroups?filter%5Bapp%5D=$app_id&filter%5BisInternalGroup%5D=false&limit=200")"
+            group_id="$(jq -r --arg name "$group_name" '.data[] | select(.attributes.name == $name) | .id' <<< "$external_groups" | head -n 1)"
+            if [[ -z "$group_id" ]]; then
+              echo "The $group_name external group is missing." >&2
+              exit 1
+            fi
+            group_body="$(jq -nc --arg id "$group_id" --argjson limit "$public_link_limit" \
+              '{data:{type:"betaGroups",id:$id,attributes:{publicLinkEnabled:true,publicLinkLimitEnabled:true,publicLinkLimit:$limit,feedbackEnabled:true}}}')"
+            asc_request PATCH "/v1/betaGroups/$group_id" "$group_body" >/dev/null
+            group="$(asc_request GET "/v1/betaGroups/$group_id")"
+            public_link="$(jq -r '.data.attributes.publicLink // empty' <<< "$group")"
+            if [[ -z "$public_link" || "$(jq -r '.data.attributes.publicLinkEnabled' <<< "$group")" != "true" ]]; then
+              echo "Apple approved the build but did not enable its public link." >&2
+              exit 1
+            fi
+            printf 'beta_review_state=%s\npublic_link=%s\npublic_link_limit=%s\n' "$review_state" "$public_link" "$public_link_limit"
+          '';
+        };
+
         iosTestflightFinalize = pkgs.writeShellApplication {
           name = "hunger-ios-testflight-finalize";
           runtimeInputs = commonInputs;
@@ -1019,6 +1302,9 @@
           ios-testflight-preflight = flake-utils.lib.mkApp { drv = iosTestflightPreflight; };
           ios-testflight-bootstrap = flake-utils.lib.mkApp { drv = iosTestflightBootstrap; };
           ios-testflight-add-tester = flake-utils.lib.mkApp { drv = iosTestflightAddTester; };
+          ios-testflight-external-preflight = flake-utils.lib.mkApp { drv = iosTestflightExternalPreflight; };
+          ios-testflight-external-submit = flake-utils.lib.mkApp { drv = iosTestflightExternalSubmit; };
+          ios-testflight-external-publish = flake-utils.lib.mkApp { drv = iosTestflightExternalPublish; };
           ios-testflight-finalize = flake-utils.lib.mkApp { drv = iosTestflightFinalize; };
           ios-testflight-release = flake-utils.lib.mkApp { drv = iosTestflightRelease; };
         };
