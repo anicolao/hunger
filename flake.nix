@@ -261,6 +261,27 @@
               tester_groups="$(asc_request GET "/v1/betaTesters/$tester_id/relationships/betaGroups?limit=200")"
               printf 'tester_app_relationships=%s\n' "$(jq '.data | length' <<< "$tester_apps")"
               printf 'tester_group_relationships=%s\n' "$(jq '.data | length' <<< "$tester_groups")"
+              printf 'tester_has_hunger_app=%s\n' "$(jq -e --arg id "$app_id" 'any(.data[]; .id == $id)' <<< "$tester_apps")"
+              hunger_groups="$(asc_request GET "/v1/betaGroups?filter%5Bapp%5D=$app_id&filter%5BisInternalGroup%5D=true&limit=200")"
+              printf 'hunger_internal_groups=%s\n' "$(jq -c '[.data[].attributes.name]' <<< "$hunger_groups")"
+              printf 'tester_hunger_group_relationships=%s\n' "$(jq --argjson groups "$(jq '[.data[].id]' <<< "$hunger_groups")" '[.data[] | select(.id as $id | $groups | index($id))] | length' <<< "$tester_groups")"
+              hunger_group_id="$(jq -r --arg name "$HUNGER_TESTFLIGHT_GROUP" '.data[] | select(.attributes.name == $name) | .id' <<< "$hunger_groups" | head -n 1)"
+              if [[ -n "$hunger_group_id" ]]; then
+                hunger_group_testers="$(asc_request GET "/v1/betaGroups/$hunger_group_id/betaTesters?limit=200")"
+                printf 'hunger_group_tester_count=%s\n' "$(jq '.data | length' <<< "$hunger_group_testers")"
+                printf 'hunger_group_has_configured_tester=%s\n' "$(jq -e --arg id "$tester_id" 'any(.data[]; .id == $id)' <<< "$hunger_group_testers")"
+              fi
+              tester_detail="$(asc_request GET "/v1/betaTesters/$tester_id")"
+              printf 'tester_type=%s\n' "$(jq -c '.data.attributes | del(.email, .firstName, .lastName)' <<< "$tester_detail")"
+              tester_group_detail="$(asc_request GET "/v1/betaTesters/$tester_id/betaGroups?limit=200")"
+              printf 'tester_existing_groups=%s\n' "$(jq -c '[.data[] | {name:.attributes.name,isInternalGroup:.attributes.isInternalGroup}]' <<< "$tester_group_detail")"
+              latest_build="$(asc_request GET "/v1/builds?filter%5Bapp%5D=$app_id&sort=-uploadedDate&limit=1")"
+              latest_build_id="$(jq -r '.data[0].id // empty' <<< "$latest_build")"
+              printf 'latest_build=%s\n' "$(jq -c '.data[0].attributes | {version,processingState,uploadedDate,expirationDate}' <<< "$latest_build")"
+              if [[ -n "$latest_build_id" ]]; then
+                beta_detail="$(asc_request GET "/v1/buildBetaDetails?filter%5Bbuild%5D=$latest_build_id&limit=1")"
+                printf 'latest_internal_build_state=%s\n' "$(jq -r '.data[0].attributes.internalBuildState // "NOT_VISIBLE"' <<< "$beta_detail")"
+              fi
             fi
             if [[ "$(jq '.data | length' <<< "$tester_response")" != "1" ]]; then
               echo "Configured tester is not an existing App Store Connect beta tester." >&2
@@ -357,12 +378,21 @@
               else
                 tester_link="$(jq -nc --arg id "$tester_id" '{data:[{type:"betaTesters",id:$id}]}')"
                 tester_link_response=""
-                if ! tester_link_response="$(asc_request POST "/v1/betaGroups/$group_id/relationships/betaTesters" "$tester_link")"; then
-                  jq -r '.errors[]? | "Apple: \(.code) — \(.detail)"' <<< "$tester_link_response" >&2
-                  echo "Apple rejected the tester-group assignment. Check the tester's app access." >&2
-                  exit 1
+                tester_link_error="$(mktemp)"
+                if ! tester_link_response="$(asc_request POST "/v1/betaGroups/$group_id/relationships/betaTesters" "$tester_link" 2>"$tester_link_error")"; then
+                  rm -f "$tester_link_error"
+                  tester_link_status="$(jq -r '.errors[0].status // empty' <<< "$tester_link_response")"
+                  if [[ "$tester_link_status" == "409" ]]; then
+                    echo "Tester assignment remains deferred to release finalization or an existing internal tester."
+                  else
+                    jq -r '.errors[]? | "Apple: \(.code) — \(.detail)"' <<< "$tester_link_response" >&2
+                    echo "Apple rejected the tester-group assignment. Check the tester's app access." >&2
+                    exit 1
+                  fi
+                else
+                  rm -f "$tester_link_error"
+                  echo "Added configured tester to the internal group."
                 fi
-                echo "Added configured tester to the internal group."
               fi
             fi
 
@@ -374,6 +404,149 @@
               '{appId:$appId,bundleId:$bundleId,betaGroupId:$betaGroupId,betaTesterId:$betaTesterId}' \
               > "$artifact_root/testflight-bootstrap.json"
             echo "App Store Connect bootstrap is ready."
+          '';
+        };
+
+        iosTestflightFinalize = pkgs.writeShellApplication {
+          name = "hunger-ios-testflight-finalize";
+          runtimeInputs = commonInputs;
+          text = ''
+            ${darwinGuard}
+            ${repoGuard}
+            ${testflightCommon}
+            state_path="$repo_root/.artifacts/ios/testflight-bootstrap.json"
+            artifact_root="$repo_root/.artifacts/ios/testflight"
+            if [[ ! -f "$state_path" ]]; then
+              echo "App Store Connect bootstrap state is missing." >&2
+              echo "Run: nix run .#ios-testflight-bootstrap" >&2
+              exit 1
+            fi
+            mkdir -p "$artifact_root"
+
+            app_id="$(jq -r '.appId' "$state_path")"
+            group_id="$(jq -r '.betaGroupId' "$state_path")"
+            tester_id="$(jq -r '.betaTesterId' "$state_path")"
+            build_number="''${HUNGER_TESTFLIGHT_BUILD_NUMBER:-}"
+            git_commit="''${HUNGER_TESTFLIGHT_GIT_COMMIT:-$(git rev-parse HEAD)}"
+            marketing_version="$(awk -F ': ' '/MARKETING_VERSION:/ {gsub(/"/, "", $2); print $2; exit}' "$repo_root/ios/project.yml")"
+
+            if [[ -z "$build_number" ]]; then
+              latest_response="$(asc_request GET "/v1/builds?filter%5Bapp%5D=$app_id&sort=-uploadedDate&limit=1")"
+              build_number="$(jq -r '.data[0].attributes.version // empty' <<< "$latest_response")"
+            fi
+            if [[ ! "$build_number" =~ ^[1-9][0-9]*$ ]]; then
+              echo "No uploaded TestFlight build is available to finalize." >&2
+              exit 1
+            fi
+            echo "Finalizing TestFlight $marketing_version ($build_number)."
+
+            deadline=$((SECONDS + 3600))
+            build_id=""
+            processing_state=""
+            while (( SECONDS < deadline )); do
+              encoded_build="$(url_encode "$build_number")"
+              processed_response="$(asc_request GET "/v1/builds?filter%5Bapp%5D=$app_id&filter%5Bversion%5D=$encoded_build&sort=-uploadedDate&limit=1")"
+              build_id="$(jq -r '.data[0].id // empty' <<< "$processed_response")"
+              processing_state="$(jq -r '.data[0].attributes.processingState // "NOT_VISIBLE"' <<< "$processed_response")"
+              printf 'App Store Connect processing state: %s\n' "$processing_state"
+              case "$processing_state" in
+                VALID) break ;;
+                FAILED|INVALID) echo "Apple rejected the uploaded build during processing." >&2; exit 1 ;;
+              esac
+              sleep 30
+            done
+            if [[ -z "$build_id" || "$processing_state" != "VALID" ]]; then
+              echo "Timed out waiting for the uploaded build to finish processing." >&2
+              exit 1
+            fi
+
+            group_builds="$(asc_request GET "/v1/betaGroups/$group_id/relationships/builds?limit=200")"
+            if ! jq -e --arg id "$build_id" '.data[] | select(.id == $id)' <<< "$group_builds" >/dev/null; then
+              build_link="$(jq -nc --arg id "$build_id" '{data:[{type:"builds",id:$id}]}')"
+              asc_request POST "/v1/betaGroups/$group_id/relationships/builds" "$build_link" >/dev/null
+              echo "Added processed build to the internal group."
+            fi
+
+            group_testers="$(asc_request GET "/v1/betaGroups/$group_id/relationships/betaTesters?limit=200")"
+            if [[ "$(jq '.data | length' <<< "$group_testers")" != "0" ]]; then
+              tester_id="$(jq -r '.data[0].id' <<< "$group_testers")"
+              echo "Reusing the internal tester selected in App Store Connect."
+            elif ! jq -e --arg id "$tester_id" '.data[] | select(.id == $id)' <<< "$group_testers" >/dev/null; then
+              tester_link="$(jq -nc --arg id "$tester_id" '{data:[{type:"betaTesters",id:$id}]}')"
+              group_link="$(jq -nc --arg id "$group_id" '{data:[{type:"betaGroups",id:$id}]}')"
+              tester_deadline=$((SECONDS + 600))
+              while (( SECONDS < tester_deadline )); do
+                tester_response=""
+                tester_error="$(mktemp)"
+                if tester_response="$(asc_request POST "/v1/betaGroups/$group_id/relationships/betaTesters" "$tester_link" 2>"$tester_error")"; then
+                  rm -f "$tester_error"
+                  echo "Added configured tester to the internal group."
+                  break
+                fi
+                rm -f "$tester_error"
+                tester_status="$(jq -r '.errors[0].status // empty' <<< "$tester_response")"
+                if [[ "$tester_status" != "409" ]]; then
+                  jq -r '.errors[]? | "Apple: \(.code) — \(.detail)"' <<< "$tester_response" >&2
+                  echo "Apple rejected the tester-group assignment." >&2
+                  exit 1
+                fi
+                alternate_response=""
+                alternate_error="$(mktemp)"
+                if alternate_response="$(asc_request POST "/v1/betaTesters/$tester_id/relationships/betaGroups" "$group_link" 2>"$alternate_error")"; then
+                  rm -f "$alternate_error"
+                  echo "Added configured tester through the tester-group relationship."
+                  break
+                fi
+                rm -f "$alternate_error"
+                alternate_status="$(jq -r '.errors[0].status // empty' <<< "$alternate_response")"
+                if [[ "$alternate_status" != "409" ]]; then
+                  jq -r '.errors[]? | "Apple: \(.code) — \(.detail)"' <<< "$alternate_response" >&2
+                  echo "Apple rejected the alternate tester-group assignment." >&2
+                  exit 1
+                fi
+                tester_code="$(jq -r '.errors[0].code // "STATE_CONFLICT"' <<< "$tester_response")"
+                tester_detail="$(jq -r '.errors[0].detail // "The relationship is not ready."' <<< "$tester_response")"
+                printf 'Apple: %s — %s\n' "$tester_code" "$tester_detail"
+                echo "Tester assignment is not ready yet; retrying after Apple propagates the build."
+                sleep 15
+              done
+              group_testers="$(asc_request GET "/v1/betaGroups/$group_id/relationships/betaTesters?limit=200")"
+              if ! jq -e --arg id "$tester_id" '.data[] | select(.id == $id)' <<< "$group_testers" >/dev/null; then
+                echo "Timed out assigning the configured tester to the internal group." >&2
+                exit 1
+              fi
+            fi
+
+            beta_state=""
+            deadline=$((SECONDS + 900))
+            while (( SECONDS < deadline )); do
+              beta_response="$(asc_request GET "/v1/buildBetaDetails?filter%5Bbuild%5D=$build_id&limit=1")"
+              beta_state="$(jq -r '.data[0].attributes.internalBuildState // "NOT_VISIBLE"' <<< "$beta_response")"
+              printf 'Internal TestFlight state: %s\n' "$beta_state"
+              [[ "$beta_state" == "IN_BETA_TESTING" ]] && break
+              case "$beta_state" in
+                PROCESSING_EXCEPTION|MISSING_EXPORT_COMPLIANCE) \
+                  echo "Build requires App Store Connect intervention: $beta_state" >&2; exit 1 ;;
+              esac
+              sleep 20
+            done
+            if [[ "$beta_state" != "IN_BETA_TESTING" ]]; then
+              echo "Timed out waiting for internal TestFlight distribution." >&2
+              exit 1
+            fi
+
+            jq -n \
+              --arg appId "$app_id" \
+              --arg buildId "$build_id" \
+              --arg betaGroupId "$group_id" \
+              --arg marketingVersion "$marketing_version" \
+              --arg buildNumber "$build_number" \
+              --arg processingState "$processing_state" \
+              --arg internalBuildState "$beta_state" \
+              --arg gitCommit "$git_commit" \
+              '{appId:$appId,buildId:$buildId,betaGroupId:$betaGroupId,marketingVersion:$marketingVersion,buildNumber:$buildNumber,processingState:$processingState,internalBuildState:$internalBuildState,gitCommit:$gitCommit}' \
+              > "$artifact_root/release.json"
+            echo "TestFlight $marketing_version ($build_number) is available to the selected internal tester."
           '';
         };
 
@@ -398,7 +571,6 @@
 
             state_path="$repo_root/.artifacts/ios/testflight-bootstrap.json"
             app_id="$(jq -r '.appId' "$state_path")"
-            group_id="$(jq -r '.betaGroupId' "$state_path")"
             builds_response="$(asc_request GET "/v1/builds?filter%5Bapp%5D=$app_id&limit=200")"
             build_number="$(jq '([.data[].attributes.version | tonumber? // 0] | max // 0) + 1' <<< "$builds_response")"
             marketing_version="$(awk -F ': ' '/MARKETING_VERSION:/ {gsub(/"/, "", $2); print $2; exit}' "$repo_root/ios/project.yml")"
@@ -491,76 +663,9 @@
               -authenticationKeyIssuerID "$HUNGER_ASC_ISSUER_ID" \
               | xcbeautify
             echo "Upload accepted; waiting for App Store Connect processing."
-
-            deadline=$((SECONDS + 3600))
-            build_id=""
-            processing_state=""
-            while (( SECONDS < deadline )); do
-              encoded_build="$(url_encode "$build_number")"
-              processed_response="$(asc_request GET "/v1/builds?filter%5Bapp%5D=$app_id&filter%5Bversion%5D=$encoded_build&sort=-uploadedDate&limit=1")"
-              build_id="$(jq -r '.data[0].id // empty' <<< "$processed_response")"
-              processing_state="$(jq -r '.data[0].attributes.processingState // "NOT_VISIBLE"' <<< "$processed_response")"
-              printf 'App Store Connect processing state: %s\n' "$processing_state"
-              case "$processing_state" in
-                VALID) break ;;
-                FAILED|INVALID) echo "Apple rejected the uploaded build during processing." >&2; exit 1 ;;
-              esac
-              sleep 30
-            done
-            if [[ -z "$build_id" || "$processing_state" != "VALID" ]]; then
-              echo "Timed out waiting for the uploaded build to finish processing." >&2
-              exit 1
-            fi
-
-            group_builds="$(asc_request GET "/v1/betaGroups/$group_id/relationships/builds?limit=200")"
-            if ! jq -e --arg id "$build_id" '.data[] | select(.id == $id)' <<< "$group_builds" >/dev/null; then
-              build_link="$(jq -nc --arg id "$build_id" '{data:[{type:"builds",id:$id}]}')"
-              asc_request POST "/v1/betaGroups/$group_id/relationships/builds" "$build_link" >/dev/null
-            fi
-
-            tester_id="$(jq -r '.betaTesterId' "$state_path")"
-            group_testers="$(asc_request GET "/v1/betaGroups/$group_id/relationships/betaTesters?limit=200")"
-            if ! jq -e --arg id "$tester_id" '.data[] | select(.id == $id)' <<< "$group_testers" >/dev/null; then
-              tester_link="$(jq -nc --arg id "$tester_id" '{data:[{type:"betaTesters",id:$id}]}')"
-              asc_request POST "/v1/betaGroups/$group_id/relationships/betaTesters" "$tester_link" >/dev/null
-              echo "Added configured tester after the first build became available."
-            fi
-
-            beta_state=""
-            deadline=$((SECONDS + 900))
-            while (( SECONDS < deadline )); do
-              beta_response="$(asc_request GET "/v1/buildBetaDetails?filter%5Bbuild%5D=$build_id&limit=1")"
-              beta_state="$(jq -r '.data[0].attributes.internalBuildState // "NOT_VISIBLE"' <<< "$beta_response")"
-              printf 'Internal TestFlight state: %s\n' "$beta_state"
-              [[ "$beta_state" == "IN_BETA_TESTING" ]] && break
-              case "$beta_state" in
-                PROCESSING_EXCEPTION|MISSING_EXPORT_COMPLIANCE) \
-                  echo "Build requires App Store Connect intervention: $beta_state" >&2; exit 1 ;;
-              esac
-              sleep 20
-            done
-            if [[ "$beta_state" != "IN_BETA_TESTING" ]]; then
-              echo "Timed out waiting for internal TestFlight distribution." >&2
-              exit 1
-            fi
-
-            group_testers="$(asc_request GET "/v1/betaGroups/$group_id/relationships/betaTesters?limit=200")"
-            if ! jq -e --arg id "$tester_id" '.data[] | select(.id == $id)' <<< "$group_testers" >/dev/null; then
-              echo "Configured tester is no longer assigned to the internal group." >&2
-              exit 1
-            fi
-            jq -n \
-              --arg appId "$app_id" \
-              --arg buildId "$build_id" \
-              --arg betaGroupId "$group_id" \
-              --arg marketingVersion "$marketing_version" \
-              --arg buildNumber "$build_number" \
-              --arg processingState "$processing_state" \
-              --arg internalBuildState "$beta_state" \
-              --arg gitCommit "$(git rev-parse HEAD)" \
-              '{appId:$appId,buildId:$buildId,betaGroupId:$betaGroupId,marketingVersion:$marketingVersion,buildNumber:$buildNumber,processingState:$processingState,internalBuildState:$internalBuildState,gitCommit:$gitCommit}' \
-              > "$artifact_root/release.json"
-            echo "TestFlight $marketing_version ($build_number) is available to the configured internal tester."
+            HUNGER_TESTFLIGHT_BUILD_NUMBER="$build_number" \
+              HUNGER_TESTFLIGHT_GIT_COMMIT="$(git rev-parse HEAD)" \
+              ${lib.getExe iosTestflightFinalize}
           '';
         };
 
@@ -795,6 +900,7 @@
           ios-testflight-configure = flake-utils.lib.mkApp { drv = iosTestflightConfigure; };
           ios-testflight-preflight = flake-utils.lib.mkApp { drv = iosTestflightPreflight; };
           ios-testflight-bootstrap = flake-utils.lib.mkApp { drv = iosTestflightBootstrap; };
+          ios-testflight-finalize = flake-utils.lib.mkApp { drv = iosTestflightFinalize; };
           ios-testflight-release = flake-utils.lib.mkApp { drv = iosTestflightRelease; };
         };
 

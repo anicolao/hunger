@@ -67,14 +67,16 @@ record at <https://appstoreconnect.apple.com> using **Apps → + → New App**:
 - SKU: **hunger-ios**
 - User Access: **Full Access**
 
-Then rerun `nix run .#ios-testflight-bootstrap`. The API automates app access
-for the configured team user, the internal group, tester-group relationship,
-and every build-group relationship. A warning that App Store Connect could not
-save all-user access is safe to acknowledge because bootstrap reconciles that
-access explicitly. Apple may defer the first tester-group relationship until a
-processed build exists; the release command completes it immediately after
-assigning that build. Do not manually create signing certificates or
-provisioning profiles.
+Then rerun `nix run .#ios-testflight-bootstrap`. The API automates app access,
+the internal group, and every build-group relationship. A warning that App
+Store Connect could not save all-user access is safe to acknowledge for an
+Account Holder or Admin: Apple does not allow those roles to have app access
+limited. Apple may defer or reject the first tester-group relationship until a
+processed build exists. If the release reports `Tester(s) cannot be assigned`,
+open the app's **TestFlight → Internal** group once, choose **Invite Testers**,
+and add the intended App Store Connect user. The resumable finalizer adopts that
+selection without uploading a second build. Do not manually create signing
+certificates or provisioning profiles.
 
 ## Release commands
 
@@ -96,6 +98,15 @@ The release is complete only when the command reports both App Store Connect
 processing state `VALID` and internal state `IN_BETA_TESTING`. A safe receipt
 containing the commit, version, build number, and opaque Apple resource IDs is
 written to `.artifacts/ios/testflight/release.json`.
+
+Upload and distribution are independently resumable. If Xcode has already
+uploaded a build but the release stops during Apple processing or tester
+assignment, resume the latest uploaded build without consuming a new build
+number:
+
+```bash
+nix run .#ios-testflight-finalize
+```
 
 If the command stops for agreements, an unavailable app name, or account-role
 permissions, resolve only that reported issue in Apple's portal and rerun the
