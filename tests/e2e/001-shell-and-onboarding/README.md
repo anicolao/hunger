@@ -1,6 +1,6 @@
 # Application shell and onboarding
 
-A new user can understand the promise and unified scale, decline optional reminders, and activate a private 30-day program.
+A new user can understand the promise and unified scale, choose private reminder windows, and activate a private 30-day program.
 
 ## The 30-day learning promise is clear
 
@@ -41,13 +41,15 @@ A new user can understand the promise and unified scale, decline optional remind
 
 - [x] The complete check-in and learning sequence is explicit
 
-## Private storage, optional context, and support stay visible
+## Reminder setup reveals native-style windows before asking permission
 
-![Private storage, optional context, and support stay visible](./screenshots/004-privacy-and-choice-phone-darwin.png)
+![Reminder setup reveals native-style windows before asking permission](./screenshots/004-privacy-and-choice-phone-darwin.png)
 
 **Verifications:**
 
 - [x] Records stay local and every context field remains optional
+- [x] Morning, Midday, and Evening switches appear and one window is selected
+- [x] Permission timing is explained before the activation action
 - [x] The medical boundary and freedom to pause are stated without alarm
 
 ## Activation opens a persisted Day 1 Today state
@@ -58,6 +60,7 @@ A new user can understand the promise and unified scale, decline optional remind
 
 - [x] Today uses elapsed program language with no quota or streak
 - [x] The next action, Week 1 focus, privacy, and app navigation are available
+- [x] Activation requests permission and schedules only the selected window
 
 ## Completed onboarding supplies an honest first step toward an insight
 

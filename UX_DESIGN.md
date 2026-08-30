@@ -202,9 +202,13 @@ closing before activation preserves no partial personal record.
 - State that records and photos remain on this device in the MVP.
 - State that every context field is optional.
 - Link to support boundary and data details without forcing a policy scroll.
-- Offer reminder setup as **Set up reminders** and **Not now**. Do not request
-  permission until the user chooses a window.
-- Primary completion action: **Start day 1**
+- Offer reminder setup as **Set up reminders** and **Not now**. Choosing setup
+  reveals Morning, Midday, and Evening iOS-style switches inline; require at
+  least one window before activation.
+- Explain that iOS will ask for notification permission before the action that
+  triggers it. Changing a switch alone never prompts.
+- Primary completion action: **Allow reminders and start** after choosing a
+  window, or **Start day 1** after choosing **Not now**.
 
 ### 7.2 Today
 

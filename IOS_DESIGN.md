@@ -384,7 +384,9 @@ and
 Rules:
 
 - onboarding remains complete without notification permission;
-- prompt only after the user explicitly enables reminders;
+- choosing reminder setup reveals Morning, Midday, and Evening switches inline;
+- changing a switch does not prompt; the labelled onboarding activation action
+  requests permission and schedules only the selected windows;
 - use a small fixed set of stable identifiers, such as
   `appetite.reminder.morning`, `.midday`, and `.evening`;
 - `replaceSchedule` first removes all app-owned pending requests, then adds the

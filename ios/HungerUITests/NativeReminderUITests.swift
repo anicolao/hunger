@@ -2,7 +2,7 @@ import XCTest
 
 @MainActor
 final class NativeReminderUITests: XCTestCase {
-    func testSchedulesAndCancelsPrivateReminderFromSettings() {
+    func testSchedulesDuringOnboardingAndCancelsFromSettings() {
         let app = XCUIApplication()
         app.launchArguments = ["--reset-web-data", "--notification-ui-test"]
         app.launch()
@@ -12,12 +12,7 @@ final class NativeReminderUITests: XCTestCase {
         app.links["Settings"].tap()
         XCTAssertTrue(element(label: "Settings", in: app).waitForExistence(timeout: 10))
 
-        element(label: "Morning", in: app).tap()
-        app.buttons["Use in-app reminders"].tap()
-        XCTAssertTrue(
-            element(label: "Scheduled 1 private iOS reminder.", in: app)
-                .waitForExistence(timeout: 10)
-        )
+        XCTAssertTrue(element(label: "Morning, on", in: app).waitForExistence(timeout: 10))
 
         element(label: "Pause reminders", in: app).tap()
         XCTAssertTrue(
@@ -46,8 +41,12 @@ final class NativeReminderUITests: XCTestCase {
                 .waitForExistence(timeout: 10)
         )
         app.buttons["Continue"].tap()
-        element(label: "Not now", in: app).tap()
-        app.buttons["Start day 1"].tap()
+        element(label: "Set up reminders", in: app).tap()
+        let morning = element(label: "Morning, off", in: app)
+        XCTAssertTrue(morning.waitForExistence(timeout: 10))
+        morning.tap()
+        XCTAssertTrue(element(label: "Morning, on", in: app).waitForExistence(timeout: 10))
+        app.buttons["Allow reminders and start"].tap()
     }
 
     private func element(label: String, in app: XCUIApplication) -> XCUIElement {

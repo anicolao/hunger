@@ -114,10 +114,13 @@ final class NotificationCoordinator: NotificationCoordinating {
 @MainActor
 final class InMemoryNotificationCoordinator: NotificationCoordinating {
     private(set) var scheduledIdentifiers: Set<String> = []
-    private(set) var status: NotificationAuthorization = .authorized
+    private(set) var status: NotificationAuthorization = .notDetermined
 
     func authorizationStatus() async -> NotificationAuthorization { status }
-    func requestAuthorization() async throws -> NotificationAuthorization { status }
+    func requestAuthorization() async throws -> NotificationAuthorization {
+        status = .authorized
+        return status
+    }
     func replaceSchedule(windows: [String]) async throws -> Int {
         let plan = try NotificationSchedule.plan(for: windows)
         scheduledIdentifiers = Set(plan.map(\.identifier))

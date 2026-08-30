@@ -1,12 +1,45 @@
 import { expect, test } from '@playwright/test';
 import { TestStepHelper } from '../helpers/test-step-helper';
 
+declare global {
+  interface Window {
+    __onboardingReminderCalls?: Array<{ command: string; payload: Record<string, unknown> }>;
+  }
+}
+
 test('application shell activates the local-first 30-day program', async ({ page, context }, testInfo) => {
   const steps = new TestStepHelper(page, testInfo);
   steps.setMetadata(
     'Application shell and onboarding',
-    'A new user can understand the promise and unified scale, decline optional reminders, and activate a private 30-day program.'
+    'A new user can understand the promise and unified scale, choose private reminder windows, and activate a private 30-day program.'
   );
+
+  await context.addInitScript(() => {
+    const calls: Array<{ command: string; payload: Record<string, unknown> }> = [];
+    window.__onboardingReminderCalls = calls;
+    window.hungerNative = {
+      request: async (command: string, payload: Record<string, unknown> = {}) => {
+        calls.push({ command, payload });
+        if (command === 'capabilities.get') {
+          return {
+            version: 1,
+            platform: 'ios',
+            commands: [
+              'notifications.authorizationStatus',
+              'notifications.requestAuthorization',
+              'notifications.replaceSchedule',
+              'notifications.cancelAll'
+            ]
+          };
+        }
+        if (command === 'notifications.authorizationStatus') return { status: 'not_determined' };
+        if (command === 'notifications.requestAuthorization') return { status: 'authorized' };
+        if (command === 'notifications.replaceSchedule') return { scheduled: 1 };
+        if (command === 'notifications.cancelAll') return { cancelled: true };
+        throw new Error(`Unexpected native command: ${command}`);
+      }
+    };
+  });
 
   await context.route('**/*', async (route) => {
     const url = new URL(route.request().url());
@@ -140,19 +173,42 @@ test('application shell activates the local-first 30-day program', async ({ page
   });
 
   await page.getByRole('button', { name: 'Continue' }).click();
-  await page.getByRole('button', { name: 'Not now' }).click();
+  await page.getByRole('button', { name: 'Set up reminders' }).click();
+  await expect(page.getByRole('button', { name: 'Allow reminders and start' })).toBeDisabled();
+  await page.getByLabel('Morning').check();
   await steps.step('privacy-and-choice', {
-    description: 'Private storage, optional context, and support stay visible',
+    description: 'Reminder setup reveals native-style windows before asking permission',
     verifications: [
       {
         spec: 'Records stay local and every context field remains optional',
         check: async () => {
           await expect(page.getByText('Records stay on this device.')).toBeVisible();
           await expect(page.getByText('Only a sensation is required.')).toBeVisible();
-          await expect(page.getByRole('button', { name: 'Not now' })).toHaveAttribute(
+          await expect(page.getByRole('button', { name: 'Set up reminders' })).toHaveAttribute(
             'aria-pressed',
             'true'
           );
+        }
+      },
+      {
+        spec: 'Morning, Midday, and Evening switches appear and one window is selected',
+        check: async () => {
+          await expect(page.getByLabel('Morning')).toBeChecked();
+          await expect(page.getByLabel('Midday')).not.toBeChecked();
+          await expect(page.getByLabel('Evening')).not.toBeChecked();
+          await expect(page.getByRole('button', { name: 'Allow reminders and start' })).toBeEnabled();
+        }
+      },
+      {
+        spec: 'Permission timing is explained before the activation action',
+        check: async () => {
+          await expect(page.getByText(/iOS will ask for notification permission/)).toBeVisible();
+          const permissionCalls = await page.evaluate(() =>
+            window.__onboardingReminderCalls?.filter(({ command }) =>
+              command === 'notifications.requestAuthorization'
+            ) ?? []
+          );
+          expect(permissionCalls).toEqual([]);
         }
       },
       {
@@ -165,7 +221,7 @@ test('application shell activates the local-first 30-day program', async ({ page
     ]
   });
 
-  await page.getByRole('button', { name: 'Start day 1' }).click();
+  await page.getByRole('button', { name: 'Allow reminders and start' }).click();
   await steps.step('today-day-one', {
     description: 'Activation opens a persisted Day 1 Today state',
     verifications: [
@@ -187,6 +243,27 @@ test('application shell activates the local-first 30-day program', async ({ page
           await expect(page.getByRole('navigation', { name: 'Primary' }).first()).toBeAttached();
           await expect(page.getByTestId('build-marker')).toHaveText('Build e2e-test');
         }
+      },
+      {
+        spec: 'Activation requests permission and schedules only the selected window',
+        check: async () => {
+          const reminderCalls = await page.evaluate(() =>
+            window.__onboardingReminderCalls?.filter(({ command }) =>
+              command.startsWith('notifications.')
+            ) ?? []
+          );
+          expect(reminderCalls).toEqual([
+            { command: 'notifications.authorizationStatus', payload: {} },
+            { command: 'notifications.requestAuthorization', payload: {} },
+            {
+              command: 'notifications.replaceSchedule',
+              payload: {
+                windows: ['morning'],
+                cadence: 'Up to two chosen windows plus an open check-in reminder'
+              }
+            }
+          ]);
+        }
       }
     ]
   });
@@ -195,7 +272,12 @@ test('application shell activates the local-first 30-day program', async ({ page
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Today');
   await expect(page.getByText('Day 1 · Week 1')).toBeVisible();
 
-  await page.getByRole('link', { name: 'Insights' }).click();
+  await page.goto('/settings');
+  await expect(page.getByLabel('Morning')).toBeChecked();
+  await expect(page.getByLabel('Midday')).not.toBeChecked();
+  await expect(page.getByLabel('Evening')).not.toBeChecked();
+
+  await page.goto('/insights');
   await steps.step('first-insight-progress', {
     description: 'Completed onboarding supplies an honest first step toward an insight',
     verifications: [

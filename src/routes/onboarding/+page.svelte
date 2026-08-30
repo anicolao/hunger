@@ -3,14 +3,18 @@
   import { goto } from '$app/navigation';
   import { onMount, tick } from 'svelte';
   import Brand from '$lib/components/Brand.svelte';
+  import ReminderWindowSwitches from '$lib/components/ReminderWindowSwitches.svelte';
   import SensationScale from '$lib/components/SensationScale.svelte';
   import { getRepository } from '$lib/data/repository';
   import { SCHEMA_VERSION, type Program } from '$lib/data/schema';
+  import { reminderCadence } from '$lib/domain/reminders';
+  import { cancelNativeReminders, configureReminders } from '$lib/platform/reminders';
   import { runtime } from '$lib/platform/runtime';
 
   let step = $state(1);
   let selectedLevel = $state<number | null>(null);
   let reminderChoice = $state<'setup' | 'later' | null>(null);
+  let reminderWindows = $state<string[]>([]);
   let status = $state<'loading' | 'ready' | 'saving' | 'error'>('loading');
   let errorMessage = $state('');
   let heading = $state<HTMLHeadingElement>();
@@ -30,6 +34,17 @@
     heading?.focus();
   }
 
+  function chooseReminderPath(choice: 'setup' | 'later') {
+    reminderChoice = choice;
+    if (choice === 'later') reminderWindows = [];
+  }
+
+  function toggleReminderWindow(window: string) {
+    reminderWindows = reminderWindows.includes(window)
+      ? reminderWindows.filter((item) => item !== window)
+      : [...reminderWindows, window];
+  }
+
   async function activate() {
     status = 'saving';
     errorMessage = '';
@@ -42,24 +57,46 @@
       schemaVersion: SCHEMA_VERSION
     };
 
+    let scheduledNativeReminders = false;
     try {
       const repository = getRepository();
       const settings = await repository.getSettings();
+      let activatedSettings = {
+        ...settings,
+        reminderWindows: reminderChoice === 'setup' ? [...reminderWindows] : []
+      };
+
+      if (reminderChoice === 'setup') {
+        const result = await configureReminders(
+          activatedSettings.reminderWindows,
+          reminderCadence(1, false)
+        );
+        scheduledNativeReminders = result.capability === 'native-ios' && result.scheduled > 0;
+        activatedSettings = {
+          ...activatedSettings,
+          remindersPaused: false,
+          permissionState:
+            result.capability === 'native-ios' ? result.permissionState : 'unsupported'
+        };
+      }
+
       await repository.append(
         { type: 'program/started', occurredAt: program.startedAt, payload: { program } },
         {
           type: 'settings/changed',
           occurredAt: program.startedAt,
-          payload: {
-            settings: {
-              ...settings,
-              reminderWindows: reminderChoice === 'setup' ? ['09:00', '18:00'] : []
-            }
-          }
+          payload: { settings: activatedSettings }
         }
       );
       await goto(`${base}/`, { replaceState: true });
     } catch (error) {
+      if (scheduledNativeReminders) {
+        try {
+          await cancelNativeReminders();
+        } catch {
+          // Keep the original activation error visible; cancellation is best effort.
+        }
+      }
       errorMessage = error instanceof Error ? error.message : 'Your program could not be started.';
       status = 'error';
     }
@@ -144,19 +181,40 @@
           <button
             class:selected={reminderChoice === 'setup'}
             aria-pressed={reminderChoice === 'setup'}
-            onclick={() => (reminderChoice = 'setup')}>Set up reminders</button
+            onclick={() => chooseReminderPath('setup')}>Set up reminders</button
           >
           <button
             class:selected={reminderChoice === 'later'}
             aria-pressed={reminderChoice === 'later'}
-            onclick={() => (reminderChoice = 'later')}>Not now</button
+            onclick={() => chooseReminderPath('later')}>Not now</button
           >
         </fieldset>
+        {#if reminderChoice === 'setup'}
+          <div class="reminder-setup">
+            <ReminderWindowSwitches
+              selected={reminderWindows}
+              legend="Choose one or more windows"
+              ontoggle={toggleReminderWindow}
+            />
+            <p>
+              When you continue, iOS will ask for notification permission. Reminder choices stay
+              on this device and can be changed in Settings.
+            </p>
+          </div>
+        {/if}
         {#if errorMessage}<p class="error" role="alert">{errorMessage}</p>{/if}
         <div class="actions">
           <button class="back" onclick={() => moveTo(3)}>Back</button>
-          <button class="primary" disabled={status === 'saving'} onclick={activate}>
-            {status === 'saving' ? 'Starting…' : 'Start day 1'}
+          <button
+            class="primary"
+            disabled={status === 'saving' || reminderChoice === null || (reminderChoice === 'setup' && reminderWindows.length === 0)}
+            onclick={activate}
+          >
+            {status === 'saving'
+              ? 'Starting…'
+              : reminderChoice === 'setup'
+                ? 'Allow reminders and start'
+                : 'Start day 1'}
           </button>
         </div>
       </section>
@@ -393,6 +451,20 @@
   .reminder-choice button.selected {
     border: 2px solid var(--primary);
     background: var(--primary-soft);
+  }
+
+  .reminder-setup {
+    margin-top: 8px;
+    padding: 0 14px 12px;
+    border-radius: 12px;
+    background: var(--canvas);
+  }
+
+  .reminder-setup p {
+    margin: 8px 0 0;
+    color: var(--ink-muted);
+    font-size: 14px;
+    line-height: 1.4;
   }
 
   .error {

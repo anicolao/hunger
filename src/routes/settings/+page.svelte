@@ -3,6 +3,7 @@
   import { goto } from '$app/navigation';
   import { onMount } from 'svelte';
   import AppShell from '$lib/components/AppShell.svelte';
+  import ReminderWindowSwitches from '$lib/components/ReminderWindowSwitches.svelte';
   import { getRepository } from '$lib/data/repository';
   import type { AppSettings, EatingEpisode, Program } from '$lib/data/schema';
   import { getProgramProgress } from '$lib/domain/progression';
@@ -98,21 +99,11 @@
 
       <section>
         <div class="section-heading"><div><h2>Reminders</h2><p>Week {progress.week} · {cadence}</p></div><span class="status">{online ? 'App ready online' : 'App ready offline'}</span></div>
-        <fieldset><legend>In-app noticing windows</legend>
-          {#each ['morning', 'midday', 'evening'] as window}
-            <label class="reminder-row">
-              <span>{window[0].toUpperCase() + window.slice(1)}</span>
-              <span class="switch">
-                <input
-                  type="checkbox"
-                  checked={settings.reminderWindows.includes(window)}
-                  onchange={() => toggleWindow(window)}
-                />
-                <span class="switch-track" aria-hidden="true"></span>
-              </span>
-            </label>
-          {/each}
-        </fieldset>
+        <ReminderWindowSwitches
+          selected={settings.reminderWindows}
+          legend="In-app noticing windows"
+          ontoggle={toggleWindow}
+        />
         <div class="actions"><button disabled={!settings.reminderWindows.length} onclick={enableReminders}>Use in-app reminders</button><button class="secondary" aria-pressed={settings.remindersPaused} onclick={toggleReminderPause}>{settings.remindersPaused ? 'Resume reminders' : 'Pause reminders'}</button></div>
         {#if reminderMessage}<p class="notice" role="status">{reminderMessage}</p>{/if}
       </section>
@@ -150,17 +141,6 @@
   p { margin: 6px 0 0; color: var(--ink-muted); line-height: 1.5; }
   .section-heading { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; }
   .status { height: fit-content; padding: 5px 9px; border-radius: 999px; background: var(--primary-soft); font-size: 13px; font-weight: 700; }
-  fieldset { margin: 18px 0 0; padding: 0; border: 0; } legend { font-weight: 700; }
-  .reminder-row { min-height: 50px; padding: 0 2px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; gap: 16px; cursor: pointer; }
-  .reminder-row:last-child { border-bottom: 0; }
-  .switch { position: relative; width: 51px; height: 44px; flex: 0 0 51px; display: grid; place-items: center; }
-  .switch input { position: absolute; z-index: 1; width: 51px; height: 44px; margin: 0; opacity: 0; cursor: pointer; }
-  .switch-track { position: relative; width: 51px; height: 31px; border-radius: 999px; display: block; background: #e9e9ea; transition: background-color 160ms ease; }
-  .switch-track::after { content: ''; position: absolute; top: 2px; left: 2px; width: 27px; height: 27px; border-radius: 50%; background: white; box-shadow: 0 2px 5px rgb(0 0 0 / .2); transition: transform 160ms ease; }
-  .switch input:checked + .switch-track { background: #34c759; }
-  .switch input:checked + .switch-track::after { transform: translateX(20px); }
-  .switch input:focus-visible + .switch-track { outline: 3px solid var(--focus); outline-offset: 3px; }
-  @media (prefers-reduced-motion: reduce) { .switch-track, .switch-track::after { transition: none; } }
   .actions { margin-top: 14px; display: flex; flex-wrap: wrap; gap: 10px; }
   button, .button-link, section > a { min-height: 48px; padding: 0 14px; border: 0; border-radius: 12px; display: inline-flex; align-items: center; color: white; background: var(--primary); font-weight: 700; }
   button.secondary, .button-link { border: 1px solid var(--border-strong); color: var(--ink); background: var(--surface); }
