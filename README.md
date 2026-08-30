@@ -113,6 +113,11 @@ are materialized projections. Application code cannot write those caches.
   test contract
 - [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) — coherent commit sequence,
   tracer bullets, and MVP completion gate
+- [IOS_DESIGN.md](IOS_DESIGN.md) and
+  [IOS_IMPLEMENTATION_PLAN.md](IOS_IMPLEMENTATION_PLAN.md) — offline native
+  shell design, tracer bullets, and release gates
+- [TESTFLIGHT_SETUP.md](TESTFLIGHT_SETUP.md) — flake-managed Apple handoff,
+  signed archive, upload, processing, and internal distribution
 
 ## Source material
 

@@ -20,6 +20,11 @@ by simulator success.
 - [ ] Confirm `PrivacyInfo.xcprivacy` is present in the built app and still
   declares no tracking or collected data.
 - [ ] Confirm the parallel browser Verify job and retained PR preview are green.
+- [ ] Run `nix run .#ios-testflight-preflight`; confirm API access, the tester,
+  and local signing identity are valid without changing Apple state.
+- [ ] From the reviewed green commit, run
+  `nix run .#ios-testflight-release`; retain
+  `.artifacts/ios/testflight/release.json` as the release receipt.
 
 ## Physical-device matrix
 
@@ -50,11 +55,11 @@ by simulator success.
 
 ## Distribution and privacy
 
-- [ ] Archive with the distribution identity and inspect the signed
-  entitlements; there must be no APNs, background execution, associated
-  domains, analytics, advertising, or unrestricted networking capability.
-- [ ] Validate the archive and upload it to TestFlight without privacy-manifest
-  or required-reason API warnings.
+- [ ] Confirm the automated signed-archive audit found the expected bundle ID,
+  version/build, encryption declaration, app icon, privacy manifest, offline
+  asset manifest, valid signature, and no push/background/network entitlement.
+- [ ] Confirm the release receipt reports App Store processing state `VALID`
+  and internal TestFlight state `IN_BETA_TESTING` for the configured group.
 - [ ] Repeat the clean-install and upgrade smoke tests from the TestFlight build.
 - [ ] Confirm App Store privacy answers say data is not collected and match the
   bundled privacy manifest and the app's offline behavior.
