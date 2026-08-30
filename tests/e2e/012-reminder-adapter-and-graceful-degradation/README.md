@@ -9,5 +9,6 @@ Reminder settings taper with the program and accurately describe browser capabil
 **Verifications:**
 
 - [x] The adapter is triggered only after a window is selected
+- [x] Reminder choices retain checkbox semantics in an iOS-sized switch
 - [x] The app says it cannot promise delivery while closed
 - [x] Pause is available and no native scheduling claim is rendered

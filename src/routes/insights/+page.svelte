@@ -6,8 +6,8 @@
   import { getRepository } from '$lib/data/repository';
   import type { EatingEpisode, InsightSnapshot, Program } from '$lib/data/schema';
   import {
+    firstInsightProgress,
     generateEarlyInsights,
-    pairedEpisodes,
     remainingForFirstInsight,
     renderInsight,
     type InsightResult
@@ -28,8 +28,8 @@
     ...generatePatternInsights(episodes),
     ...generateEarlyInsights(episodes)
   ].slice(0, 3));
-  let pairedCount = $derived(pairedEpisodes(episodes).length);
   let remaining = $derived(remainingForFirstInsight(episodes));
+  let insightProgress = $derived(firstInsightProgress(episodes));
 
   onMount(async () => {
     const repository = getRepository();
@@ -127,11 +127,21 @@
           <h2 id="learning-title">
             {remaining} more paired {remaining === 1 ? 'check-in' : 'check-ins'} will help compare where you started and finished.
           </h2>
-          <div class="progress" aria-label={`${pairedCount} of 4 paired`}>
-            <span style={`width: ${Math.min(100, (pairedCount / 4) * 100)}%`}></span>
+          <div
+            class="progress"
+            role="progressbar"
+            aria-label="Progress toward your first insight"
+            aria-valuemin="0"
+            aria-valuemax={insightProgress.total}
+            aria-valuenow={insightProgress.completed}
+          >
+            <span style={`width: ${insightProgress.percent}%`}></span>
           </div>
-          <strong>{pairedCount} of 4 paired</strong>
-          <p>A before and after check-in from the same eating moment.</p>
+          <strong>{insightProgress.completed} of {insightProgress.total} insight steps</strong>
+          <p>
+            <span class="completed-step">Completed: learn how insights work.</span>
+            Each remaining step is a before and after check-in from the same eating moment.
+          </p>
         </section>
       {:else}
         <div class="insight-list">
@@ -206,6 +216,7 @@
   .progress { height: 8px; margin: 24px 0 10px; border-radius: 999px; overflow: hidden; background: var(--primary-soft); }
   .progress span { height: 100%; display: block; background: var(--primary); }
   .learning-card > strong { display: block; }
+  .completed-step { display: block; color: var(--ink); font-weight: 700; }
   .insight-list { display: grid; gap: 18px; }
   article.primary { border-color: color-mix(in srgb, var(--primary) 45%, var(--border)); }
   .finding { color: var(--ink); font-size: 20px; font-weight: 700; }

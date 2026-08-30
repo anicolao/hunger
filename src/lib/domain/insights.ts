@@ -2,6 +2,8 @@ import type { EatingEpisode } from '../data/schema';
 import { getSensationLevel } from './scale';
 
 export const INSIGHT_ALGORITHM_VERSION = 1;
+export const FIRST_INSIGHT_PAIR_REQUIREMENT = 4;
+export const FIRST_INSIGHT_TOTAL_STEPS = FIRST_INSIGHT_PAIR_REQUIREMENT + 1;
 export type InsightKind = 'typical-start' | 'typical-end';
 
 export interface InsightResult {
@@ -46,7 +48,7 @@ export function pairedEpisodes(episodes: EatingEpisode[]): EatingEpisode[] {
 
 export function generateEarlyInsights(episodes: EatingEpisode[]): InsightResult[] {
   const paired = pairedEpisodes(episodes);
-  if (paired.length < 4) return [];
+  if (paired.length < FIRST_INSIGHT_PAIR_REQUIREMENT) return [];
   const strength = paired.length >= 8 ? 'recurring' : 'early';
 
   return [
@@ -105,5 +107,23 @@ export function renderInsight(result: InsightResult): RenderedInsight {
 }
 
 export function remainingForFirstInsight(episodes: EatingEpisode[]): number {
-  return Math.max(0, 4 - pairedEpisodes(episodes).length);
+  return Math.max(0, FIRST_INSIGHT_PAIR_REQUIREMENT - pairedEpisodes(episodes).length);
+}
+
+export function firstInsightProgress(episodes: EatingEpisode[]): {
+  completed: number;
+  total: number;
+  percent: number;
+} {
+  const completedPairs = Math.min(
+    FIRST_INSIGHT_PAIR_REQUIREMENT,
+    pairedEpisodes(episodes).length
+  );
+  const completed = 1 + completedPairs;
+
+  return {
+    completed,
+    total: FIRST_INSIGHT_TOTAL_STEPS,
+    percent: (completed / FIRST_INSIGHT_TOTAL_STEPS) * 100
+  };
 }
