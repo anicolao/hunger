@@ -117,7 +117,7 @@ are materialized projections. Application code cannot write those caches.
   [IOS_IMPLEMENTATION_PLAN.md](IOS_IMPLEMENTATION_PLAN.md) — offline native
   shell design, tracer bullets, and release gates
 - [TESTFLIGHT_SETUP.md](TESTFLIGHT_SETUP.md) — flake-managed Apple handoff,
-  signed archive, upload, processing, and internal distribution
+  signed archive, internal distribution, Beta App Review, and public beta
 
 ## Source material
 

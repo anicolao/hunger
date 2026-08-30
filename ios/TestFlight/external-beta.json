@@ -1,0 +1,11 @@
+{
+  "locale": "en-CA",
+  "description": "Learn Your Appetite is a private, offline-first reflection tool for noticing patterns in hunger, fullness, eating context, and comfort over a 30-day guided period. It supports paired before-and-after check-ins, evidence-labelled observations, optional reminders and photos, small self-directed experiments, and a private export. It does not diagnose or provide medical treatment.",
+  "feedbackEmail": "anicolao@gmail.com",
+  "whatToTest": "Complete onboarding, record a before-eating check-in, and finish it with an after-eating sensation. Review History and Settings; test reminders, optional photo selection, profile export and sharing, offline relaunch, and Delete Everything. Insights intentionally appear only after enough repeated records, and the UI explains sparse evidence. Verify that no account or network is required and that records survive relaunch.",
+  "reviewNotes": "No account, demo credentials, server, subscription, purchase, or network connection is required. All features and user data are local to the device. Optional notification and photo-library prompts occur only after a user action. This is a reflection tool, not medical advice. Some longitudinal insights require repeated entries by design; reviewers can evaluate the primary onboarding, paired check-in, history, settings, export, and deletion flows immediately.",
+  "externalGroup": {
+    "name": "Public Beta",
+    "publicLinkLimit": 100
+  }
+}

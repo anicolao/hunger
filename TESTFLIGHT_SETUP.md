@@ -119,6 +119,44 @@ The command verifies an internal-testing role and app access, creates or reuses
 the beta-tester identity, adds it to the Hunger internal group, and reads the
 relationship back from Apple before succeeding.
 
+## External TestFlight and public beta
+
+Public beta copy is versioned in `ios/TestFlight/external-beta.json`. Reviewer
+contact details stay private: submission copies the already-verified contact
+from the Player app through App Store Connect without printing or committing
+the phone number. No demo account is required because Hunger has no account or
+sign-in flow.
+
+Inspect the latest build without changing Apple state:
+
+```bash
+nix run .#ios-testflight-external-preflight
+```
+
+Create or update localized beta information, What to Test copy, the external
+`Public Beta` group, its build relationship, and the TestFlight Beta App Review
+submission:
+
+```bash
+nix run .#ios-testflight-external-submit
+```
+
+The command is idempotent. It reconciles both the live App Store record's
+primary locale and the repository locale, then reuses an existing review
+submission instead of submitting the build twice. While Apple reports
+`WAITING_FOR_REVIEW` or `IN_REVIEW`, the public link deliberately remains off.
+
+After Apple reports `APPROVED`, enable an open public link capped by
+`externalGroup.publicLinkLimit` in the metadata file and read the link back:
+
+```bash
+nix run .#ios-testflight-external-publish
+```
+
+If review is still pending, publish exits without changing the group. If Apple
+rejects the build or metadata, resolve the reported Beta App Review issue and
+upload a corrected build; never enable a public link around a rejection.
+
 If the command stops for agreements, an unavailable app name, or account-role
 permissions, resolve only that reported issue in Apple's portal and rerun the
 same command. Automatic signing manages certificates and provisioning profiles;
@@ -131,3 +169,5 @@ do not create them by hand preemptively.
 - [Builds API](https://developer.apple.com/documentation/appstoreconnectapi/builds)
 - [Beta groups API](https://developer.apple.com/documentation/appstoreconnectapi/beta-groups)
 - [Add internal testers](https://developer.apple.com/help/app-store-connect/test-a-beta-version/add-internal-testers)
+- [Beta App Review submissions](https://developer.apple.com/documentation/appstoreconnectapi/beta-app-review-submissions)
+- [Invite external testers](https://developer.apple.com/help/app-store-connect/test-a-beta-version/invite-external-testers)
