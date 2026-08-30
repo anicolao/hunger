@@ -1,0 +1,1 @@
+import{l as h,h as l,u as k,r as f}from"./CRUQ4kew.js";function o(e,a,d=a){h(e,"change",c=>{var r=c?e.defaultChecked:e.checked;d(r)}),(l&&e.defaultChecked!==e.checked||k(a)==null)&&d(e.checked),f(()=>{var c=a();e.checked=!!c})}export{o as b};
