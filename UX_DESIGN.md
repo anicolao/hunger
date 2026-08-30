@@ -122,8 +122,8 @@ puts focus on the saved-state message or pending completion card.
 
 ### Mobile shell
 
-- Bottom navigation contains Today, Insights, and Profile.
-- Settings opens from a clearly labelled gear in the page header or Profile.
+- Bottom navigation contains Today, Insights, Profile, and Settings.
+- Settings uses a repository-owned SVG gear asset; emoji are never UI icons.
 - The bar is 64 CSS pixels plus safe-area inset.
 - The active destination uses icon, text, weight, and a pale background or
   indicator—not color alone.
@@ -223,8 +223,7 @@ Order:
 3. active experiment, if one exists;
 4. **Today's moments** count;
 5. **Week focus**;
-6. recent episodes; and
-7. unobtrusive Settings action.
+6. recent episodes.
 
 Primary copy:
 
@@ -442,6 +441,10 @@ Group settings in this order:
 4. **Accessibility** — follow-system motion and appearance, optional larger
    controls if needed beyond browser zoom; and
 5. **Support** — when check-ins feel unhelpful, product boundary, source notes.
+
+The Settings footer is the only application surface that displays the short
+source commit identifier. Packaged iOS builds embed the same identifier as the
+web assets they contain.
 
 Settings use rows with visible values, not unlabeled toggles. Every toggle has
 an adjacent label and status that a screen reader announces.

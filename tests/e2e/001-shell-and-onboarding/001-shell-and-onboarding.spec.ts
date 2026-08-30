@@ -85,10 +85,10 @@ test('application shell activates the local-first 30-day program', async ({ page
         }
       },
       {
-        spec: 'Privacy is visible and the deterministic build marker is present',
+        spec: 'Privacy is visible without exposing implementation details',
         check: async () => {
           await expect(page.getByText('Private by default')).toBeAttached();
-          await expect(page.getByTestId('build-marker')).toHaveText('Build e2e-test');
+          await expect(page.getByTestId('build-marker')).toHaveCount(0);
         }
       }
     ]
@@ -235,13 +235,16 @@ test('application shell activates the local-first 30-day program', async ({ page
         }
       },
       {
-        spec: 'The next action, Week 1 focus, privacy, and app navigation are available',
+        spec: 'The next action, Week 1 focus, privacy, and four app destinations are available',
         check: async () => {
           await expect(page.getByRole('link', { name: 'Check in before eating' })).toBeVisible();
           await expect(page.getByRole('heading', { name: 'Hunger' })).toBeVisible();
           await expect(page.getByText('Private on this device', { exact: true })).toBeAttached();
           await expect(page.getByRole('navigation', { name: 'Primary' }).first()).toBeAttached();
-          await expect(page.getByTestId('build-marker')).toHaveText('Build e2e-test');
+          await expect(page.locator('.bottom-nav a')).toHaveCount(4);
+          await expect(page.locator('.bottom-nav a[href$="/settings"]')).toBeAttached();
+          await expect(page.locator('.bottom-nav [data-icon="settings"]')).toBeAttached();
+          await expect(page.getByTestId('build-marker')).toHaveCount(0);
         }
       },
       {
@@ -273,9 +276,32 @@ test('application shell activates the local-first 30-day program', async ({ page
   await expect(page.getByText('Day 1 · Week 1')).toBeVisible();
 
   await page.goto('/settings');
-  await expect(page.getByLabel('Morning')).toBeChecked();
-  await expect(page.getByLabel('Midday')).not.toBeChecked();
-  await expect(page.getByLabel('Evening')).not.toBeChecked();
+  await steps.step('settings-navigation-and-build', {
+    description: 'Settings owns the build identity and the fourth navigation tab',
+    verifications: [
+      {
+        spec: 'The selected reminder window persists in Settings',
+        check: async () => {
+          await expect(page.getByLabel('Morning')).toBeChecked();
+          await expect(page.getByLabel('Midday')).not.toBeChecked();
+          await expect(page.getByLabel('Evening')).not.toBeChecked();
+        }
+      },
+      {
+        spec: 'The deterministic build identifier appears only in Settings',
+        check: async () => {
+          await expect(page.getByTestId('build-marker')).toHaveText('Build e2e-test');
+        }
+      },
+      {
+        spec: 'Settings uses the bundled SVG gear and no gear emoji',
+        check: async () => {
+          await expect(page.locator('[data-icon="settings"]')).toHaveCount(2);
+          await expect(page.getByText('⚙')).toHaveCount(0);
+        }
+      }
+    ]
+  });
 
   await page.goto('/insights');
   await steps.step('first-insight-progress', {

@@ -9,7 +9,7 @@ final class NativeExportUITests: XCTestCase {
         completeOnboarding(in: app)
 
         XCTAssertTrue(element(label: "Today", in: app).waitForExistence(timeout: 20))
-        app.coordinate(withNormalizedOffset: CGVector(dx: 0.82, dy: 0.94)).tap()
+        app.tapBottomNavigation(.profile)
         XCTAssertTrue(element(label: "Your appetite profile", in: app).waitForExistence(timeout: 10))
         app.swipeUp()
         app.swipeUp()

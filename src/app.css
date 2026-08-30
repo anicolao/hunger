@@ -20,6 +20,12 @@
   --border-strong: #aebbb5;
   --danger: #b42318;
   --focus: #0b5fff;
+  --shell-safe-area-bottom: env(safe-area-inset-bottom);
+}
+
+html[data-native-shell='ios'] {
+  /* Replaced with the measured window inset after the packaged page loads. */
+  --shell-safe-area-bottom: 34px;
 }
 
 * {

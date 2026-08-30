@@ -9,7 +9,7 @@ final class NativePrivacyAndRecoveryUITests: XCTestCase {
         completeOnboarding(in: app)
 
         XCTAssertTrue(element(label: "Today", in: app).waitForExistence(timeout: 20))
-        app.links["Settings"].tap()
+        app.tapBottomNavigation(.settings)
         XCTAssertTrue(element(label: "PRIVATE ON THIS DEVICE", in: app).waitForExistence(timeout: 10))
         let openDeleteConfirmation = app.buttons["Delete everything"]
         for _ in 0..<4 where !openDeleteConfirmation.exists {

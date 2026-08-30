@@ -134,7 +134,6 @@
 
   <footer>
     <span>Learn Your Appetite</span>
-    <span data-testid="build-marker">Build {import.meta.env.VITE_GIT_HASH}</span>
   </footer>
 </div>
 {/if}

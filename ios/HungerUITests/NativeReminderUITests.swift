@@ -9,8 +9,19 @@ final class NativeReminderUITests: XCTestCase {
         completeOnboarding(in: app)
 
         XCTAssertTrue(element(label: "Today", in: app).waitForExistence(timeout: 20))
-        app.links["Settings"].tap()
+        XCTAssertFalse(element(labelPrefix: "Build ", in: app).exists)
+        app.tapBottomNavigation(.settings)
         XCTAssertTrue(element(label: "Settings", in: app).waitForExistence(timeout: 10))
+
+        let build = element(labelPrefix: "Build ", in: app)
+        XCTAssertTrue(build.waitForExistence(timeout: 10))
+        XCTAssertNotNil(
+            build.label.range(
+                of: #"^Build [0-9a-f]{8}$"#,
+                options: .regularExpression
+            ),
+            "The packaged Settings screen must expose the source commit, not a placeholder."
+        )
 
         XCTAssertTrue(element(label: "Morning, on", in: app).waitForExistence(timeout: 10))
 
@@ -52,6 +63,12 @@ final class NativeReminderUITests: XCTestCase {
     private func element(label: String, in app: XCUIApplication) -> XCUIElement {
         app.descendants(matching: .any)
             .matching(NSPredicate(format: "label == %@", label))
+            .firstMatch
+    }
+
+    private func element(labelPrefix: String, in app: XCUIApplication) -> XCUIElement {
+        app.descendants(matching: .any)
+            .matching(NSPredicate(format: "label BEGINSWITH %@", labelPrefix))
             .firstMatch
     }
 }

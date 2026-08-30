@@ -114,7 +114,6 @@
     {/if}
   </section>
 
-  <p class="build-marker" data-testid="build-marker">Build {import.meta.env.VITE_GIT_HASH}</p>
 </div>
 
 <style>
@@ -262,12 +261,6 @@
   .empty-history {
     margin-top: 32px;
     border-style: dashed;
-  }
-
-  .build-marker {
-    margin: 32px 0 0;
-    color: var(--ink-muted);
-    font-size: 12px;
   }
 
   @media (min-width: 700px) {

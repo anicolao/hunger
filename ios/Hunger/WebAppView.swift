@@ -11,7 +11,6 @@ struct WebAppView: View {
 
             if let webView = controller.webView {
                 WebViewContainer(webView: webView)
-                    .ignoresSafeArea(.container, edges: .bottom)
             } else if case let .failed(message) = controller.state {
                 ContentUnavailableView {
                     Label("Learn Your Appetite could not open", systemImage: "exclamationmark.triangle")
