@@ -108,6 +108,17 @@ number:
 nix run .#ios-testflight-finalize
 ```
 
+Add another accepted App Store Connect team user without replacing existing
+internal testers:
+
+```bash
+nix run .#ios-testflight-add-tester -- tester@example.com
+```
+
+The command verifies an internal-testing role and app access, creates or reuses
+the beta-tester identity, adds it to the Hunger internal group, and reads the
+relationship back from Apple before succeeding.
+
 If the command stops for agreements, an unavailable app name, or account-role
 permissions, resolve only that reported issue in Apple's portal and rerun the
 same command. Automatic signing manages certificates and provisioning profiles;
