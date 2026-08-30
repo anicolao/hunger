@@ -13,9 +13,15 @@ final class OfflineEventPersistenceUITests: XCTestCase {
 
         XCTAssertTrue(app.buttons["Begin"].waitForExistence(timeout: 10))
         app.buttons["Begin"].tap()
-        XCTAssertTrue(element(label: "3, Clear hunger", in: app).waitForExistence(timeout: 10))
-        element(label: "3, Clear hunger", in: app).tap()
-        app.buttons["I understand"].tap()
+        XCTAssertTrue(
+            element(label: "Practice only—not a check-in.", in: app)
+                .waitForExistence(timeout: 10)
+        )
+        app.buttons["Continue"].tap()
+        XCTAssertTrue(
+            element(label: "Small moments become patterns", in: app)
+                .waitForExistence(timeout: 10)
+        )
         app.buttons["Continue"].tap()
         element(label: "Not now", in: app).tap()
         app.buttons["Start day 1"].tap()
