@@ -12,6 +12,7 @@
 		151FED507278E11C09B0FEB6 /* HungerApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 696A4F58E11658F79C01B40B /* HungerApp.swift */; };
 		25E3CDA93C49F9C02AE40976 /* WebApp in Resources */ = {isa = PBXBuildFile; fileRef = 171B50D6B677DFCE6DDF903B /* WebApp */; };
 		344BABA8A635767792ED50D5 /* NativeBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = E163D5A5F623DA49FD1C6C49 /* NativeBridge.swift */; };
+		41F68CB6EA08BEC8F7F8CDA8 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 5F732604C9914CA59A3ACEF9 /* Assets.xcassets */; };
 		582C75C43A3AEC7F88AB655A /* NativeReminderUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E078E13AF0F471B08F252654 /* NativeReminderUITests.swift */; };
 		6894A3F306CDA3F744F3CA2D /* OfflineAssetSchemeHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 137D9604EE777F89B09051E1 /* OfflineAssetSchemeHandler.swift */; };
 		730D57B64E5F89E5DA3BB06B /* OfflineEventPersistenceUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5650725E5A0C21804D957826 /* OfflineEventPersistenceUITests.swift */; };
@@ -57,6 +58,7 @@
 		5650725E5A0C21804D957826 /* OfflineEventPersistenceUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OfflineEventPersistenceUITests.swift; sourceTree = "<group>"; };
 		577602F759F5A2343F471C95 /* PersistenceConstants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersistenceConstants.swift; sourceTree = "<group>"; };
 		58EDCAA62A8608DB2C911331 /* NotificationCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationCoordinator.swift; sourceTree = "<group>"; };
+		5F732604C9914CA59A3ACEF9 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		66BA4F8CB2F11B770459F130 /* NotificationCoordinatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationCoordinatorTests.swift; sourceTree = "<group>"; };
 		696A4F58E11658F79C01B40B /* HungerApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HungerApp.swift; sourceTree = "<group>"; };
 		727D6CF79965B3FA7DD6B17D /* OfflineAssetTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OfflineAssetTests.swift; sourceTree = "<group>"; };
@@ -95,6 +97,7 @@
 			isa = PBXGroup;
 			children = (
 				336900380AC9D874EF416A31 /* Resources */,
+				5F732604C9914CA59A3ACEF9 /* Assets.xcassets */,
 				696A4F58E11658F79C01B40B /* HungerApp.swift */,
 				E163D5A5F623DA49FD1C6C49 /* NativeBridge.swift */,
 				8FEB9725A9AD6069AB91EE20 /* NavigationPolicy.swift */,
@@ -242,6 +245,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				41F68CB6EA08BEC8F7F8CDA8 /* Assets.xcassets in Resources */,
 				B24459134BC4598C742192BA /* PrivacyInfo.xcprivacy in Resources */,
 				25E3CDA93C49F9C02AE40976 /* WebApp in Resources */,
 			);
@@ -391,6 +395,7 @@
 				DEVELOPMENT_ASSET_PATHS = "";
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = "Learn Your Appetite";
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.healthcare-fitness";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -435,6 +440,7 @@
 				DEVELOPMENT_ASSET_PATHS = "";
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = "Learn Your Appetite";
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.healthcare-fitness";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
