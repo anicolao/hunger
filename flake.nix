@@ -77,6 +77,8 @@
               -resize 1024x1024! \
               -alpha off \
               -colorspace sRGB \
+              -strip \
+              -define png:exclude-chunks=date,time \
               "PNG24:$target_icon"
             dimensions="$(magick identify -format '%wx%h' "$target_icon")"
             alpha="$(magick identify -format '%[channels]' "$target_icon")"
