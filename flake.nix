@@ -407,6 +407,124 @@
           '';
         };
 
+        iosTestflightAddTester = pkgs.writeShellApplication {
+          name = "hunger-ios-testflight-add-tester";
+          runtimeInputs = commonInputs;
+          text = ''
+            ${darwinGuard}
+            ${repoGuard}
+            ${testflightCommon}
+            tester_email="''${1:-}"
+            if [[ -z "$tester_email" || "$tester_email" != *@*.* ]]; then
+              echo "Usage: nix run .#ios-testflight-add-tester -- tester@example.com" >&2
+              exit 1
+            fi
+
+            state_path="$repo_root/.artifacts/ios/testflight-bootstrap.json"
+            if [[ ! -f "$state_path" ]]; then
+              echo "App Store Connect bootstrap state is missing." >&2
+              echo "Run: nix run .#ios-testflight-bootstrap" >&2
+              exit 1
+            fi
+            app_id="$(jq -r '.appId' "$state_path")"
+            group_id="$(jq -r '.betaGroupId' "$state_path")"
+            encoded_email="$(url_encode "$tester_email")"
+
+            user_response="$(asc_request GET "/v1/users?filter%5Busername%5D=$encoded_email&limit=2")"
+            if [[ "$(jq '.data | length' <<< "$user_response")" != "1" ]]; then
+              echo "$tester_email is not an accepted App Store Connect team user." >&2
+              echo "Invite and activate the user in Users and Access before adding them as an internal tester." >&2
+              exit 2
+            fi
+            user_id="$(jq -r '.data[0].id' <<< "$user_response")"
+            user_roles="$(jq -r '.data[0].attributes.roles | join(",")' <<< "$user_response")"
+            if ! jq -e '.data[0].attributes.roles | any(. == "ACCOUNT_HOLDER" or . == "ADMIN" or . == "APP_MANAGER" or . == "DEVELOPER" or . == "MARKETING")' <<< "$user_response" >/dev/null; then
+              echo "$tester_email does not have an Apple role eligible for internal testing: $user_roles" >&2
+              exit 2
+            fi
+            if [[ "$(jq -r '.data[0].attributes.allAppsVisible // false' <<< "$user_response")" != "true" ]]; then
+              visible_apps="$(asc_request GET "/v1/users/$user_id/relationships/visibleApps?limit=200")"
+              if ! jq -e --arg id "$app_id" '.data[] | select(.id == $id)' <<< "$visible_apps" >/dev/null; then
+                app_link="$(jq -nc --arg id "$app_id" '{data:[{type:"apps",id:$id}]}')"
+                asc_request POST "/v1/users/$user_id/relationships/visibleApps" "$app_link" >/dev/null
+                echo "Granted $tester_email access to Learn Your Appetite."
+              fi
+            fi
+
+            tester_response="$(asc_request GET "/v1/betaTesters?filter%5Bemail%5D=$encoded_email&limit=200")"
+            tester_count="$(jq '.data | length' <<< "$tester_response")"
+            first_name="$(jq -r '.data[0].attributes.firstName // empty' <<< "$user_response")"
+            last_name="$(jq -r '.data[0].attributes.lastName // empty' <<< "$user_response")"
+            create_body="$(jq -nc \
+              --arg email "$tester_email" \
+              --arg firstName "$first_name" \
+              --arg lastName "$last_name" \
+              --arg groupId "$group_id" \
+              '{data:{type:"betaTesters",attributes:{email:$email,firstName:$firstName,lastName:$lastName},relationships:{betaGroups:{data:[{type:"betaGroups",id:$groupId}]}}}}')"
+            if [[ "$tester_count" == "0" ]]; then
+              tester_response="$(asc_request POST '/v1/betaTesters' "$create_body")"
+              tester_id="$(jq -r '.data.id' <<< "$tester_response")"
+              echo "Created the internal beta tester for $tester_email."
+            else
+              internal_candidates=()
+              other_candidates=()
+              while IFS= read -r candidate_id; do
+                candidate_groups="$(asc_request GET "/v1/betaTesters/$candidate_id/betaGroups?limit=200")"
+                if jq -e 'any(.data[]; .attributes.isInternalGroup == true)' <<< "$candidate_groups" >/dev/null; then
+                  internal_candidates+=("$candidate_id")
+                else
+                  other_candidates+=("$candidate_id")
+                fi
+              done < <(jq -r '.data[].id' <<< "$tester_response")
+
+              candidate_ids=("''${internal_candidates[@]}" "''${other_candidates[@]}")
+              tester_id=""
+              group_link="$(jq -nc --arg id "$group_id" '{data:[{type:"betaGroups",id:$id}]}')"
+              for candidate_id in "''${candidate_ids[@]}"; do
+                candidate_groups="$(asc_request GET "/v1/betaTesters/$candidate_id/relationships/betaGroups?limit=200")"
+                if jq -e --arg id "$group_id" '.data[] | select(.id == $id)' <<< "$candidate_groups" >/dev/null; then
+                  tester_id="$candidate_id"
+                  echo "$tester_email is already in the Hunger internal group."
+                  break
+                fi
+
+                assignment_error="$(mktemp)"
+                if asc_request POST "/v1/betaTesters/$candidate_id/relationships/betaGroups" "$group_link" >/dev/null 2>"$assignment_error"; then
+                  rm -f "$assignment_error"
+                  tester_id="$candidate_id"
+                  echo "Added $tester_email to the Hunger internal group."
+                  break
+                fi
+                rm -f "$assignment_error"
+              done
+              if [[ -z "$tester_id" ]]; then
+                create_response=""
+                create_error="$(mktemp)"
+                if create_response="$(asc_request POST '/v1/betaTesters' "$create_body" 2>"$create_error")"; then
+                  rm -f "$create_error"
+                  tester_id="$(jq -r '.data.id' <<< "$create_response")"
+                  echo "Created a Hunger-scoped internal beta tester for $tester_email."
+                else
+                  rm -f "$create_error"
+                  jq -r '.errors[]? | "Apple: \(.code) — \(.detail)"' <<< "$create_response" >&2
+                  echo "Apple rejected every existing and new TestFlight identity for $tester_email." >&2
+                  echo "Add this user once in App Store Connect → TestFlight → Internal → Invite Testers, then rerun the command." >&2
+                  exit 2
+                fi
+              fi
+            fi
+
+            group_testers="$(asc_request GET "/v1/betaGroups/$group_id/betaTesters?limit=200")"
+            if ! jq -e --arg id "$tester_id" '.data[] | select(.id == $id)' <<< "$group_testers" >/dev/null; then
+              echo "Apple did not confirm $tester_email in the Hunger internal group." >&2
+              exit 1
+            fi
+            group_builds="$(asc_request GET "/v1/betaGroups/$group_id/builds?limit=200")"
+            testing_builds="$(jq '[.data[] | select(.attributes.processingState == "VALID")] | length' <<< "$group_builds")"
+            printf 'internal_tester=%s\nroles=%s\nvalid_group_builds=%s\n' "$tester_email" "$user_roles" "$testing_builds"
+          '';
+        };
+
         iosTestflightFinalize = pkgs.writeShellApplication {
           name = "hunger-ios-testflight-finalize";
           runtimeInputs = commonInputs;
@@ -900,6 +1018,7 @@
           ios-testflight-configure = flake-utils.lib.mkApp { drv = iosTestflightConfigure; };
           ios-testflight-preflight = flake-utils.lib.mkApp { drv = iosTestflightPreflight; };
           ios-testflight-bootstrap = flake-utils.lib.mkApp { drv = iosTestflightBootstrap; };
+          ios-testflight-add-tester = flake-utils.lib.mkApp { drv = iosTestflightAddTester; };
           ios-testflight-finalize = flake-utils.lib.mkApp { drv = iosTestflightFinalize; };
           ios-testflight-release = flake-utils.lib.mkApp { drv = iosTestflightRelease; };
         };
