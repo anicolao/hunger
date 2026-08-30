@@ -13,6 +13,10 @@ test('browser reminders save an exact in-app prompt without promising background
   await page.goto('/settings');
   await expect(page.getByText(/Week 1 · Up to two/)).toBeVisible();
   await page.getByLabel('Morning').check();
+  const morningSwitch = page.getByLabel('Morning').locator('xpath=following-sibling::span');
+  await expect(morningSwitch).toHaveCSS('width', '51px');
+  await expect(morningSwitch).toHaveCSS('height', '31px');
+  await expect(morningSwitch).toHaveCSS('background-color', 'rgb(52, 199, 89)');
   await expect(page.getByRole('button', { name: 'Use in-app reminders' })).toBeEnabled();
   await page.getByRole('button', { name: 'Use in-app reminders' }).click();
 
@@ -20,6 +24,7 @@ test('browser reminders save an exact in-app prompt without promising background
     description: 'A user-selected window becomes an in-app prompt with an explicit capability limit',
     verifications: [
       { spec: 'The adapter is triggered only after a window is selected', check: async () => expect(page.getByLabel('Morning')).toBeChecked() },
+      { spec: 'Reminder choices retain checkbox semantics in an iOS-sized switch', check: async () => expect(morningSwitch).toHaveCSS('width', '51px') },
       { spec: 'The app says it cannot promise delivery while closed', check: async () => expect(page.getByRole('status')).toHaveText('Saved as an in-app prompt. This browser cannot promise a reminder while the app is closed.') },
       { spec: 'Pause is available and no native scheduling claim is rendered', check: async () => { await expect(page.getByRole('button', { name: 'Pause reminders' })).toBeVisible(); await expect(page.getByText(/notification scheduled|will notify you/i)).toHaveCount(0); } }
     ]

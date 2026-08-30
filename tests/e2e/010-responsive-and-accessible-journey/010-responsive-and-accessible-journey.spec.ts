@@ -20,7 +20,7 @@ test('the primary journey reflows and remains operable by keyboard', async ({ pa
   await press(page.getByRole('button', { name: 'Begin' }));
   const onboardingRadio = page.getByRole('radio', { name: '4, Early hunger' });
   await onboardingRadio.focus(); await onboardingRadio.press('Space');
-  await press(page.getByRole('button', { name: 'I understand' }));
+  await press(page.getByRole('button', { name: 'Continue' }));
   await expect(page.getByRole('heading', { name: 'Small moments become patterns' })).toBeFocused();
   await press(page.getByRole('button', { name: 'Continue' }));
   await expect(page.getByRole('heading', { name: 'Private by default' })).toBeFocused();

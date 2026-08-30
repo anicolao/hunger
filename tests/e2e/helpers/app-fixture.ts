@@ -14,8 +14,7 @@ export async function activateProgram(page: Page) {
   await expect(page.locator('[data-status]')).toHaveAttribute('data-status', 'ready');
   await page.getByRole('button', { name: 'Begin' }).click();
   await expect(page.getByRole('heading', { name: 'One scale, every time' })).toBeVisible();
-  await page.getByRole('radio', { name: '4, Early hunger' }).check();
-  await page.getByRole('button', { name: 'I understand' }).click();
+  await page.getByRole('button', { name: 'Continue' }).click();
   await expect(page.getByRole('heading', { name: 'Small moments become patterns' })).toBeVisible();
   await page.getByRole('button', { name: 'Continue' }).click();
   await expect(page.getByRole('heading', { name: 'Private by default' })).toBeVisible();

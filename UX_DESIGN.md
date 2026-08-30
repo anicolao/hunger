@@ -183,9 +183,10 @@ closing before activation preserves no partial personal record.
   - `5` Neutral
   - `10` Painfully full
 - Body: **Numbers describe a moment. They are not grades.**
-- Require one exploratory selection so the user hears/reads the associated
-  phrase.
-- Primary action: **I understand**
+- Label the scale **Try the scale (optional)** and state that this is practice,
+  not a check-in, and that no choice on the screen is saved.
+- A user may explore a phrase or continue without choosing a sensation.
+- Primary action: **Continue**
 
 #### Screen 3 — How learning works
 
@@ -326,9 +327,12 @@ Use a single explanatory card:
 - Heading: **Still learning**
 - Dynamic body: **_n_ more paired check-in(s) will help compare where you
   started and finished.**
-- Progress label such as **2 of 4 paired**.
-- Secondary explanation: **A before and after check-in from the same eating
-  moment.**
+- Progress label such as **1 of 5 insight steps** immediately after activation.
+- Count completed onboarding as the first step, followed by four paired eating
+  moments. This makes initial progress 20% without creating a synthetic episode
+  or weakening the four-pair evidence gate.
+- Secondary explanation identifies onboarding as complete and defines each
+  remaining step as a before and after check-in from the same eating moment.
 
 Do not show generic advice under an “Insight” heading.
 
@@ -736,6 +740,8 @@ no upload service.
 Before permission, explain which window will be scheduled. If only in-app
 reminders are possible, state **Browser reminders may only appear while the app
 is open.** Do not display a native-success confirmation on unsupported web.
+Render reminder-window checkboxes as iOS-style switches while preserving their
+native checkbox semantics, labels, keyboard behavior, and 44-point hit areas.
 
 ### Storage migration
 

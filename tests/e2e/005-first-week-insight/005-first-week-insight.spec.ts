@@ -32,7 +32,7 @@ test('the fourth paired episode unlocks an evidence-backed early observation', a
         spec: 'The exact remaining evidence and paired definition are visible',
         check: async () => {
           await expect(page.getByRole('heading', { name: /1 more paired check-in/ })).toBeVisible();
-          await expect(page.getByText('3 of 4 paired')).toBeVisible();
+          await expect(page.getByText('4 of 5 insight steps')).toBeVisible();
           await expect(page.getByText(/before and after check-in from the same eating moment/)).toBeVisible();
         }
       },
@@ -88,7 +88,7 @@ test('the fourth paired episode unlocks an evidence-backed early observation', a
   await page.getByRole('dialog').getByRole('button', { name: 'Delete this check-in' }).click();
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Today');
   await page.goto('/insights');
-  await expect(page.getByText('3 of 4 paired')).toBeVisible();
+  await expect(page.getByText('4 of 5 insight steps')).toBeVisible();
   await expect(page.getByText('Early observation')).toHaveCount(0);
   steps.generateDocs();
 });

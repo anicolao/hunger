@@ -92,12 +92,8 @@ test('application shell activates the local-first 30-day program', async ({ page
   });
 
   await page.getByRole('button', { name: 'Begin' }).click();
-  const levelThree = page.getByRole('radio', { name: '3, Clear hunger' });
-  await levelThree.check();
-  await levelThree.press('ArrowRight');
-  await expect(page.getByRole('radio', { name: '4, Early hunger' })).toBeChecked();
   await steps.step('one-unified-scale', {
-    description: 'The user explores one keyboard-operable scale',
+    description: 'Scale education is clearly separate from a real check-in',
     verifications: [
       {
         spec: 'The scale retains urgent hunger, neutral, and painful fullness anchors',
@@ -108,11 +104,11 @@ test('application shell activates the local-first 30-day program', async ({ page
         }
       },
       {
-        spec: 'Arrow keys change the native radio selection and announce its phrase',
+        spec: 'The optional practice is explicitly not saved as a check-in',
         check: async () => {
-          await expect(page.getByRole('radio', { name: '4, Early hunger' })).toBeChecked();
-          await expect(page.getByText('4 · Early hunger')).toBeVisible();
-          await expect(page.getByText('Subtle body cues or more thoughts of food.')).toBeVisible();
+          await expect(page.getByText('Practice only—not a check-in.')).toBeVisible();
+          await expect(page.getByText(/continue without choosing.*Nothing on this screen is saved/)).toBeVisible();
+          await expect(page.locator('input[type="radio"]:checked')).toHaveCount(0);
         }
       },
       {
@@ -123,7 +119,7 @@ test('application shell activates the local-first 30-day program', async ({ page
     ]
   });
 
-  await page.getByRole('button', { name: 'I understand' }).click();
+  await page.getByRole('button', { name: 'Continue' }).click();
   await steps.step('learning-loop', {
     description: 'Paired moments lead to evidence-backed patterns',
     verifications: [
@@ -198,6 +194,34 @@ test('application shell activates the local-first 30-day program', async ({ page
   await page.reload();
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Today');
   await expect(page.getByText('Day 1 · Week 1')).toBeVisible();
+
+  await page.getByRole('link', { name: 'Insights' }).click();
+  await steps.step('first-insight-progress', {
+    description: 'Completed onboarding supplies an honest first step toward an insight',
+    verifications: [
+      {
+        spec: 'The initial meter starts at one of five steps, or 20 percent',
+        check: async () => {
+          await expect(page.getByRole('progressbar', { name: 'Progress toward your first insight' })).toHaveAttribute('aria-valuenow', '1');
+          await expect(page.getByText('1 of 5 insight steps')).toBeVisible();
+        }
+      },
+      {
+        spec: 'The completed step is onboarding, while all four evidence pairs remain required',
+        check: async () => {
+          await expect(page.getByText('Completed: learn how insights work.')).toBeVisible();
+          await expect(page.getByText(/4 more paired check-ins/)).toBeVisible();
+        }
+      },
+      {
+        spec: 'No synthetic eating moment or personalized claim was created',
+        check: async () => {
+          await expect(page.getByText(/Your 0 paired check-ins/)).toHaveCount(0);
+          await expect(page.getByText('Early observation')).toHaveCount(0);
+        }
+      }
+    ]
+  });
 
   steps.generateDocs();
 });

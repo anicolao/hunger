@@ -246,6 +246,11 @@ Before eligibility, show progress truthfully: “Two more paired check-ins will
 help compare where you started and finished.” Never fill the empty state with
 generic advice disguised as personalization.
 
+Present first-insight progress as five steps: learning how insights work during
+onboarding, then four paired eating moments. Onboarding supplies the honest
+first 20% of progress but never creates an eating episode; personalized claims
+still require four complete pairs.
+
 ### 7.6 Experiment
 
 Only one experiment can be active. The user may accept, skip, replace, pause,

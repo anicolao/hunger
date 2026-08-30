@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { EatingEpisode } from '../data/schema';
 import {
+  firstInsightProgress,
   generateEarlyInsights,
   median,
   pairedEpisodes,
@@ -43,6 +44,15 @@ describe('early insight engine', () => {
     const episodes = [episode('1', 3, 6), episode('2', 4, null, 'unfinished'), episode('3', 4, 7, 'open')];
     expect(pairedEpisodes(episodes).map(({ id }) => id)).toEqual(['1']);
     expect(remainingForFirstInsight(episodes)).toBe(3);
+  });
+
+  it('counts completed onboarding as the first of five honest insight steps', () => {
+    expect(firstInsightProgress([])).toEqual({ completed: 1, total: 5, percent: 20 });
+    expect(firstInsightProgress([episode('1', 3, 6), episode('2', 4, 7)])).toEqual({
+      completed: 3,
+      total: 5,
+      percent: 60
+    });
   });
 
   it('suppresses every personalized claim below four pairs', () => {

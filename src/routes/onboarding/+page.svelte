@@ -93,12 +93,19 @@
         <p class="eyebrow">One scale</p>
         <h1 bind:this={heading} tabindex="-1">One scale, every time</h1>
         <p class="body">Numbers describe a moment. They are not grades.</p>
-        <SensationScale value={selectedLevel} onselect={(level) => (selectedLevel = level)} />
+        <p class="practice-note">
+          <strong>Practice only—not a check-in.</strong>
+          Try a number to learn the scale, or continue without choosing. Nothing on this screen is saved.
+        </p>
+        <SensationScale
+          value={selectedLevel}
+          legend="Try the scale (optional)"
+          name="onboarding-practice-level"
+          onselect={(level) => (selectedLevel = level)}
+        />
         <div class="actions">
           <button class="back" onclick={() => moveTo(1)}>Back</button>
-          <button class="primary" disabled={selectedLevel === null} onclick={() => moveTo(3)}>
-            I understand
-          </button>
+          <button class="primary" onclick={() => moveTo(3)}>Continue</button>
         </div>
       </section>
     {:else if step === 3}
@@ -229,6 +236,20 @@
 
   .body {
     margin: 16px 0 0;
+  }
+
+  .practice-note {
+    margin: 16px 0 20px;
+    padding: 12px 14px;
+    border-radius: 12px;
+    color: var(--ink-muted);
+    background: var(--primary-soft);
+    line-height: 1.4;
+  }
+
+  .practice-note strong {
+    display: block;
+    color: var(--ink);
   }
 
   .illustration {
