@@ -150,10 +150,11 @@ Deliver the first user-facing native capability:
 - cancel reminders on pause, completion, or Delete Everything; and
 - request no APNs registration or remote-notification entitlement.
 
-Tracer bullet: `NativeReminderUITests` enables reminders from Settings,
-observes the permission result through a deterministic test notification
-center, replaces a schedule twice without duplicates, opens the app from a
-notification into Today, pauses, and proves all requests are cancelled.
+Tracer bullet: `NativeReminderUITests` chooses a reminder window during
+onboarding, observes the permission result through a deterministic test
+notification center, verifies the choice in Settings, then pauses and proves
+all requests are cancelled. Unit coverage retains replacement-without-
+duplicates and notification-open routing checks.
 
 Unit proof: every authorization state, future-state fallback, time-window
 validation, stable identifiers, cadence mapping, idempotent replacement,

@@ -182,7 +182,9 @@ Onboarding has four short steps:
 
 Activation creates a `Program` and opens Today. Account creation, weight,
 height, calorie target, diet goal, demographic survey, and notification
-permission are not activation requirements.
+permission are not required: **Not now** always completes activation without a
+prompt. If the user chooses reminder windows, the labelled activation action
+requests permission and schedules exactly those windows before opening Today.
 
 ### 7.2 Before eating
 
