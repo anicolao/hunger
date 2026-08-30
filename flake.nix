@@ -446,6 +446,19 @@
               echo "Signed archive metadata does not match the intended release." >&2
               exit 1
             fi
+            ipad_orientations="$(/usr/libexec/PlistBuddy -c 'Print :UISupportedInterfaceOrientations~ipad' "$info_plist")"
+            required_ipad_orientations=(
+              UIInterfaceOrientationPortrait
+              UIInterfaceOrientationPortraitUpsideDown
+              UIInterfaceOrientationLandscapeLeft
+              UIInterfaceOrientationLandscapeRight
+            )
+            for required_orientation in "''${required_ipad_orientations[@]}"; do
+              if ! rg -q "^ *$required_orientation$" <<< "$ipad_orientations"; then
+                echo "Signed archive is missing required iPad orientation: $required_orientation" >&2
+                exit 1
+              fi
+            done
             if [[ ! -f "$app_root/PrivacyInfo.xcprivacy" || ! -f "$app_root/WebApp/asset-manifest.json" || ! -f "$app_root/Assets.car" ]]; then
               echo "Signed archive is missing privacy, offline web, or app-icon assets." >&2
               exit 1
