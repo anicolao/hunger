@@ -1,6 +1,7 @@
 <script lang="ts">
   import { base } from '$app/paths';
   import type { Snippet } from 'svelte';
+  import gearIcon from '$lib/assets/gear.svg?url';
   import Brand from './Brand.svelte';
 
   let {
@@ -15,7 +16,7 @@
     { id: 'today' as const, label: 'Today', href: `${base}/`, icon: '○' },
     { id: 'insights' as const, label: 'Insights', href: `${base}/insights`, icon: '◇' },
     { id: 'profile' as const, label: 'Profile', href: `${base}/profile`, icon: '◒' },
-    { id: 'settings' as const, label: 'Settings', href: `${base}/settings`, icon: '⚙' }
+    { id: 'settings' as const, label: 'Settings', href: `${base}/settings`, icon: gearIcon }
   ];
 </script>
 
@@ -28,9 +29,14 @@
         <a
           class:active={active === destination.id}
           href={destination.href}
+          aria-label={destination.label}
           aria-current={active === destination.id ? 'page' : undefined}
         >
-          <span aria-hidden="true">{destination.icon}</span>
+          {#if destination.id === 'settings'}
+            <span class="svg-icon" data-icon="settings" style={`--icon: url("${destination.icon}")`} aria-hidden="true"></span>
+          {:else}
+            <span class="text-icon" aria-hidden="true">{destination.icon}</span>
+          {/if}
           {destination.label}
         </a>
       {/each}
@@ -41,19 +47,23 @@
   <div class="content-frame">
     <header class="mobile-header">
       <Brand compact />
-      <a class="settings-link" href={`${base}/settings`} aria-label="Settings">⚙</a>
     </header>
     <main id="main-content">
       {@render children()}
     </main>
     <nav class="bottom-nav" aria-label="Primary">
-      {#each destinations.slice(0, 3) as destination}
+      {#each destinations as destination}
         <a
           class:active={active === destination.id}
           href={destination.href}
+          aria-label={destination.label}
           aria-current={active === destination.id ? 'page' : undefined}
         >
-          <span aria-hidden="true">{destination.icon}</span>
+          {#if destination.id === 'settings'}
+            <span class="svg-icon" data-icon="settings" style={`--icon: url("${destination.icon}")`} aria-hidden="true"></span>
+          {:else}
+            <span class="text-icon" aria-hidden="true">{destination.icon}</span>
+          {/if}
           <small>{destination.label}</small>
         </a>
       {/each}
@@ -88,7 +98,7 @@
 
   .content-frame {
     min-height: 100vh;
-    padding-bottom: calc(80px + env(safe-area-inset-bottom));
+    padding-bottom: calc(80px + var(--shell-safe-area-bottom));
   }
 
   .mobile-header {
@@ -97,19 +107,21 @@
     border-bottom: 1px solid var(--border);
     display: flex;
     align-items: center;
-    justify-content: space-between;
     background: color-mix(in srgb, var(--canvas) 94%, transparent);
   }
 
-  .settings-link {
-    width: 48px;
-    height: 48px;
-    border-radius: 12px;
-    display: grid;
-    place-items: center;
-    color: var(--ink);
-    font-size: 20px;
-    text-decoration: none;
+  .svg-icon {
+    width: 20px;
+    height: 20px;
+    display: block;
+    background: currentColor;
+    -webkit-mask: var(--icon) center / contain no-repeat;
+    mask: var(--icon) center / contain no-repeat;
+  }
+
+  .text-icon {
+    min-width: 20px;
+    text-align: center;
   }
 
   main {
@@ -124,12 +136,12 @@
     right: 0;
     bottom: 0;
     left: 0;
-    height: calc(64px + env(safe-area-inset-bottom));
-    padding: 4px max(12px, env(safe-area-inset-right)) env(safe-area-inset-bottom)
+    height: calc(64px + var(--shell-safe-area-bottom));
+    padding: 4px max(12px, env(safe-area-inset-right)) var(--shell-safe-area-bottom)
       max(12px, env(safe-area-inset-left));
     border-top: 1px solid var(--border);
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(4, 1fr);
     background: color-mix(in srgb, var(--surface) 96%, transparent);
   }
 

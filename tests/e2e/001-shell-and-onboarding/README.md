@@ -12,7 +12,7 @@ A new user can understand the promise and unified scale, choose private reminder
 - [x] The primary promise avoids calorie tracking
 - [x] The unified scale keeps its direction and non-judgmental framing
 - [x] The page explains the complete Notice, Understand, Experiment loop
-- [x] Privacy is visible and the deterministic build marker is present
+- [x] Privacy is visible without exposing implementation details
 
 ## Onboarding introduces one calm idea at a time
 
@@ -59,12 +59,22 @@ A new user can understand the promise and unified scale, choose private reminder
 **Verifications:**
 
 - [x] Today uses elapsed program language with no quota or streak
-- [x] The next action, Week 1 focus, privacy, and app navigation are available
+- [x] The next action, Week 1 focus, privacy, and four app destinations are available
 - [x] Activation requests permission and schedules only the selected window
+
+## Settings owns the build identity and the fourth navigation tab
+
+![Settings owns the build identity and the fourth navigation tab](./screenshots/006-settings-navigation-and-build-phone-darwin.png)
+
+**Verifications:**
+
+- [x] The selected reminder window persists in Settings
+- [x] The deterministic build identifier appears only in Settings
+- [x] Settings uses the bundled SVG gear and no gear emoji
 
 ## Completed onboarding supplies an honest first step toward an insight
 
-![Completed onboarding supplies an honest first step toward an insight](./screenshots/006-first-insight-progress-phone-darwin.png)
+![Completed onboarding supplies an honest first step toward an insight](./screenshots/007-first-insight-progress-phone-darwin.png)
 
 **Verifications:**
 

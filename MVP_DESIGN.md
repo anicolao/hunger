@@ -659,7 +659,7 @@ Playwright scenario, reviewed phone/desktop screenshots, and documentation.
 ### Slice 1 — Foundation and onboarding
 
 - Scaffold static SvelteKit, Bun, strict TypeScript, fonts, design tokens,
-  manifest, build marker, Nix app tools, verifier, hooks, and CI.
+  manifest, a Settings-only build marker, Nix app tools, verifier, hooks, and CI.
 - Add typed IndexedDB repository and closed-by-default external network policy.
 - Implement onboarding and Today empty state.
 - Prove `001-shell-and-onboarding`.

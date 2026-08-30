@@ -121,6 +121,11 @@
           <aside class="support-card"><h3>Would a pause or extra support feel useful?</h3><p>Several recent check-ins ended with strong discomfort. You can pause this guide, change how you use it, or talk with a qualified health professional. This app cannot diagnose what is happening.</p><div class="actions"><button onclick={pauseProgram}>Pause the program</button><button class="secondary" onclick={dismissSupport}>Dismiss this note</button></div></aside>
         {:else}<p>Pause whenever check-ins feel unhelpful. For medical or eating concerns, a qualified health professional can offer individual support.</p>{/if}
       </section>
+
+      <footer class="build-information">
+        <span>Learn Your Appetite</span>
+        <span data-testid="build-marker">Build {import.meta.env.VITE_GIT_HASH}</span>
+      </footer>
     </div>
   </AppShell>
 
@@ -155,4 +160,5 @@
   .confirm { min-height: 48px; margin: 20px 0; display: flex; align-items: center; gap: 10px; }
   .confirm input[type='checkbox'] { width: 46px; height: 46px; margin: 0; }
   .danger-button { color: white; background: var(--danger); }
+  .build-information { padding-top: 24px; border-top: 1px solid var(--border); display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 16px; color: var(--ink-muted); font-size: 12px; }
 </style>

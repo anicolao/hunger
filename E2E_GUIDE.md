@@ -165,7 +165,9 @@ viewport without an accidental nested scroll region.
 
 - First scaffold increment: load the responsive public landing state and prove
   the 30-day promise, unified scale direction, learning loop, local-first
-  framing, keyboard focus, target sizes, and deterministic build marker.
+  framing, keyboard focus, and target sizes. After activation, prove the
+  deterministic build marker appears only in Settings and is also present in
+  the packaged iOS application.
 - Keep this scenario and its walkthrough as onboarding is implemented; extend
   it rather than replacing the landing tracer bullet.
 - Load a clean install and show the 30-day promise.

@@ -152,6 +152,13 @@ extension WebAppController: WKNavigationDelegate {
     }
 
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+        let bottomInset = max(
+            webView.safeAreaInsets.bottom,
+            webView.window?.safeAreaInsets.bottom ?? 0
+        )
+        webView.evaluateJavaScript(
+            "document.documentElement.style.setProperty('--shell-safe-area-bottom', '\(bottomInset)px')"
+        )
         if let url = webView.url,
            NavigationPolicy.decision(for: url, opensNewWindow: false) == .allow {
             lastSafeURL = url

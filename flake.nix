@@ -1083,7 +1083,9 @@
               exit 1
             fi
 
-            VITE_NATIVE_SHELL=ios VITE_GIT_HASH="''${VITE_GIT_HASH:-native}" bun run build
+            native_build_hash="''${VITE_GIT_HASH:-$(git rev-parse --short=8 HEAD)}"
+            native_build_hash="''${native_build_hash:0:8}"
+            VITE_NATIVE_SHELL=ios VITE_GIT_HASH="$native_build_hash" bun run build
 
             rm -rf "$resource_root"
             mkdir -p "$resource_root"
@@ -1095,6 +1097,14 @@
 
             if rg -q '__HUNGER_E2E__|data-e2e-fixture|serviceWorker\.register' "$resource_root"; then
               echo "Development or service-worker code leaked into the native bundle." >&2
+              exit 1
+            fi
+            if ! rg -q --fixed-strings "$native_build_hash" "$resource_root"; then
+              echo "Native bundle does not contain its source commit identifier." >&2
+              exit 1
+            fi
+            if rg -q 'Build (native|development)' "$resource_root"; then
+              echo "Native bundle contains a placeholder build identifier." >&2
               exit 1
             fi
 
