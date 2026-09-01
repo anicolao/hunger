@@ -24,6 +24,19 @@ final class NativeBridgeTests: XCTestCase {
         )
     }
 
+    func testAcceptsOnlyAnEmptyApplicationReadyHandshake() throws {
+        var body = validBody()
+        body["command"] = "app.ready"
+        XCTAssertEqual(
+            try NativeBridgeValidator.decode(body: body, source: trusted),
+            NativeBridgeRequest(id: "request-123", command: .appReady, payload: .empty)
+        )
+        body["payload"] = ["route": "today"]
+        XCTAssertThrowsError(try NativeBridgeValidator.decode(body: body, source: trusted)) {
+            XCTAssertEqual($0 as? NativeBridgeValidationError, .invalidPayload)
+        }
+    }
+
     func testRejectsForeignAndSubframeSources() {
         let sources = [
             NativeBridgeSource(isMainFrame: false, scheme: "hunger-app", host: "app", port: 0),

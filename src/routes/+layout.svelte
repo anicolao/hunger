@@ -7,6 +7,7 @@
   import {
     installNativeLifecycleBoundary,
     nativeCapabilities,
+    signalNativeAppReady,
     type NativeLifecycleEvent
   } from '$lib/platform/native';
   import { reconcileStoredReminders } from '$lib/platform/reminders';
@@ -31,7 +32,7 @@
     void getRepository().getSettings().catch(showStorageRecovery);
     if (import.meta.env.VITE_NATIVE_SHELL === 'ios') {
       installNativeLifecycleBoundary();
-      void nativeCapabilities();
+      void nativeCapabilities().then(() => signalNativeAppReady());
       const reconcileOnForeground = (event: Event) => {
         const lifecycle = event as CustomEvent<NativeLifecycleEvent>;
         if (lifecycle.detail.reason === 'foreground') {

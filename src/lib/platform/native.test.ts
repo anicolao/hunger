@@ -4,7 +4,8 @@ import {
   installNativeLifecycleBoundary,
   nativeCapabilities,
   nativeRequest,
-  resetNativeCapabilityCacheForTests
+  resetNativeCapabilityCacheForTests,
+  signalNativeAppReady
 } from './native';
 
 describe('native platform boundary', () => {
@@ -68,5 +69,14 @@ describe('native platform boundary', () => {
     resetNativeCapabilityCacheForTests();
     vi.stubGlobal('window', {});
     expect(await completeNativeDelete()).toBe(false);
+  });
+
+  it('signals application readiness only after the command is negotiated', async () => {
+    const request = vi.fn(async (command: string) => command === 'capabilities.get'
+      ? { version: 1, platform: 'ios', commands: ['app.ready'] }
+      : { ready: true });
+    vi.stubGlobal('window', { hungerNative: { request } });
+    expect(await signalNativeAppReady()).toBe(true);
+    expect(request).toHaveBeenLastCalledWith('app.ready', {});
   });
 });
