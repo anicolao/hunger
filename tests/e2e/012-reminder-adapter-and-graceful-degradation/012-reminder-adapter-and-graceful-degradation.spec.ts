@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test';
 import { blockExternalRequests } from '../helpers/app-fixture';
 import { buildHistoryFixture } from '../helpers/fixture-builder';
 import { TestStepHelper } from '../helpers/test-step-helper';
+import { initialSettings } from '$lib/data/schema';
 
 declare global {
   interface Window {
@@ -14,6 +15,7 @@ test('browser reminder preferences remain honest about unavailable background de
   steps.setMetadata('Reminder adapter and graceful degradation', 'Reminder settings taper with the program and accurately describe browser capability.');
   await blockExternalRequests(context);
   const fixture = buildHistoryFixture(2, [{ before: 3, after: 6, localHour: 12 }]);
+  fixture.settings = { ...initialSettings };
   await page.goto('/'); await expect(page.locator('html')).toHaveAttribute('data-e2e-fixture', 'ready');
   await page.evaluate(async (value) => window.__HUNGER_E2E__?.importFixture(value), fixture);
   await page.goto('/settings');
