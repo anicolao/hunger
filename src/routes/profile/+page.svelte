@@ -10,6 +10,7 @@
   import { buildExport, exportHtml, exportJson, shareExport } from '$lib/platform/export';
   import { runtime } from '$lib/platform/runtime';
   import { reconcileStoredReminders } from '$lib/platform/reminders';
+  import { reconcileProgramLifecycle } from '$lib/platform/program';
 
   let program = $state<Program | null>(null);
   let episodes = $state<EatingEpisode[]>([]);
@@ -21,18 +22,10 @@
 
   onMount(async () => {
     const repository = getRepository();
-    program = await repository.getProgram();
+    program = await reconcileProgramLifecycle(runtime.now(), repository);
     if (!program) return goto(`${base}/`);
-    progress = getProgramProgress(program.startedAt, runtime.now());
-    if (progress.complete && program.status !== 'complete') {
-      program = { ...program, status: 'complete' };
-      await repository.append({
-        type: 'program/status-changed',
-        occurredAt: runtime.now(),
-        payload: { program }
-      });
-      await reconcileStoredReminders(runtime.now());
-    }
+    progress = getProgramProgress(program.startedAt, runtime.now(), program.timeZone);
+    if (progress.complete) await reconcileStoredReminders(runtime.now());
     episodes = await repository.listEpisodes(program.id);
     experiments = await repository.listExperiments(program.id);
     profile = buildProfile(program, episodes, experiments, runtime.now());

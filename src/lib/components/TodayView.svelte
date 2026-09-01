@@ -4,7 +4,7 @@
   import { onMount } from 'svelte';
   import { getRepository } from '$lib/data/repository';
   import type { EatingEpisode } from '$lib/data/schema';
-  import { getProgramProgress } from '$lib/domain/progression';
+  import { getProgramProgress, sameLocalCalendarDay } from '$lib/domain/progression';
   import { getSensationLevel } from '$lib/domain/scale';
   import { isOpenEpisodeStale, markEpisodeUnfinished } from '$lib/domain/episodes';
   import type { Program } from '$lib/data/schema';
@@ -12,13 +12,13 @@
   import { reconcileStoredReminders } from '$lib/platform/reminders';
 
   let { program, now = runtime.now() }: { program: Program; now?: number } = $props();
-  let progress = $derived(getProgramProgress(program.startedAt, now));
+  let progress = $derived(getProgramProgress(program.startedAt, now, program.timeZone));
   let episodes = $state<EatingEpisode[]>([]);
   let loaded = $state(false);
   let openEpisode = $derived(episodes.find((episode) => episode.status === 'open') ?? null);
   let todayCount = $derived(
     episodes.filter(
-      (episode) => new Date(episode.startedAt).toDateString() === new Date(now).toDateString()
+      (episode) => sameLocalCalendarDay(episode.startedAt, now, program.timeZone)
     ).length
   );
 
@@ -71,12 +71,19 @@
       <a class="primary-button" href={`${base}/check-in/after?episode=${openEpisode.id}`}>How do you feel now?</a>
       <button class="unfinished-button" onclick={markUnfinished}>Mark unfinished</button>
     </section>
+  {:else if program.status === 'paused'}
+    <section class="notice-card paused" aria-labelledby="notice-title">
+      <p class="eyebrow">Check-ins paused</p>
+      <h2 id="notice-title">Your history is still here.</h2>
+      <p>Resume whenever brief check-ins feel useful again. The program calendar continues without a streak.</p>
+      <a class="primary-button" href={`${base}/settings`}>Review program settings</a>
+    </section>
   {:else}
     <section class="notice-card" aria-labelledby="notice-title">
       <p class="eyebrow">What do you notice?</p>
-      <h2 id="notice-title">Begin with how your body feels.</h2>
+      <h2 id="notice-title">{program.status === 'complete' ? 'Continue in your own way.' : 'Begin with how your body feels.'}</h2>
       <p>{progress.prompt}</p>
-      <a class="primary-button" href={`${base}/check-in/new`}>Check in before eating</a>
+      <a class="primary-button" href={`${base}/check-in/new`}>{program.status === 'complete' ? 'Start an occasional check-in' : 'Check in before eating'}</a>
     </section>
   {/if}
 

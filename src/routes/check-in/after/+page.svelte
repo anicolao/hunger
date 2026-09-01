@@ -17,6 +17,7 @@
   import { getSensationLevel } from '$lib/domain/scale';
   import { reconcileStoredReminders } from '$lib/platform/reminders';
   import { runtime } from '$lib/platform/runtime';
+  import { reconcileProgramLifecycle } from '$lib/platform/program';
 
   let program = $state<Program | null>(null);
   let episode = $state<EatingEpisode | null>(null);
@@ -30,7 +31,7 @@
 
   onMount(async () => {
     const repository = getRepository();
-    program = await repository.getProgram();
+    program = await reconcileProgramLifecycle(runtime.now(), repository);
     const episodeId = page.url.searchParams.get('episode');
     episode = episodeId ? await repository.getEpisode(episodeId) : null;
     if (!program) return goto(`${base}/onboarding`);

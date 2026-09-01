@@ -8,9 +8,37 @@ export interface ProgramProgress {
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
-export function getProgramProgress(startedAt: number, now: number): ProgramProgress {
-  const elapsed = Math.max(0, now - startedAt);
-  const day = Math.min(30, Math.floor(elapsed / DAY_MS) + 1);
+function localDateParts(timestamp: number, timeZone: string): [number, number, number] {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  }).formatToParts(timestamp);
+  const value = (type: Intl.DateTimeFormatPartTypes) =>
+    Number(parts.find((part) => part.type === type)?.value);
+  return [value('year'), value('month'), value('day')];
+}
+
+export function localCalendarDay(timestamp: number, timeZone: string): number {
+  const [year, month, day] = localDateParts(timestamp, timeZone);
+  return Math.floor(Date.UTC(year, month - 1, day) / DAY_MS);
+}
+
+export function sameLocalCalendarDay(left: number, right: number, timeZone: string): boolean {
+  return localCalendarDay(left, timeZone) === localCalendarDay(right, timeZone);
+}
+
+export function getProgramProgress(
+  startedAt: number,
+  now: number,
+  timeZone = 'UTC'
+): ProgramProgress {
+  const elapsedDays = Math.max(
+    0,
+    localCalendarDay(now, timeZone) - localCalendarDay(startedAt, timeZone)
+  );
+  const day = Math.min(30, elapsedDays + 1);
   const week = Math.min(4, Math.floor((day - 1) / 7) + 1) as 1 | 2 | 3 | 4;
 
   const stages = {
@@ -32,5 +60,5 @@ export function getProgramProgress(startedAt: number, now: number): ProgramProgr
     }
   };
 
-  return { day, week, ...stages[week], complete: now >= startedAt + 30 * DAY_MS };
+  return { day, week, ...stages[week], complete: elapsedDays >= 29 };
 }

@@ -5,12 +5,14 @@
   import TodayView from '$lib/components/TodayView.svelte';
   import { getRepository } from '$lib/data/repository';
   import type { Program } from '$lib/data/schema';
+  import { reconcileProgramLifecycle } from '$lib/platform/program';
+  import { runtime } from '$lib/platform/runtime';
 
   let program = $state<Program | null>(null);
   let loaded = $state(false);
 
   onMount(async () => {
-    program = await getRepository().getProgram();
+    program = await reconcileProgramLifecycle(runtime.now());
     loaded = true;
   });
 

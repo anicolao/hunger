@@ -5,7 +5,7 @@
   import AppShell from '$lib/components/AppShell.svelte';
   import ReminderWindowSwitches from '$lib/components/ReminderWindowSwitches.svelte';
   import { getRepository } from '$lib/data/repository';
-  import type { AppSettings, EatingEpisode, Program } from '$lib/data/schema';
+  import { SCHEMA_VERSION, type AppSettings, type EatingEpisode, type Program } from '$lib/data/schema';
   import { getProgramProgress } from '$lib/domain/progression';
   import { reminderCadence } from '$lib/domain/reminders';
   import { supportEligible } from '$lib/domain/support';
@@ -13,6 +13,7 @@
   import { completeNativeDelete } from '$lib/platform/native';
   import { getNativeReminderDiagnostics, openNativeNotificationSettings, reconcileStoredReminders, type NativeReminderDiagnostics } from '$lib/platform/reminders';
   import { runtime } from '$lib/platform/runtime';
+  import { reconcileProgramLifecycle } from '$lib/platform/program';
 
   let program = $state<Program | null>(null);
   let episodes = $state<EatingEpisode[]>([]);
@@ -23,6 +24,8 @@
   let deleteDialog = $state<HTMLDialogElement>();
   let deleteConfirmed = $state(false);
   let deleting = $state(false);
+  let restartDialog = $state<HTMLDialogElement>();
+  let restartConfirmed = $state(false);
 
   onMount(() => {
     online = navigator.onLine;
@@ -30,7 +33,7 @@
     addEventListener('online', updateOnline); addEventListener('offline', updateOnline);
     void (async () => {
       const repository = getRepository();
-      program = await repository.getProgram();
+      program = await reconcileProgramLifecycle(runtime.now(), repository);
       if (!program) return goto(`${base}/`);
       episodes = await repository.listEpisodes(program.id);
       settings = await repository.getSettings();
@@ -82,9 +85,9 @@
     reminderDiagnostics = await getNativeReminderDiagnostics();
     reminderMessage = result.explanation;
   }
-  async function pauseProgram() {
+  async function setProgramStatus(status: 'active' | 'paused') {
     if (!program) return;
-    const updated: Program = { ...program, status: 'paused' };
+    const updated: Program = { ...program, status };
     await getRepository().append({
       type: 'program/status-changed',
       occurredAt: runtime.now(),
@@ -93,6 +96,25 @@
     program = updated;
     const result = await reconcileStoredReminders(runtime.now());
     reminderMessage = result.explanation;
+  }
+  async function restartProgram() {
+    if (!program || !restartConfirmed) return;
+    const now = runtime.now();
+    const restarted: Program = {
+      id: runtime.createId(),
+      startedAt: now,
+      timeZone: runtime.timeZone(),
+      status: 'active',
+      onboardingVersion: program.onboardingVersion,
+      schemaVersion: SCHEMA_VERSION
+    };
+    await getRepository().append({
+      type: 'program/started',
+      occurredAt: now,
+      payload: { program: restarted }
+    });
+    await reconcileStoredReminders(now);
+    location.href = `${base}/`;
   }
   async function dismissSupport() { if (settings) await saveSettings({ ...settings, dismissedSupport: true }); }
   async function deleteEverything() {
@@ -107,7 +129,7 @@
 
 <span id="scale" class="scale-anchor" aria-hidden="true"></span>
 {#if program && settings}
-  {@const progress = getProgramProgress(program.startedAt, runtime.now())}
+  {@const progress = getProgramProgress(program.startedAt, runtime.now(), program.timeZone)}
   {@const cadence = reminderCadence(progress.week, settings.remindersPaused)}
   <AppShell active="settings">
     <div class="settings-page" data-status="ready">
@@ -125,7 +147,20 @@
         {#if reminderDiagnostics}<p class="diagnostic" role="status">iOS has {reminderDiagnostics.scheduled} private reminder{reminderDiagnostics.scheduled === 1 ? '' : 's'} pending.</p>{/if}
       </section>
 
-      <section><h2>Scale and program</h2><p>Day {progress.day} of 30 · {progress.focus}. One scale from urgent hunger to painful fullness.</p><a href={`${base}/onboarding?step=scale`}>Review all scale words</a>{#if program.status === 'paused'}<p class="notice">The guided program is paused. Your records remain available.</p>{/if}</section>
+      <section>
+        <h2>Scale and program</h2>
+        <p>Day {progress.day} of 30 · {progress.focus}. One scale from urgent hunger to painful fullness.</p>
+        <a href={`${base}/onboarding?step=scale`}>Review all scale words</a>
+        {#if program.status === 'paused'}
+          <p class="notice">The guided program is paused. Your records remain available and the calendar continues without a streak.</p>
+          <button class="secondary program-action" onclick={() => setProgramStatus('active')}>Resume check-ins</button>
+        {:else if program.status === 'complete'}
+          <p class="notice">The 30-day guide is complete. You can keep occasional check-ins or begin a new program.</p>
+          <button class="secondary program-action" onclick={() => restartDialog?.showModal()}>Start a new 30-day program</button>
+        {:else}
+          <button class="secondary program-action" onclick={() => setProgramStatus('paused')}>Pause check-ins</button>
+        {/if}
+      </section>
 
       <section>
         <h2>Your data</h2><p>{episodes.length} local eating moment{episodes.length === 1 ? '' : 's'}. Storage is not end-to-end encrypted and may be visible to someone with this browser profile.</p>
@@ -135,7 +170,7 @@
       <section>
         <h2>Support</h2>
         {#if supportEligible(episodes) && !settings.dismissedSupport}
-          <aside class="support-card"><h3>Would a pause or extra support feel useful?</h3><p>Several recent check-ins ended with strong discomfort. You can pause this guide, change how you use it, or talk with a qualified health professional. This app cannot diagnose what is happening.</p><div class="actions"><button onclick={pauseProgram}>Pause the program</button><button class="secondary" onclick={dismissSupport}>Dismiss this note</button></div></aside>
+          <aside class="support-card"><h3>Would a pause or extra support feel useful?</h3><p>Several recent check-ins ended with strong discomfort. You can pause this guide, change how you use it, or talk with a qualified health professional. This app cannot diagnose what is happening.</p><div class="actions"><button onclick={() => setProgramStatus('paused')}>Pause the program</button><button class="secondary" onclick={dismissSupport}>Dismiss this note</button></div></aside>
         {:else}<p>Pause whenever check-ins feel unhelpful. For medical or eating concerns, a qualified health professional can offer individual support.</p>{/if}
       </section>
 
@@ -151,6 +186,13 @@
     <h2>Delete everything on this device?</h2><p>This physically removes source events, check-ins, photos, insights, experiments, settings, reminders, and cached app data. It cannot be undone.</p>
     <label class="confirm"><input type="checkbox" bind:checked={deleteConfirmed} />I understand this cannot be undone</label>
     <button class="danger-button" disabled={!deleteConfirmed || deleting} onclick={deleteEverything}>{deleting ? 'Deleting…' : 'Delete everything'}</button>
+  </dialog>
+  <dialog bind:this={restartDialog} onclose={() => restartConfirmed = false}>
+    <form method="dialog"><button class="close" aria-label="Close restart dialog">×</button></form>
+    <h2>Start a new 30-day program?</h2>
+    <p>Your earlier source events and records stay on this device until you delete everything. The new program starts at day 1 with no streak or carried-over claims.</p>
+    <label class="confirm"><input type="checkbox" bind:checked={restartConfirmed} />I understand this starts a new program</label>
+    <button disabled={!restartConfirmed} onclick={restartProgram}>Start new program</button>
   </dialog>
 {:else}<div data-status="loading" aria-live="polite">Opening your private records…</div>{/if}
 
@@ -169,6 +211,7 @@
   button:disabled { opacity: .5; }
   section > a { width: fit-content; margin-top: 12px; color: var(--primary); background: transparent; }
   .notice { margin-top: 14px; padding: 12px; border-radius: 10px; color: var(--ink); background: var(--primary-soft); }
+  .program-action { margin-top: 14px; }
   .diagnostic { font-size: 14px; }
   .support-card { margin-top: 14px; padding: 20px; border: 1px solid var(--border); border-radius: 14px; background: var(--surface); }
   .danger { color: var(--danger) !important; }
