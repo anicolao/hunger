@@ -87,6 +87,12 @@
   {:else if page.url.searchParams.get('saved') === 'complete'}
     <p class="status-message" role="status" tabindex="-1">Check-in complete</p>
   {/if}
+  {#if page.url.searchParams.get('photo') === 'omitted'}
+    <p class="status-message photo-warning" role="status" tabindex="-1">
+      Your check-in was saved, but the photo was not because this device could not store it.
+      <a href={`${base}/settings#manage-data`}>Manage Data</a>
+    </p>
+  {/if}
   <header class="page-heading">
     <p class="eyebrow">Day {progress.day} · Week {progress.week}</p>
     <h1>Today</h1>
@@ -243,6 +249,8 @@
     background: var(--primary-soft);
     font-weight: 700;
   }
+  .status-message a { color: var(--primary); }
+  .photo-warning { background: var(--accent-soft); }
 
   .primary-button {
     min-height: 52px;

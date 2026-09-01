@@ -1,7 +1,7 @@
 <script lang="ts">
   import { base } from '$app/paths';
   import { goto } from '$app/navigation';
-  import { onMount } from 'svelte';
+  import { onDestroy, onMount } from 'svelte';
   import ContextDisclosure from '$lib/components/ContextDisclosure.svelte';
   import SensationScale from '$lib/components/SensationScale.svelte';
   import { getRepository } from '$lib/data/repository';
@@ -10,6 +10,7 @@
   import { getSensationLevel } from '$lib/domain/scale';
   import { reconcileStoredReminders } from '$lib/platform/reminders';
   import { runtime } from '$lib/platform/runtime';
+  import { storablePhoto } from '$lib/platform/photos';
 
   let episode = $state<EatingEpisode | null>(null);
   let editing = $state(false);
@@ -24,6 +25,11 @@
   let photoUrl = $state('');
   let status = $state<'loading' | 'ready' | 'saving' | 'error'>('loading');
   let message = $state('');
+  let photoSaveFailed = $state(false);
+
+  onDestroy(() => {
+    if (photoUrl) URL.revokeObjectURL(photoUrl);
+  });
 
   onMount(async () => {
     const episodeId = new URL(location.href).searchParams.get('episode');
@@ -46,6 +52,7 @@
     event.preventDefault();
     if (!episode || beforeLevel === null) return;
     status = 'saving';
+    photoSaveFailed = false;
     const repository = getRepository();
     try {
       const now = runtime.now();
@@ -54,11 +61,23 @@
         { beforeLevel, afterLevel, reason, occasion, note, photoId: photo?.id ?? episode.photoId },
         now
       );
+      let saved = updated;
+      let omittedPhoto = false;
       if (photo) {
-        await repository.append(
-          { type: 'photo/stored', occurredAt: now, payload: { photo } },
-          { type: 'episode/changed', occurredAt: now, payload: { episode: updated } }
-        );
+        try {
+          await repository.append(
+            { type: 'photo/stored', occurredAt: now, payload: { photo: storablePhoto(photo) } },
+            { type: 'episode/changed', occurredAt: now, payload: { episode: updated } }
+          );
+          if (photoUrl) URL.revokeObjectURL(photoUrl);
+          photoUrl = URL.createObjectURL(photo.blob);
+        } catch {
+          saved = { ...updated, photoId: episode.photoId };
+          await repository.append({
+            type: 'episode/changed', occurredAt: now, payload: { episode: saved }
+          });
+          omittedPhoto = true;
+        }
       } else {
         await repository.append({
           type: 'episode/changed',
@@ -67,9 +86,13 @@
         });
       }
       await reconcileStoredReminders(now);
-      episode = updated;
+      episode = saved;
       editing = false;
-      message = 'Check-in updated. Your observations may update too.';
+      photoSaveFailed = omittedPhoto;
+      message = omittedPhoto
+        ? 'Your check-in was updated, but the new photo was not because this device could not store it.'
+        : 'Check-in updated. Your observations may update too.';
+      photo = null;
       status = 'ready';
     } catch (error) {
       message = error instanceof Error ? error.message : 'The check-in could not be updated.';
@@ -142,7 +165,7 @@
       <article>
         <p class="eyebrow">{displayDate(episode.startedAt)}</p>
         <h1>{episode.occasion ? `${episode.occasion} check-in` : 'Eating-moment check-in'}</h1>
-        {#if message}<p class="notice" role="status">{message}</p>{/if}
+        {#if message}<p class="notice" role="status">{message} {#if photoSaveFailed}<a href={`${base}/settings#manage-data`}>Manage Data</a>{/if}</p>{/if}
         <dl>
           <div><dt>Before</dt><dd>{episode.beforeLevel} · {getSensationLevel(episode.beforeLevel).phrase}</dd></div>
           <div><dt>After</dt><dd>{episode.afterLevel ? `${episode.afterLevel} · ${getSensationLevel(episode.afterLevel).phrase}` : '— · Unfinished'}</dd></div>

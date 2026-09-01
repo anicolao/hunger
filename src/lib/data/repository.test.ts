@@ -110,6 +110,27 @@ describe('IndexedDbRepository', () => {
     reopened.close();
   });
 
+  it('does not append a partial source event when a photo write runs out of space', async () => {
+    const factory = new IDBFactory();
+    const repository = new IndexedDbRepository(factory, eventIds());
+    await repository.append({
+      type: 'program/started', occurredAt: program.startedAt, payload: { program }
+    });
+    repository.simulateNextPhotoAppendFailure();
+    await expect(repository.append({
+      type: 'photo/stored',
+      occurredAt: program.startedAt,
+      payload: {
+        photo: {
+          id: 'photo-1', programId: program.id, blob: new Blob(['x']), mediaType: 'image/jpeg',
+          width: 1, height: 1, bytes: 1
+        }
+      }
+    })).rejects.toMatchObject({ name: 'QuotaExceededError' });
+    expect((await repository.listEvents()).map(({ type }) => type)).toEqual(['program/started']);
+    repository.close();
+  });
+
   it('converts the prior mutable stores into source events once', async () => {
     const factory = new IDBFactory();
     const legacyDatabase = await openLegacyDatabase(factory);

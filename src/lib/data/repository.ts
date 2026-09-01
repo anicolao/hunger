@@ -83,6 +83,7 @@ function eventTime(record: StoreRecord): number {
 export class IndexedDbRepository implements AppetiteRepository {
   private databasePromise: Promise<IDBDatabase> | null = null;
   private readyPromise: Promise<IDBDatabase> | null = null;
+  private failNextPhotoAppend = false;
 
   constructor(
     private readonly factory: IDBFactory = indexedDB,
@@ -133,6 +134,10 @@ export class IndexedDbRepository implements AppetiteRepository {
 
   async append(...events: NewAppetiteEvent[]): Promise<void> {
     if (events.length === 0) return;
+    if (this.failNextPhotoAppend && events.some((event) => event.type === 'photo/stored')) {
+      this.failNextPhotoAppend = false;
+      throw new DOMException('The device has no room for this photo.', 'QuotaExceededError');
+    }
     const database = await this.ready();
     const transaction = database.transaction(EVENT_STORE_NAME, 'readwrite');
     const store = transaction.objectStore(EVENT_STORE_NAME);
@@ -145,6 +150,10 @@ export class IndexedDbRepository implements AppetiteRepository {
     }
     await transactionDone(transaction);
     await this.materialize(database);
+  }
+
+  simulateNextPhotoAppendFailure(): void {
+    this.failNextPhotoAppend = true;
   }
 
   async listEvents(): Promise<AppetiteEvent[]> {

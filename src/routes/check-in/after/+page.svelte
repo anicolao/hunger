@@ -18,6 +18,7 @@
   import { reconcileStoredReminders } from '$lib/platform/reminders';
   import { runtime } from '$lib/platform/runtime';
   import { reconcileProgramLifecycle } from '$lib/platform/program';
+  import { storablePhoto } from '$lib/platform/photos';
 
   let program = $state<Program | null>(null);
   let episode = $state<EatingEpisode | null>(null);
@@ -54,13 +55,15 @@
         note,
         photoId: photo?.id ?? episode.photoId
       });
+      let photoOmitted = false;
       if (photo) {
         try {
           await repository.append(
-            { type: 'photo/stored', occurredAt: now, payload: { photo } },
+            { type: 'photo/stored', occurredAt: now, payload: { photo: storablePhoto(photo) } },
             { type: 'episode/changed', occurredAt: now, payload: { episode: completed } }
           );
         } catch {
+          photoOmitted = true;
           await repository.append({
             type: 'episode/changed',
             occurredAt: now,
@@ -75,7 +78,7 @@
         });
       }
       await reconcileStoredReminders(now);
-      await goto(`${base}/?saved=complete`, { replaceState: true });
+      await goto(`${base}/?saved=complete${photoOmitted ? '&photo=omitted' : ''}`, { replaceState: true });
     } catch (error) {
       errorMessage = error instanceof Error ? error.message : 'Your check-in could not be completed.';
       status = 'error';

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { EatingEpisode, Program } from '../data/schema';
 import { buildProfile } from './profile';
-import { buildExport, exportHtml, exportJson } from '../platform/export';
+import { buildExport, encodeExportPhotos, exportHtml, exportJson } from '../platform/export';
 
 const now = Date.UTC(2026, 7, 29);
 const program: Program = { id: 'p', startedAt: now - 30 * 86_400_000, timeZone: 'UTC', status: 'complete', onboardingVersion: 1, schemaVersion: 1 };
@@ -21,5 +21,24 @@ describe('profile and export', () => {
     expect(exportJson(data)).not.toContain('photoId');
     expect(exportHtml(data)).not.toContain('<script>');
     expect(data.exportVersion).toBe(1);
+    expect(data.photoPolicy).toEqual({ included: false, maximumSourceBytes: 750_000, omittedCount: 1 });
+  });
+  it('includes a bounded photo only after explicit opt-in', async () => {
+    const episodes = [episode(1), episode(2), episode(3), episode(4)];
+    const profile = buildProfile(program, episodes, [], now);
+    const photos = await encodeExportPhotos(episodes, async (id) => id === 'private-photo' ? {
+      id,
+      programId: program.id,
+      blob: new Blob(['private image bytes'], { type: 'image/jpeg' }),
+      mediaType: 'image/jpeg',
+      width: 1,
+      height: 1,
+      bytes: 19
+    } : null);
+    const data = buildExport(program, profile, episodes, [], now, photos, true);
+    expect(data.photos).toHaveLength(1);
+    expect(data.photos?.[0].dataUrl).toMatch(/^data:image\/jpeg;base64,/);
+    expect(exportHtml(data)).toContain('Included photos');
+    expect(data.photoPolicy).toMatchObject({ included: true, omittedCount: 0 });
   });
 });

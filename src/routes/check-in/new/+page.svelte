@@ -10,6 +10,7 @@
   import { reconcileStoredReminders } from '$lib/platform/reminders';
   import { runtime } from '$lib/platform/runtime';
   import { reconcileProgramLifecycle } from '$lib/platform/program';
+  import { storablePhoto } from '$lib/platform/photos';
 
   let program = $state<Program | null>(null);
   let existing = $state<EatingEpisode | null>(null);
@@ -45,13 +46,15 @@
         timeZone: runtime.timeZone(),
         context: { occasion, photoId: photo?.id ?? null }
       });
+      let photoOmitted = false;
       if (photo) {
         try {
           await repository.append(
-            { type: 'photo/stored', occurredAt: now, payload: { photo } },
+            { type: 'photo/stored', occurredAt: now, payload: { photo: storablePhoto(photo) } },
             { type: 'episode/started', occurredAt: now, payload: { episode } }
           );
         } catch {
+          photoOmitted = true;
           await repository.append({
             type: 'episode/started',
             occurredAt: now,
@@ -66,7 +69,7 @@
         });
       }
       await reconcileStoredReminders(now);
-      await goto(`${base}/?saved=before`, { replaceState: true });
+      await goto(`${base}/?saved=before${photoOmitted ? '&photo=omitted' : ''}`, { replaceState: true });
     } catch (error) {
       errorMessage = error instanceof Error ? error.message : 'Your selection could not be saved.';
       status = 'error';
