@@ -11,13 +11,14 @@
   import { supportEligible } from '$lib/domain/support';
   import { clearDeviceCaches } from '$lib/platform/offline';
   import { completeNativeDelete } from '$lib/platform/native';
-  import { openNativeNotificationSettings, reconcileStoredReminders } from '$lib/platform/reminders';
+  import { getNativeReminderDiagnostics, openNativeNotificationSettings, reconcileStoredReminders, type NativeReminderDiagnostics } from '$lib/platform/reminders';
   import { runtime } from '$lib/platform/runtime';
 
   let program = $state<Program | null>(null);
   let episodes = $state<EatingEpisode[]>([]);
   let settings = $state<AppSettings | null>(null);
   let reminderMessage = $state('');
+  let reminderDiagnostics = $state<NativeReminderDiagnostics | null>(null);
   let online = $state(true);
   let deleteDialog = $state<HTMLDialogElement>();
   let deleteConfirmed = $state(false);
@@ -33,6 +34,7 @@
       if (!program) return goto(`${base}/`);
       episodes = await repository.listEpisodes(program.id);
       settings = await repository.getSettings();
+      reminderDiagnostics = await getNativeReminderDiagnostics();
     })();
     return () => { removeEventListener('online', updateOnline); removeEventListener('offline', updateOnline); };
   });
@@ -52,6 +54,7 @@
     await saveSettings({ ...settings, remindersPaused: pausing });
     const result = await reconcileStoredReminders(runtime.now());
     settings = await getRepository().getSettings();
+    reminderDiagnostics = await getNativeReminderDiagnostics();
     reminderMessage = pausing
       ? result.capability === 'native-ios'
         ? 'Private iOS reminders are paused.'
@@ -68,6 +71,7 @@
     await saveSettings({ ...settings, reminderWindows: windows });
     const result = await reconcileStoredReminders(runtime.now());
     settings = await getRepository().getSettings();
+    reminderDiagnostics = await getNativeReminderDiagnostics();
     reminderMessage = result.explanation;
   }
   async function enableReminders() {
@@ -75,6 +79,7 @@
     if (settings.remindersPaused) await saveSettings({ ...settings, remindersPaused: false });
     const result = await reconcileStoredReminders(runtime.now(), true);
     settings = await getRepository().getSettings();
+    reminderDiagnostics = await getNativeReminderDiagnostics();
     reminderMessage = result.explanation;
   }
   async function pauseProgram() {
@@ -117,6 +122,7 @@
         />
         <div class="actions"><button disabled={!settings.reminderWindows.length} onclick={enableReminders}>Allow iOS reminders</button><button class="secondary" aria-pressed={settings.remindersPaused} onclick={toggleReminderPause}>{settings.remindersPaused ? 'Resume reminders' : 'Pause reminders'}</button>{#if settings.permissionState === 'denied'}<button class="secondary" onclick={openNativeNotificationSettings}>Open notification settings</button>{/if}</div>
         {#if reminderMessage}<p class="notice" role="status">{reminderMessage}</p>{/if}
+        {#if reminderDiagnostics}<p class="diagnostic" role="status">iOS has {reminderDiagnostics.scheduled} private reminder{reminderDiagnostics.scheduled === 1 ? '' : 's'} pending.</p>{/if}
       </section>
 
       <section><h2>Scale and program</h2><p>Day {progress.day} of 30 · {progress.focus}. One scale from urgent hunger to painful fullness.</p><a href={`${base}/onboarding?step=scale`}>Review all scale words</a>{#if program.status === 'paused'}<p class="notice">The guided program is paused. Your records remain available.</p>{/if}</section>
@@ -163,6 +169,7 @@
   button:disabled { opacity: .5; }
   section > a { width: fit-content; margin-top: 12px; color: var(--primary); background: transparent; }
   .notice { margin-top: 14px; padding: 12px; border-radius: 10px; color: var(--ink); background: var(--primary-soft); }
+  .diagnostic { font-size: 14px; }
   .support-card { margin-top: 14px; padding: 20px; border: 1px solid var(--border); border-radius: 14px; background: var(--surface); }
   .danger { color: var(--danger) !important; }
   dialog { width: min(100% - 32px, 520px); padding: 28px; border: 0; border-radius: 18px; color: var(--ink); background: var(--surface); }

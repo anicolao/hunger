@@ -10,6 +10,7 @@ export interface NativeLifecycleEvent {
   reason: 'foreground' | 'notification';
   occurredAt: number;
   route?: 'today';
+  kind?: 'window' | 'context' | 'experiment' | 'pending-completion';
 }
 
 interface NativeRequest {

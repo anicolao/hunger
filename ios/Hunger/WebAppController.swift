@@ -23,6 +23,9 @@ final class WebAppController: NSObject, ObservableObject {
     func startIfNeeded() async {
         guard !started else { return }
         started = true
+        NotificationRouteCenter.shared.bind { [weak self] event in
+            Task { await self?.sendNotificationLifecycle(event) }
+        }
         await buildAndLoad(resetData: ProcessInfo.processInfo.arguments.contains("--reset-web-data"))
     }
 
@@ -107,6 +110,19 @@ final class WebAppController: NSObject, ObservableObject {
         ], to: webView)
     }
 
+    private func sendNotificationLifecycle(_ event: NotificationRouteEvent) async {
+        guard state == .ready, let webView, let bridge else {
+            NotificationRouteCenter.shared.deferUntilReady(event)
+            return
+        }
+        await bridge.sendLifecycle([
+            "reason": "notification",
+            "occurredAt": Int(Date().timeIntervalSince1970 * 1000),
+            "route": event.route,
+            "kind": event.kind
+        ], to: webView)
+    }
+
     private func compileRuleList(_ source: String) async throws -> WKContentRuleList {
         try await withCheckedThrowingContinuation {
             (continuation: CheckedContinuation<WKContentRuleList, Error>) in
@@ -165,6 +181,7 @@ extension WebAppController: WKNavigationDelegate {
         }
         recoveryAttempts = 0
         state = .ready
+        NotificationRouteCenter.shared.webAppBecameReady()
     }
 
     func webView(

@@ -1,5 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { base } from '$app/paths';
+  import { goto } from '$app/navigation';
   import '../app.css';
   import { installE2EFixtureBoundary } from '$lib/platform/e2e';
   import {
@@ -22,6 +24,8 @@
         const lifecycle = event as CustomEvent<NativeLifecycleEvent>;
         if (lifecycle.detail.reason === 'foreground') {
           void reconcileStoredReminders(runtime.now());
+        } else if (lifecycle.detail.reason === 'notification' && lifecycle.detail.route === 'today') {
+          void goto(`${base}/?reminder=${encodeURIComponent(lifecycle.detail.kind ?? 'window')}`);
         }
       };
       addEventListener('hunger:native-lifecycle', reconcileOnForeground);

@@ -20,6 +20,11 @@ export interface NativeReminderResult {
 
 export type ReminderResult = BrowserReminderResult | NativeReminderResult;
 
+export interface NativeReminderDiagnostics {
+  scheduled: number;
+  identifiers: string[];
+}
+
 export function configureBrowserReminders(): BrowserReminderResult {
   return {
     capability: 'browser-unavailable',
@@ -87,6 +92,16 @@ export async function openNativeNotificationSettings(): Promise<boolean> {
   if (!capabilities?.commands.includes('app.openNotificationSettings')) return false;
   const result = await nativeRequest<{ opened: boolean }>('app.openNotificationSettings');
   return result.opened;
+}
+
+export async function getNativeReminderDiagnostics(): Promise<NativeReminderDiagnostics | null> {
+  const capabilities = await nativeCapabilities();
+  if (!capabilities?.commands.includes('notifications.pendingSchedule')) return null;
+  const diagnostics = await nativeRequest<NativeReminderDiagnostics>('notifications.pendingSchedule');
+  if (!Number.isInteger(diagnostics.scheduled) || diagnostics.scheduled < 0 ||
+      !Array.isArray(diagnostics.identifiers) ||
+      diagnostics.identifiers.some((identifier) => typeof identifier !== 'string')) return null;
+  return diagnostics;
 }
 
 export async function reconcileStoredReminders(

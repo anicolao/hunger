@@ -24,6 +24,46 @@ struct ReminderSchedule: Equatable {
     let items: [ReminderScheduleItem]
 }
 
+struct NotificationRouteEvent: Equatable {
+    let route: String
+    let kind: String
+}
+
+@MainActor
+final class NotificationRouteCenter {
+    static let shared = NotificationRouteCenter()
+
+    private var handler: ((NotificationRouteEvent) -> Void)?
+    private var pendingEvent: NotificationRouteEvent?
+
+    func bind(_ handler: @escaping (NotificationRouteEvent) -> Void) {
+        self.handler = handler
+    }
+
+    func receive(userInfo: [AnyHashable: Any]) {
+        guard let event = Self.event(userInfo: userInfo) else { return }
+        handler?(event)
+    }
+
+    func deferUntilReady(_ event: NotificationRouteEvent) {
+        pendingEvent = event
+    }
+
+    func webAppBecameReady() {
+        guard let event = pendingEvent else { return }
+        pendingEvent = nil
+        handler?(event)
+    }
+
+    nonisolated static func event(userInfo: [AnyHashable: Any]) -> NotificationRouteEvent? {
+        guard userInfo["route"] as? String == "today",
+              let kind = userInfo["kind"] as? String,
+              ["window", "context", "experiment", "pending-completion"].contains(kind)
+        else { return nil }
+        return NotificationRouteEvent(route: "today", kind: kind)
+    }
+}
+
 enum NotificationSchedule {
     static let message = "Want to notice how your body feels?"
     static let windowHours = [
@@ -47,6 +87,7 @@ protocol NotificationCoordinating: AnyObject {
     func requestAuthorization() async throws -> NotificationAuthorization
     func replaceSchedule(_ schedule: ReminderSchedule) async throws -> Int
     func cancelAll() async
+    func pendingIdentifiers() async -> [String]
 }
 
 @MainActor
@@ -116,6 +157,18 @@ final class NotificationCoordinator: NotificationCoordinating {
         center.removeDeliveredNotifications(withIdentifiers: NotificationSchedule.identifiers)
     }
 
+    func pendingIdentifiers() async -> [String] {
+        await withCheckedContinuation { continuation in
+            center.getPendingNotificationRequests { requests in
+                let owned = requests
+                    .map(\.identifier)
+                    .filter(NotificationSchedule.identifiers.contains)
+                    .sorted()
+                continuation.resume(returning: owned)
+            }
+        }
+    }
+
     nonisolated static func map(_ status: UNAuthorizationStatus) -> NotificationAuthorization {
         switch status {
         case .notDetermined: .notDetermined
@@ -144,5 +197,6 @@ final class InMemoryNotificationCoordinator: NotificationCoordinating {
         return scheduledIdentifiers.count
     }
     func cancelAll() async { scheduledIdentifiers.removeAll() }
+    func pendingIdentifiers() async -> [String] { scheduledIdentifiers.sorted() }
 }
 #endif

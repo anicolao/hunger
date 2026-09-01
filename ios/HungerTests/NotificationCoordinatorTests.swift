@@ -22,4 +22,14 @@ final class NotificationCoordinatorTests: XCTestCase {
         XCTAssertEqual(NotificationCoordinator.map(.provisional), .provisional)
         XCTAssertEqual(NotificationCoordinator.map(.ephemeral), .ephemeral)
     }
+
+    func testAcceptsOnlyOwnedNotificationRoutes() {
+        XCTAssertEqual(
+            NotificationRouteCenter.event(userInfo: ["route": "today", "kind": "window"]),
+            NotificationRouteEvent(route: "today", kind: "window")
+        )
+        XCTAssertNil(NotificationRouteCenter.event(userInfo: ["route": "settings", "kind": "window"]))
+        XCTAssertNil(NotificationRouteCenter.event(userInfo: ["route": "today", "kind": "unknown"]))
+        XCTAssertNil(NotificationRouteCenter.event(userInfo: ["route": "today"]))
+    }
 }

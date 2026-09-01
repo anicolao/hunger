@@ -16,6 +16,7 @@ enum NativeBridgeCommand: String, CaseIterable {
     case notificationRequest = "notifications.requestAuthorization"
     case notificationReplace = "notifications.replaceSchedule"
     case notificationCancel = "notifications.cancelAll"
+    case notificationPending = "notifications.pendingSchedule"
     case openNotificationSettings = "app.openNotificationSettings"
     case exportShare = "export.share"
     case privacyCompleteDelete = "privacy.completeDelete"
@@ -303,6 +304,9 @@ final class NativeBridge: NSObject, WKScriptMessageHandlerWithReply {
         case .notificationCancel:
             await notifications.cancelAll()
             return ["cancelled": true]
+        case .notificationPending:
+            let identifiers = await notifications.pendingIdentifiers()
+            return ["scheduled": identifiers.count, "identifiers": identifiers]
         case .openNotificationSettings:
             guard let url = URL(string: UIApplication.openNotificationSettingsURLString) else {
                 return ["opened": false]
