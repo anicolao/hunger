@@ -11,7 +11,8 @@
     onreason,
     onoccasion,
     onnote,
-    onphoto
+    onphoto,
+    reduced = false
   }: {
     programId: string;
     includeReason?: boolean;
@@ -22,6 +23,7 @@
     onoccasion: (occasion: Occasion | null) => void;
     onnote?: (note: string) => void;
     onphoto: (photo: PhotoRecord | null) => void;
+    reduced?: boolean;
   } = $props();
 
   const reasons: { value: EatingReason; label: string }[] = [
@@ -42,7 +44,7 @@
 </script>
 
 <details>
-  <summary>Add optional context</summary>
+  <summary>{reduced ? 'Optional details' : 'Add optional context'}</summary>
   <div class="context-fields">
     {#if includeReason}
       <fieldset>

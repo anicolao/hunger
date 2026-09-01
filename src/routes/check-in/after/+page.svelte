@@ -1,12 +1,12 @@
 <script lang="ts">
   import { base } from '$app/paths';
   import { goto } from '$app/navigation';
-  import { page } from '$app/state';
   import { onMount } from 'svelte';
   import ContextDisclosure from '$lib/components/ContextDisclosure.svelte';
   import SensationScale from '$lib/components/SensationScale.svelte';
   import { getRepository } from '$lib/data/repository';
   import type {
+    AppSettings,
     EatingEpisode,
     EatingReason,
     Occasion,
@@ -21,6 +21,7 @@
 
   let program = $state<Program | null>(null);
   let episode = $state<EatingEpisode | null>(null);
+  let settings = $state<AppSettings | null>(null);
   let level = $state<number | null>(null);
   let reason = $state<EatingReason | null>(null);
   let occasion = $state<Occasion | null>(null);
@@ -32,9 +33,10 @@
   onMount(async () => {
     const repository = getRepository();
     program = await reconcileProgramLifecycle(runtime.now(), repository);
-    const episodeId = page.url.searchParams.get('episode');
+    const episodeId = new URL(location.href).searchParams.get('episode');
     episode = episodeId ? await repository.getEpisode(episodeId) : null;
     if (!program) return goto(`${base}/onboarding`);
+    settings = await repository.getSettings();
     status = 'ready';
   });
 
@@ -87,7 +89,7 @@
   <header>
     <a href={`${base}/`}>← Back</a>
     <strong>After eating</strong>
-    <a href={`${base}/settings#scale`}>Scale help</a>
+    <a href={`${base}/scale?returnTo=${encodeURIComponent(`/check-in/after?episode=${episode?.id ?? ''}`)}`}>Scale help</a>
   </header>
 
   <main>
@@ -97,7 +99,7 @@
           You began at <strong>{episode.beforeLevel} · {getSensationLevel(episode.beforeLevel).phrase}</strong>
         </p>
         <h1>How does your body feel now?</h1>
-        <p class="intro">Use the same scale in the same direction.</p>
+        {#if !settings?.reducedPrompts}<p class="intro">Use the same scale in the same direction.</p>{/if}
         <SensationScale
           value={level}
           legend="Choose your sensation after eating"
@@ -105,6 +107,7 @@
         />
         <ContextDisclosure
           programId={program.id}
+          reduced={settings?.reducedPrompts}
           includeReason
           {reason}
           {occasion}

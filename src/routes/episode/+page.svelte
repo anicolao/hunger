@@ -1,7 +1,6 @@
 <script lang="ts">
   import { base } from '$app/paths';
   import { goto } from '$app/navigation';
-  import { page } from '$app/state';
   import { onMount } from 'svelte';
   import ContextDisclosure from '$lib/components/ContextDisclosure.svelte';
   import SensationScale from '$lib/components/SensationScale.svelte';
@@ -27,8 +26,8 @@
   let message = $state('');
 
   onMount(async () => {
-    const id = page.url.searchParams.get('episode');
-    episode = id ? await getRepository().getEpisode(id) : null;
+    const episodeId = new URL(location.href).searchParams.get('episode');
+    episode = episodeId ? await getRepository().getEpisode(episodeId) : null;
     if (episode) {
       beforeLevel = episode.beforeLevel;
       afterLevel = episode.afterLevel;
