@@ -86,7 +86,8 @@ product:
   notifications are required for the pilot;
 - an append-only IndexedDB event sequence as the local source of truth;
 - disposable IndexedDB read-model caches rebuilt by deterministic playback;
-- local compressed photo blobs carried by the corresponding source events;
+- local compressed photo blobs carried by corresponding source events, omitted
+  from export unless the user enables a documented 750 KB bounded policy;
 - pure, versioned insight and experiment functions—no generative model;
 - plain Svelte-scoped CSS with global design tokens;
 - Vitest for scale, projection, insight, experiment, and migration rules;
@@ -95,6 +96,13 @@ product:
 - semantic assertions plus zero-pixel visual baselines; and
 - one repository verifier that runs checks, tests, build, and whitespace
   validation before a change lands.
+
+The browser build uses SvelteKit's generated, versioned service-worker manifest
+to precache every hashed asset and prerendered route, remove obsolete versions,
+and use network-first navigations with an offline fallback. The iOS build turns
+service-worker registration off and packages the same audited static assets in
+the signed application instead. If source events cannot be migrated safely,
+the app stops with Export Original Data and a deliberate Reset path.
 
 Unlike the two realtime reference apps, Learn Your Appetite does not need a
 cloud event stream for its first hypothesis. It does retain their core event

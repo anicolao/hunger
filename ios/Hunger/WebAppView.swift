@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 import WebKit
 
 struct WebAppView: View {
@@ -6,7 +7,11 @@ struct WebAppView: View {
 
     var body: some View {
         ZStack {
-            Color(red: 0.969, green: 0.957, blue: 0.933)
+            Color(uiColor: UIColor { traits in
+                traits.userInterfaceStyle == .dark
+                    ? UIColor(red: 0.067, green: 0.090, blue: 0.075, alpha: 1)
+                    : UIColor(red: 0.969, green: 0.957, blue: 0.933, alpha: 1)
+            })
                 .ignoresSafeArea()
 
             if let webView = controller.webView {

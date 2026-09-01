@@ -15,6 +15,7 @@ export default defineConfig({
     timezoneId: 'America/Toronto',
     locale: 'en-CA',
     reducedMotion: 'reduce',
+    colorScheme: 'light',
     launchOptions: {
       args: [
         '--font-render-hinting=none',

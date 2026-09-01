@@ -266,6 +266,60 @@ viewport without an accidental nested scroll region.
 - On an unsupported browser, show persistent in-app prompts and accurate copy;
   never claim a closed-browser reminder was scheduled.
 
+### 013 — Reminder state reconciliation
+
+- Reconcile stable native request identifiers from event-projected program,
+  experiment, permission, pause, timezone, and reminder-window state.
+- Prove switch changes, lifecycle transitions, relaunch, completion, and retry
+  converge without duplicate or stale requests.
+
+### 014 — Program lifecycle and DST
+
+- Derive program days from local calendar boundaries across both DST changes.
+- Pause and resume without losing history, complete on day 30 from every route,
+  and require confirmation before a retained-history restart.
+
+### 015 — Settings and guidance
+
+- Open scale language outside onboarding and persist reduced prompts and export
+  photo policy across reload.
+- Exercise program controls, support actions, storage diagnostics, projection
+  rebuild, and exact build identity from Settings.
+
+### 016 — Insight history and evidence
+
+- Suppress constant, sparse, stale, duplicate, and outlier-created claims.
+- Publish at most one novel observation per week and retain immutable evidence,
+  feedback, algorithm version, and changed/deleted-source labels after replay.
+
+### 017 — Timed experiment on Today
+
+- Keep an active experiment secondary to check-in, reversible, and unavailable
+  for comparison before seven local calendar days.
+- Auto-complete through an event and render changed, similar, and still-learning
+  results after projection replay.
+
+### 018 — Storage pressure and private export
+
+- Force photo quota failure on create and edit while preserving sensations and
+  offering Manage Data.
+- Prove photo-free exports by default, explicit bounded photo inclusion, native
+  share cleanup, and no orphaned photo projection after deletion and replay.
+
+### 019 — Migration and offline update
+
+- Rebuild supported old data after deleting projections, export an unsupported
+  source log before deliberate Reset, and never guess at a future schema.
+- Install a versioned full precache, delete obsolete caches, and revisit every
+  primary route offline through the navigation fallback.
+
+### 020 — Accessible release journey
+
+- Complete the primary journey with keyboard focus and reduced motion in dark
+  appearance.
+- Verify smallest phone, landscape, tablet, 200% text, forced colors, semantic
+  switch labels, private export, and deliberate deletion.
+
 ## Unit-test boundary
 
 Use Vitest, not browser scenarios, to exhaustively cover:
