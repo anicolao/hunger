@@ -1,9 +1,13 @@
+import { getRepository } from '../data/repository';
+import { deriveReminderSchedule, type ReminderSchedule } from '../domain/reminders';
 import { nativeCapabilities, nativeRequest } from './native';
 
-export interface ReminderRequest { windows: string[]; cadence: string; message: 'Want to notice how your body feels?'; }
-export interface ReminderResult { capability: 'in-app-only'; request: ReminderRequest; explanation: string; }
-export function configureBrowserReminders(windows: string[], cadence: string): ReminderResult {
-  return { capability: 'in-app-only', request: { windows: [...windows], cadence, message: 'Want to notice how your body feels?' }, explanation: 'Saved as an in-app prompt. This browser cannot promise a reminder while the app is closed.' };
+export interface BrowserReminderResult {
+  capability: 'browser-unavailable';
+  status: 'unsupported';
+  permissionState: 'unsupported';
+  scheduled: 0;
+  explanation: string;
 }
 
 export interface NativeReminderResult {
@@ -14,46 +18,110 @@ export interface NativeReminderResult {
   explanation: string;
 }
 
-export async function configureReminders(
-  windows: string[],
-  cadence: string
-): Promise<ReminderResult | NativeReminderResult> {
+export type ReminderResult = BrowserReminderResult | NativeReminderResult;
+
+export function configureBrowserReminders(): BrowserReminderResult {
+  return {
+    capability: 'browser-unavailable',
+    status: 'unsupported',
+    permissionState: 'unsupported',
+    scheduled: 0,
+    explanation: 'Background reminders are unavailable in this browser. Your window preferences are still saved on this device.'
+  };
+}
+
+function permissionState(status: string): NotificationPermission {
+  if (['authorized', 'provisional', 'ephemeral'].includes(status)) return 'granted';
+  if (status === 'not_determined') return 'default';
+  return 'denied';
+}
+
+export async function reconcileReminders(
+  schedule: ReminderSchedule,
+  requestPermission = false
+): Promise<ReminderResult> {
   const capabilities = await nativeCapabilities();
   const required = [
     'notifications.authorizationStatus',
     'notifications.requestAuthorization',
-    'notifications.replaceSchedule'
+    'notifications.replaceSchedule',
+    'notifications.cancelAll'
   ];
   if (!required.every((command) => capabilities?.commands.includes(command))) {
-    return configureBrowserReminders(windows, cadence);
+    return configureBrowserReminders();
   }
 
   let { status } = await nativeRequest<{ status: string }>('notifications.authorizationStatus');
-  if (status === 'not_determined') {
+  if (status === 'not_determined' && requestPermission && schedule.items.length > 0) {
     ({ status } = await nativeRequest<{ status: string }>('notifications.requestAuthorization'));
   }
   if (!['authorized', 'provisional', 'ephemeral'].includes(status)) {
+    await nativeRequest('notifications.cancelAll');
     return {
       capability: 'native-ios',
       status,
-      permissionState: status === 'not_determined' ? 'default' : 'denied',
+      permissionState: permissionState(status),
       scheduled: 0,
       explanation: status === 'denied'
-        ? 'iOS notifications are off. You can enable them in system Settings.'
-        : 'iOS could not schedule reminders right now.'
+        ? 'iOS notifications are off. Open notification settings to enable them.'
+        : 'Choose a reminder window and allow notifications when you are ready.'
     };
   }
   const { scheduled } = await nativeRequest<{ scheduled: number }>(
     'notifications.replaceSchedule',
-    { windows: [...windows], cadence }
+    { schedule }
   );
   return {
     capability: 'native-ios',
     status,
     permissionState: 'granted',
     scheduled,
-    explanation: `Scheduled ${scheduled} private iOS reminder${scheduled === 1 ? '' : 's'}.`
+    explanation: scheduled === 0
+      ? 'Private iOS reminders are off for the current program stage.'
+      : `Scheduled ${scheduled} private iOS reminder${scheduled === 1 ? '' : 's'}.`
   };
+}
+
+export async function openNativeNotificationSettings(): Promise<boolean> {
+  const capabilities = await nativeCapabilities();
+  if (!capabilities?.commands.includes('app.openNotificationSettings')) return false;
+  const result = await nativeRequest<{ opened: boolean }>('app.openNotificationSettings');
+  return result.opened;
+}
+
+export async function reconcileStoredReminders(
+  now: number,
+  requestPermission = false
+): Promise<ReminderResult> {
+  const repository = getRepository();
+  const program = await repository.getProgram();
+  if (!program) {
+    await cancelNativeReminders();
+    return configureBrowserReminders();
+  }
+  const [settings, episodes, experiments] = await Promise.all([
+    repository.getSettings(),
+    repository.listEpisodes(program.id),
+    repository.listExperiments(program.id)
+  ]);
+  const result = await reconcileReminders(
+    deriveReminderSchedule({ program, settings, episodes, experiments, now }),
+    requestPermission
+  );
+  if (settings.permissionState !== result.permissionState) {
+    await repository.append({
+      type: 'settings/changed',
+      occurredAt: now,
+      payload: {
+        settings: {
+          ...settings,
+          reminderWindows: [...settings.reminderWindows],
+          permissionState: result.permissionState
+        }
+      }
+    });
+  }
+  return result;
 }
 
 export async function cancelNativeReminders(): Promise<boolean> {

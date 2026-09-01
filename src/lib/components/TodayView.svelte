@@ -9,6 +9,7 @@
   import { isOpenEpisodeStale, markEpisodeUnfinished } from '$lib/domain/episodes';
   import type { Program } from '$lib/data/schema';
   import { runtime } from '$lib/platform/runtime';
+  import { reconcileStoredReminders } from '$lib/platform/reminders';
 
   let { program, now = runtime.now() }: { program: Program; now?: number } = $props();
   let progress = $derived(getProgramProgress(program.startedAt, now));
@@ -34,6 +35,7 @@
       occurredAt: now,
       payload: { episode: markEpisodeUnfinished(openEpisode, now) }
     });
+    await reconcileStoredReminders(now);
     episodes = await getRepository().listEpisodes(program.id);
   }
 

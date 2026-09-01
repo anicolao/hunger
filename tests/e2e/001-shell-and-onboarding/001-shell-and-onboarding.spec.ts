@@ -261,8 +261,16 @@ test('application shell activates the local-first 30-day program', async ({ page
             {
               command: 'notifications.replaceSchedule',
               payload: {
-                windows: ['morning'],
-                cadence: 'Up to two chosen windows plus an open check-in reminder'
+                schedule: {
+                  version: 1,
+                  message: 'Want to notice how your body feels?',
+                  items: [{
+                    identifier: 'appetite.reminder.morning',
+                    kind: 'window',
+                    hour: 9,
+                    repeatsDaily: true
+                  }]
+                }
               }
             }
           ]);

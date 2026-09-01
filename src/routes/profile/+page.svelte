@@ -9,6 +9,7 @@
   import { getProgramProgress, type ProgramProgress } from '$lib/domain/progression';
   import { buildExport, exportHtml, exportJson, shareExport } from '$lib/platform/export';
   import { runtime } from '$lib/platform/runtime';
+  import { reconcileStoredReminders } from '$lib/platform/reminders';
 
   let program = $state<Program | null>(null);
   let episodes = $state<EatingEpisode[]>([]);
@@ -30,6 +31,7 @@
         occurredAt: runtime.now(),
         payload: { program }
       });
+      await reconcileStoredReminders(runtime.now());
     }
     episodes = await repository.listEpisodes(program.id);
     experiments = await repository.listExperiments(program.id);

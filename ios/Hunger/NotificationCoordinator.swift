@@ -10,34 +10,34 @@ enum NotificationAuthorization: String, Equatable, Sendable {
     case unknown
 }
 
-struct ReminderWindow: Equatable {
-    let name: String
-    let hour: Int
+struct ReminderScheduleItem: Equatable {
+    let identifier: String
+    let kind: String
+    let hour: Int?
+    let fireAt: Int64?
+    let repeatsDaily: Bool
+}
 
-    var identifier: String { "appetite.reminder.\(name)" }
+struct ReminderSchedule: Equatable {
+    let version: Int
+    let message: String
+    let items: [ReminderScheduleItem]
 }
 
 enum NotificationSchedule {
     static let message = "Want to notice how your body feels?"
-    static let windows = [
+    static let windowHours = [
         "morning": 9,
         "midday": 13,
         "evening": 18
     ]
 
-    static func plan(for values: [String]) throws -> [ReminderWindow] {
-        guard !values.isEmpty,
-              values.count <= windows.count,
-              Set(values).count == values.count,
-              values.allSatisfy({ windows[$0] != nil })
-        else {
-            throw NativeBridgeValidationError.invalidPayload
-        }
-        return values.sorted().map { ReminderWindow(name: $0, hour: windows[$0]!) }
-    }
-
     static var identifiers: [String] {
-        windows.keys.sorted().map { "appetite.reminder.\($0)" }
+        windowHours.keys.map { "appetite.reminder.\($0)" } + [
+            "appetite.reminder.pending-completion",
+            "appetite.reminder.context",
+            "appetite.reminder.experiment"
+        ]
     }
 }
 
@@ -45,7 +45,7 @@ enum NotificationSchedule {
 protocol NotificationCoordinating: AnyObject {
     func authorizationStatus() async -> NotificationAuthorization
     func requestAuthorization() async throws -> NotificationAuthorization
-    func replaceSchedule(windows: [String]) async throws -> Int
+    func replaceSchedule(_ schedule: ReminderSchedule) async throws -> Int
     func cancelAll() async
 }
 
@@ -70,27 +70,45 @@ final class NotificationCoordinator: NotificationCoordinating {
         return await authorizationStatus()
     }
 
-    func replaceSchedule(windows: [String]) async throws -> Int {
-        let plan = try NotificationSchedule.plan(for: windows)
+    func replaceSchedule(_ schedule: ReminderSchedule) async throws -> Int {
         center.removePendingNotificationRequests(withIdentifiers: NotificationSchedule.identifiers)
         center.removeDeliveredNotifications(withIdentifiers: NotificationSchedule.identifiers)
-        for window in plan {
-            let content = UNMutableNotificationContent()
-            content.title = "Learn Your Appetite"
-            content.body = NotificationSchedule.message
-            content.sound = .default
-            content.userInfo = ["route": "today"]
-            let trigger = UNCalendarNotificationTrigger(
-                dateMatching: DateComponents(hour: window.hour),
-                repeats: true
-            )
-            try await center.add(UNNotificationRequest(
-                identifier: window.identifier,
-                content: content,
-                trigger: trigger
-            ))
+        do {
+            for item in schedule.items {
+                let content = UNMutableNotificationContent()
+                content.title = "Learn Your Appetite"
+                content.body = schedule.message
+                content.sound = .default
+                content.userInfo = ["route": "today", "kind": item.kind]
+                let trigger: UNNotificationTrigger
+                if item.repeatsDaily, let hour = item.hour {
+                    trigger = UNCalendarNotificationTrigger(
+                        dateMatching: DateComponents(hour: hour),
+                        repeats: true
+                    )
+                } else if let fireAt = item.fireAt {
+                    let date = Date(timeIntervalSince1970: TimeInterval(fireAt) / 1_000)
+                    trigger = UNCalendarNotificationTrigger(
+                        dateMatching: Calendar.current.dateComponents(
+                            [.year, .month, .day, .hour, .minute, .second],
+                            from: date
+                        ),
+                        repeats: false
+                    )
+                } else {
+                    throw NativeBridgeValidationError.invalidPayload
+                }
+                try await center.add(UNNotificationRequest(
+                    identifier: item.identifier,
+                    content: content,
+                    trigger: trigger
+                ))
+            }
+        } catch {
+            center.removePendingNotificationRequests(withIdentifiers: NotificationSchedule.identifiers)
+            throw error
         }
-        return plan.count
+        return schedule.items.count
     }
 
     func cancelAll() async {
@@ -121,9 +139,8 @@ final class InMemoryNotificationCoordinator: NotificationCoordinating {
         status = .authorized
         return status
     }
-    func replaceSchedule(windows: [String]) async throws -> Int {
-        let plan = try NotificationSchedule.plan(for: windows)
-        scheduledIdentifiers = Set(plan.map(\.identifier))
+    func replaceSchedule(_ schedule: ReminderSchedule) async throws -> Int {
+        scheduledIdentifiers = Set(schedule.items.map(\.identifier))
         return scheduledIdentifiers.count
     }
     func cancelAll() async { scheduledIdentifiers.removeAll() }

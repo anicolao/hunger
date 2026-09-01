@@ -64,7 +64,7 @@ describe('progression patterns', () => {
     [1, false, 'Up to two chosen windows'],
     [2, false, 'One chosen window'],
     [3, false, 'Context-focused'],
-    [4, false, 'Only pending completion prompts'],
+    [4, false, 'One experiment reminder'],
     [1, true, 'Paused']
   ] as const)('tapers week %s reminders', (week, paused, expected) => {
     expect(reminderCadence(week, paused)).toContain(expected);

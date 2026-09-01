@@ -49,22 +49,50 @@ final class NativeBridgeTests: XCTestCase {
         }
     }
 
-    func testAcceptsOnlyKnownReminderWindowsAndPayloadFields() throws {
+    func testAcceptsOnlyAValidatedVersionedReminderSchedule() throws {
+        let schedule: [String: Any] = [
+            "version": 1,
+            "message": NotificationSchedule.message,
+            "items": [[
+                "identifier": "appetite.reminder.morning",
+                "kind": "window",
+                "hour": 9,
+                "repeatsDaily": true
+            ]]
+        ]
         let request = try NativeBridgeValidator.decode(body: [
             "version": 1,
             "id": "reminder-1",
             "command": "notifications.replaceSchedule",
-            "payload": ["windows": ["morning", "evening"], "cadence": "up to twice daily"]
+            "payload": ["schedule": schedule]
         ], source: trusted)
         XCTAssertEqual(
             request.payload,
-            .reminderSchedule(windows: ["morning", "evening"], cadence: "up to twice daily")
+            .reminderSchedule(ReminderSchedule(
+                version: 1,
+                message: NotificationSchedule.message,
+                items: [ReminderScheduleItem(
+                    identifier: "appetite.reminder.morning",
+                    kind: "window",
+                    hour: 9,
+                    fireAt: nil,
+                    repeatsDaily: true
+                )]
+            ))
         )
 
-        for windows in [[], ["night"], ["morning", "morning"]] {
+        for item in [
+            ["identifier": "appetite.reminder.night", "kind": "window", "hour": 21, "repeatsDaily": true] as [String: Any],
+            ["identifier": "appetite.reminder.morning", "kind": "window", "hour": 18, "repeatsDaily": true] as [String: Any],
+            ["identifier": "appetite.reminder.pending-completion", "kind": "pending-completion", "fireAt": 0, "repeatsDaily": false] as [String: Any]
+        ] {
             var body = validBody()
             body["command"] = "notifications.replaceSchedule"
-            body["payload"] = ["windows": windows, "cadence": "daily"]
+            body["payload"] = ["schedule": [
+                "version": 1,
+                "message": NotificationSchedule.message,
+                "items": [item]
+            ]]
             XCTAssertThrowsError(try NativeBridgeValidator.decode(body: body, source: trusted))
         }
     }

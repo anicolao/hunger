@@ -43,7 +43,7 @@ struct NativeBridgeRequest: Equatable {
 
 enum NativeBridgePayload: Equatable {
     case empty
-    case reminderSchedule(windows: [String], cadence: String)
+    case reminderSchedule(ReminderSchedule)
     case export(ValidatedExport)
 }
 
@@ -98,16 +98,12 @@ enum NativeBridgeValidator {
         let decodedPayload: NativeBridgePayload
         switch command {
         case .notificationReplace:
-            guard Set(payload.keys) == Set(["windows", "cadence"]),
-                  let windows = payload["windows"] as? [String],
-                  let cadence = payload["cadence"] as? String,
-                  !cadence.isEmpty,
-                  cadence.lengthOfBytes(using: .utf8) <= 160
+            guard Set(payload.keys) == Set(["schedule"]),
+                  let schedule = payload["schedule"] as? [String: Any]
             else {
                 throw NativeBridgeValidationError.invalidPayload
             }
-            _ = try NotificationSchedule.plan(for: windows)
-            decodedPayload = .reminderSchedule(windows: windows, cadence: cadence)
+            decodedPayload = .reminderSchedule(try decodeReminderSchedule(schedule))
         case .exportShare:
             guard Set(payload.keys) == Set(["filename", "mimeType", "content"]),
                   let filename = payload["filename"] as? String,
@@ -135,6 +131,72 @@ enum NativeBridgeValidator {
             decodedPayload = .empty
         }
         return NativeBridgeRequest(id: id, command: command, payload: decodedPayload)
+    }
+
+    private static func decodeReminderSchedule(
+        _ value: [String: Any]
+    ) throws -> ReminderSchedule {
+        guard Set(value.keys) == Set(["version", "message", "items"]),
+              let version = value["version"] as? Int,
+              version == 1,
+              let message = value["message"] as? String,
+              message == NotificationSchedule.message,
+              let values = value["items"] as? [[String: Any]],
+              values.count <= NotificationSchedule.identifiers.count
+        else {
+            throw NativeBridgeValidationError.invalidPayload
+        }
+
+        var items: [ReminderScheduleItem] = []
+        var seen = Set<String>()
+        for item in values {
+            guard let identifier = item["identifier"] as? String,
+                  NotificationSchedule.identifiers.contains(identifier),
+                  seen.insert(identifier).inserted,
+                  let kind = item["kind"] as? String,
+                  let repeatsDaily = item["repeatsDaily"] as? Bool
+            else {
+                throw NativeBridgeValidationError.invalidPayload
+            }
+            let hour = item["hour"] as? Int
+            let fireAt = (item["fireAt"] as? NSNumber)?.int64Value
+            if repeatsDaily {
+                guard Set(item.keys) == Set(["identifier", "kind", "hour", "repeatsDaily"]),
+                      let hour,
+                      NotificationSchedule.windowHours.values.contains(hour),
+                      ["window", "context", "experiment"].contains(kind)
+                else {
+                    throw NativeBridgeValidationError.invalidPayload
+                }
+                if kind == "window" {
+                    let name = String(identifier.split(separator: ".").last ?? "")
+                    guard NotificationSchedule.windowHours[name] == hour else {
+                        throw NativeBridgeValidationError.invalidPayload
+                    }
+                } else {
+                    guard identifier == "appetite.reminder.\(kind)" else {
+                        throw NativeBridgeValidationError.invalidPayload
+                    }
+                }
+            } else {
+                guard Set(item.keys) == Set(["identifier", "kind", "fireAt", "repeatsDaily"]),
+                      kind == "pending-completion",
+                      identifier == "appetite.reminder.pending-completion",
+                      let fireAt,
+                      fireAt > 0
+                else {
+                    throw NativeBridgeValidationError.invalidPayload
+                }
+            }
+            items.append(ReminderScheduleItem(
+                identifier: identifier,
+                kind: kind,
+                hour: hour,
+                fireAt: fireAt,
+                repeatsDaily: repeatsDaily
+            ))
+        }
+        return ReminderSchedule(version: version, message: message, items: items)
     }
 }
 
@@ -234,10 +296,10 @@ final class NativeBridge: NSObject, WKScriptMessageHandlerWithReply {
         case .notificationRequest:
             return ["status": try await notifications.requestAuthorization().rawValue]
         case .notificationReplace:
-            guard case let .reminderSchedule(windows, _) = request.payload else {
+            guard case let .reminderSchedule(schedule) = request.payload else {
                 throw NativeBridgeValidationError.invalidPayload
             }
-            return ["scheduled": try await notifications.replaceSchedule(windows: windows)]
+            return ["scheduled": try await notifications.replaceSchedule(schedule)]
         case .notificationCancel:
             await notifications.cancelAll()
             return ["cancelled": true]

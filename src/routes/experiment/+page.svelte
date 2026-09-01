@@ -14,6 +14,7 @@
   } from '$lib/domain/experiments';
   import { generatePatternInsights, renderPattern, type PatternInsightResult } from '$lib/domain/patterns';
   import { runtime } from '$lib/platform/runtime';
+  import { reconcileStoredReminders } from '$lib/platform/reminders';
 
   let program = $state<Program | null>(null);
   let episodes = $state<EatingEpisode[]>([]);
@@ -38,11 +39,13 @@
 
   async function persist(record: ExperimentRecord) {
     const plainRecord = JSON.parse(JSON.stringify(record)) as ExperimentRecord;
+    const now = runtime.now();
     await getRepository().append({
       type: 'experiment/changed',
-      occurredAt: runtime.now(),
+      occurredAt: now,
       payload: { experiment: plainRecord }
     });
+    await reconcileStoredReminders(now);
     experiments = await getRepository().listExperiments(record.programId);
   }
 

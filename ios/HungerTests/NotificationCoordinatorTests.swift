@@ -3,29 +3,16 @@ import XCTest
 @testable import Hunger
 
 final class NotificationCoordinatorTests: XCTestCase {
-    func testBuildsStablePrivateReminderWindows() throws {
-        XCTAssertEqual(
-            try NotificationSchedule.plan(for: ["evening", "morning"]),
-            [
-                ReminderWindow(name: "evening", hour: 18),
-                ReminderWindow(name: "morning", hour: 9)
-            ]
-        )
-        XCTAssertEqual(
-            NotificationSchedule.identifiers,
-            [
-                "appetite.reminder.evening",
-                "appetite.reminder.midday",
-                "appetite.reminder.morning"
-            ]
-        )
+    func testOwnsEveryStablePrivateReminderIdentifier() {
+        XCTAssertEqual(Set(NotificationSchedule.identifiers), Set([
+            "appetite.reminder.evening",
+            "appetite.reminder.midday",
+            "appetite.reminder.morning",
+            "appetite.reminder.pending-completion",
+            "appetite.reminder.context",
+            "appetite.reminder.experiment"
+        ]))
         XCTAssertEqual(NotificationSchedule.message, "Want to notice how your body feels?")
-    }
-
-    func testRejectsUnknownDuplicateAndEmptyWindows() {
-        XCTAssertThrowsError(try NotificationSchedule.plan(for: []))
-        XCTAssertThrowsError(try NotificationSchedule.plan(for: ["night"]))
-        XCTAssertThrowsError(try NotificationSchedule.plan(for: ["morning", "morning"]))
     }
 
     func testMapsEveryKnownAuthorizationState() {

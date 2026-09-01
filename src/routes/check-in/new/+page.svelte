@@ -7,6 +7,7 @@
   import { getRepository } from '$lib/data/repository';
   import type { EatingEpisode, Occasion, PhotoRecord, Program } from '$lib/data/schema';
   import { createOpenEpisode, markEpisodeUnfinished } from '$lib/domain/episodes';
+  import { reconcileStoredReminders } from '$lib/platform/reminders';
   import { runtime } from '$lib/platform/runtime';
 
   let program = $state<Program | null>(null);
@@ -61,6 +62,7 @@
           payload: { episode }
         });
       }
+      await reconcileStoredReminders(now);
       await goto(`${base}/?saved=before`, { replaceState: true });
     } catch (error) {
       errorMessage = error instanceof Error ? error.message : 'Your selection could not be saved.';
@@ -76,6 +78,7 @@
       occurredAt: now,
       payload: { episode: markEpisodeUnfinished(existing, now) }
     });
+    await reconcileStoredReminders(now);
     existing = null;
   }
 </script>
