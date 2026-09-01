@@ -9,6 +9,7 @@
   import type { EatingEpisode, EatingReason, Occasion, PhotoRecord } from '$lib/data/schema';
   import { updateEpisode } from '$lib/domain/episodes';
   import { getSensationLevel } from '$lib/domain/scale';
+  import { reconcileStoredReminders } from '$lib/platform/reminders';
   import { runtime } from '$lib/platform/runtime';
 
   let episode = $state<EatingEpisode | null>(null);
@@ -66,6 +67,7 @@
           payload: { episode: updated }
         });
       }
+      await reconcileStoredReminders(now);
       episode = updated;
       editing = false;
       message = 'Check-in updated. Your observations may update too.';
@@ -78,11 +80,13 @@
 
   async function removeEpisode() {
     if (!episode || !deleteUnderstood) return;
+    const now = runtime.now();
     await getRepository().append({
       type: 'episode/deleted',
-      occurredAt: runtime.now(),
+      occurredAt: now,
       payload: { episodeId: episode.id }
     });
+    await reconcileStoredReminders(now);
     await goto(`${base}/?deleted=episode`, { replaceState: true });
   }
 

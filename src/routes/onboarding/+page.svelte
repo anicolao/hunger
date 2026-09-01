@@ -7,8 +7,8 @@
   import SensationScale from '$lib/components/SensationScale.svelte';
   import { getRepository } from '$lib/data/repository';
   import { SCHEMA_VERSION, type Program } from '$lib/data/schema';
-  import { reminderCadence } from '$lib/domain/reminders';
-  import { cancelNativeReminders, configureReminders } from '$lib/platform/reminders';
+  import { deriveReminderSchedule } from '$lib/domain/reminders';
+  import { cancelNativeReminders, reconcileReminders } from '$lib/platform/reminders';
   import { runtime } from '$lib/platform/runtime';
 
   let step = $state(1);
@@ -40,6 +40,7 @@
   }
 
   function toggleReminderWindow(window: string) {
+    if (!reminderWindows.includes(window) && reminderWindows.length >= 2) return;
     reminderWindows = reminderWindows.includes(window)
       ? reminderWindows.filter((item) => item !== window)
       : [...reminderWindows, window];
@@ -67,16 +68,19 @@
       };
 
       if (reminderChoice === 'setup') {
-        const result = await configureReminders(
-          activatedSettings.reminderWindows,
-          reminderCadence(1, false)
-        );
+        const result = await reconcileReminders(deriveReminderSchedule({
+          program,
+          settings: activatedSettings,
+          episodes: [],
+          experiments: [],
+          now: program.startedAt
+        }), true);
         scheduledNativeReminders = result.capability === 'native-ios' && result.scheduled > 0;
         activatedSettings = {
           ...activatedSettings,
           remindersPaused: false,
           permissionState:
-            result.capability === 'native-ios' ? result.permissionState : 'unsupported'
+            result.permissionState
         };
       }
 

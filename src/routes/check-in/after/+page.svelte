@@ -15,6 +15,7 @@
   } from '$lib/data/schema';
   import { completeEpisode } from '$lib/domain/episodes';
   import { getSensationLevel } from '$lib/domain/scale';
+  import { reconcileStoredReminders } from '$lib/platform/reminders';
   import { runtime } from '$lib/platform/runtime';
 
   let program = $state<Program | null>(null);
@@ -70,6 +71,7 @@
           payload: { episode: completed }
         });
       }
+      await reconcileStoredReminders(now);
       await goto(`${base}/?saved=complete`, { replaceState: true });
     } catch (error) {
       errorMessage = error instanceof Error ? error.message : 'Your check-in could not be completed.';

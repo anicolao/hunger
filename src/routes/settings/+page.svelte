@@ -11,7 +11,7 @@
   import { supportEligible } from '$lib/domain/support';
   import { clearDeviceCaches } from '$lib/platform/offline';
   import { completeNativeDelete } from '$lib/platform/native';
-  import { cancelNativeReminders, configureReminders } from '$lib/platform/reminders';
+  import { openNativeNotificationSettings, reconcileStoredReminders } from '$lib/platform/reminders';
   import { runtime } from '$lib/platform/runtime';
 
   let program = $state<Program | null>(null);
@@ -50,22 +50,31 @@
     if (!settings) return;
     const pausing = !settings.remindersPaused;
     await saveSettings({ ...settings, remindersPaused: pausing });
-    if (pausing && await cancelNativeReminders()) reminderMessage = 'Private iOS reminders are paused.';
+    const result = await reconcileStoredReminders(runtime.now());
+    settings = await getRepository().getSettings();
+    reminderMessage = pausing
+      ? result.capability === 'native-ios'
+        ? 'Private iOS reminders are paused.'
+        : 'Reminder preferences are paused.'
+      : result.explanation;
   }
   async function toggleWindow(window: string) {
     if (!settings) return;
+    if (!settings.reminderWindows.includes(window) && settings.reminderWindows.length >= 2) {
+      reminderMessage = 'Choose up to two reminder windows.';
+      return;
+    }
     const windows = settings.reminderWindows.includes(window) ? settings.reminderWindows.filter((item) => item !== window) : [...settings.reminderWindows, window];
-    await saveSettings({ ...settings, reminderWindows: windows }); reminderMessage = '';
+    await saveSettings({ ...settings, reminderWindows: windows });
+    const result = await reconcileStoredReminders(runtime.now());
+    settings = await getRepository().getSettings();
+    reminderMessage = result.explanation;
   }
   async function enableReminders() {
     if (!settings || !program) return;
-    const cadence = reminderCadence(getProgramProgress(program.startedAt, runtime.now()).week, false);
-    const result = await configureReminders(settings.reminderWindows, cadence);
-    await saveSettings({
-      ...settings,
-      remindersPaused: false,
-      permissionState: result.capability === 'native-ios' ? result.permissionState : 'unsupported'
-    });
+    if (settings.remindersPaused) await saveSettings({ ...settings, remindersPaused: false });
+    const result = await reconcileStoredReminders(runtime.now(), true);
+    settings = await getRepository().getSettings();
     reminderMessage = result.explanation;
   }
   async function pauseProgram() {
@@ -77,6 +86,8 @@
       payload: { program: updated }
     });
     program = updated;
+    const result = await reconcileStoredReminders(runtime.now());
+    reminderMessage = result.explanation;
   }
   async function dismissSupport() { if (settings) await saveSettings({ ...settings, dismissedSupport: true }); }
   async function deleteEverything() {
@@ -104,7 +115,7 @@
           legend="In-app noticing windows"
           ontoggle={toggleWindow}
         />
-        <div class="actions"><button disabled={!settings.reminderWindows.length} onclick={enableReminders}>Use in-app reminders</button><button class="secondary" aria-pressed={settings.remindersPaused} onclick={toggleReminderPause}>{settings.remindersPaused ? 'Resume reminders' : 'Pause reminders'}</button></div>
+        <div class="actions"><button disabled={!settings.reminderWindows.length} onclick={enableReminders}>Allow iOS reminders</button><button class="secondary" aria-pressed={settings.remindersPaused} onclick={toggleReminderPause}>{settings.remindersPaused ? 'Resume reminders' : 'Pause reminders'}</button>{#if settings.permissionState === 'denied'}<button class="secondary" onclick={openNativeNotificationSettings}>Open notification settings</button>{/if}</div>
         {#if reminderMessage}<p class="notice" role="status">{reminderMessage}</p>{/if}
       </section>
 
