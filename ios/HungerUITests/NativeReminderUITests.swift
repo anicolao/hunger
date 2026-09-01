@@ -24,12 +24,16 @@ final class NativeReminderUITests: XCTestCase {
         )
 
         XCTAssertTrue(element(label: "Morning, on", in: app).waitForExistence(timeout: 10))
+        XCTAssertTrue(element(label: "iOS has 1 private reminder pending.", in: app).waitForExistence(timeout: 10))
 
         element(label: "Pause reminders", in: app).tap()
         XCTAssertTrue(
             element(label: "Private iOS reminders are paused.", in: app)
                 .waitForExistence(timeout: 10)
         )
+        XCTAssertTrue(element(label: "iOS has 0 private reminders pending.", in: app).waitForExistence(timeout: 10))
+        element(label: "Resume reminders", in: app).tap()
+        XCTAssertTrue(element(label: "iOS has 1 private reminder pending.", in: app).waitForExistence(timeout: 10))
         let attachment = XCTAttachment(screenshot: app.screenshot())
         attachment.name = "phone-native-reminders-paused"
         attachment.lifetime = .keepAlways
