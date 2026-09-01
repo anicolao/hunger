@@ -57,6 +57,46 @@
           fi
         '';
 
+        simulatorDestination = ''
+          select_ios_simulator_destination() {
+            if [[ -n "''${IOS_DESTINATION:-}" ]]; then
+              printf '%s\n' "$IOS_DESTINATION"
+              return
+            fi
+
+            local devices_json simulator_id runtime_id device_type_id
+            devices_json="$(xcrun simctl list devices available --json)"
+            simulator_id="$(
+              jq -r '
+                [.devices | to_entries[] as $runtime
+                  | $runtime.value[]
+                  | select(.isAvailable == true and (.name | startswith("iPhone")))
+                  | {udid, name, runtime: $runtime.key}]
+                | sort_by(.runtime, .name) | reverse | .[0].udid // empty
+              ' <<< "$devices_json"
+            )"
+
+            if [[ -z "$simulator_id" ]]; then
+              runtime_id="$(
+                xcrun simctl list runtimes available --json \
+                  | jq -r '[.runtimes[] | select(.isAvailable == true and (.name | startswith("iOS")))] | sort_by(.version) | reverse | .[0].identifier // empty'
+              )"
+              device_type_id="$(
+                xcrun simctl list devicetypes --json \
+                  | jq -r '[.devicetypes[] | select(.name | startswith("iPhone"))] | sort_by(.name) | reverse | .[0].identifier // empty'
+              )"
+              if [[ -z "$runtime_id" || -z "$device_type_id" ]]; then
+                echo "No available iOS Simulator runtime or iPhone device type was found in $DEVELOPER_DIR." >&2
+                return 1
+              fi
+              simulator_id="$(xcrun simctl create "Hunger Verification" "$device_type_id" "$runtime_id")"
+              echo "Created iOS simulator $simulator_id for deterministic verification." >&2
+            fi
+
+            printf 'platform=iOS Simulator,id=%s\n' "$simulator_id"
+          }
+        '';
+
         iosGenerateAppIcon = pkgs.writeShellApplication {
           name = "hunger-ios-generate-app-icon";
           runtimeInputs = commonInputs;
@@ -1165,9 +1205,10 @@
           text = ''
             ${darwinGuard}
             ${repoGuard}
+            ${simulatorDestination}
             ${lib.getExe iosBuildWeb}
             ${lib.getExe iosGenerate}
-            destination="''${IOS_DESTINATION:-platform=iOS Simulator,name=iPhone 17,OS=latest}"
+            destination="$(select_ios_simulator_destination)"
             only_testing="''${IOS_ONLY_TESTING:-Hunger${testTarget}}"
             artifact_root="$repo_root/.artifacts/ios"
             result_bundle="$artifact_root/${testTarget}.xcresult"
