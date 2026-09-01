@@ -4,6 +4,7 @@
   import { onMount } from 'svelte';
   import AppShell from '$lib/components/AppShell.svelte';
   import ReminderWindowSwitches from '$lib/components/ReminderWindowSwitches.svelte';
+  import ToggleSwitch from '$lib/components/ToggleSwitch.svelte';
   import { getRepository } from '$lib/data/repository';
   import { SCHEMA_VERSION, type AppSettings, type EatingEpisode, type Program } from '$lib/data/schema';
   import { getProgramProgress } from '$lib/domain/progression';
@@ -26,6 +27,11 @@
   let deleting = $state(false);
   let restartDialog = $state<HTMLDialogElement>();
   let restartConfirmed = $state(false);
+  let supportDialog = $state<HTMLDialogElement>();
+  let storageSummary = $state('Checking local storage…');
+  let recoveryMessage = $state('');
+  let preferenceMessage = $state('');
+  let settingsWrite = Promise.resolve();
 
   onMount(() => {
     online = navigator.onLine;
@@ -38,18 +44,26 @@
       episodes = await repository.listEpisodes(program.id);
       settings = await repository.getSettings();
       reminderDiagnostics = await getNativeReminderDiagnostics();
+      if (navigator.storage?.estimate) {
+        const estimate = await navigator.storage.estimate();
+        const used = estimate.usage ?? 0;
+        storageSummary = used < 1_000_000
+          ? `${Math.max(1, Math.round(used / 1_000))} KB used on this device.`
+          : `${(used / 1_000_000).toFixed(1)} MB used on this device.`;
+      } else storageSummary = 'Stored privately in this browser profile.';
     })();
     return () => { removeEventListener('online', updateOnline); removeEventListener('offline', updateOnline); };
   });
 
   async function saveSettings(updated: AppSettings) {
     const plain = { ...updated, reminderWindows: [...updated.reminderWindows] };
-    await getRepository().append({
+    settings = plain;
+    settingsWrite = settingsWrite.then(() => getRepository().append({
       type: 'settings/changed',
       occurredAt: runtime.now(),
       payload: { settings: plain }
-    });
-    settings = plain;
+    }));
+    await settingsWrite;
   }
   async function toggleReminderPause() {
     if (!settings) return;
@@ -117,6 +131,27 @@
     location.href = `${base}/`;
   }
   async function dismissSupport() { if (settings) await saveSettings({ ...settings, dismissedSupport: true }); }
+  async function restoreSupport() { if (settings) await saveSettings({ ...settings, dismissedSupport: false }); }
+  async function setPreference(key: 'reducedPrompts' | 'includePhotosInExport', checked: boolean) {
+    if (!settings) return;
+    preferenceMessage = '';
+    await saveSettings({ ...settings, [key]: checked });
+    preferenceMessage = key === 'reducedPrompts'
+      ? 'Reduced prompt preference saved.'
+      : 'Photo export preference saved.';
+  }
+  async function rebuildProjection() {
+    recoveryMessage = 'Rebuilding local views from the source event log…';
+    try {
+      await getRepository().rebuildProjection();
+      program = await getRepository().getProgram();
+      episodes = program ? await getRepository().listEpisodes(program.id) : [];
+      settings = await getRepository().getSettings();
+      recoveryMessage = 'Local views were rebuilt from the source event log.';
+    } catch {
+      recoveryMessage = 'Recovery could not finish. Your source event log was not changed.';
+    }
+  }
   async function deleteEverything() {
     if (!deleteConfirmed) return;
     deleting = true; await getRepository().deleteAll(); await clearDeviceCaches();
@@ -127,7 +162,6 @@
 
 <svelte:head><title>Settings — Learn Your Appetite</title></svelte:head>
 
-<span id="scale" class="scale-anchor" aria-hidden="true"></span>
 {#if program && settings}
   {@const progress = getProgramProgress(program.startedAt, runtime.now(), program.timeZone)}
   {@const cadence = reminderCadence(progress.week, settings.remindersPaused)}
@@ -150,7 +184,7 @@
       <section>
         <h2>Scale and program</h2>
         <p>Day {progress.day} of 30 · {progress.focus}. One scale from urgent hunger to painful fullness.</p>
-        <a href={`${base}/onboarding?step=scale`}>Review all scale words</a>
+        <a href={`${base}/scale?returnTo=${encodeURIComponent('/settings')}`}>Review all scale words</a>
         {#if program.status === 'paused'}
           <p class="notice">The guided program is paused. Your records remain available and the calendar continues without a streak.</p>
           <button class="secondary program-action" onclick={() => setProgramStatus('active')}>Resume check-ins</button>
@@ -164,14 +198,34 @@
 
       <section>
         <h2>Your data</h2><p>{episodes.length} local eating moment{episodes.length === 1 ? '' : 's'}. Storage is not end-to-end encrypted and may be visible to someone with this browser profile.</p>
+        <p class="diagnostic">{storageSummary}</p>
+        <ToggleSwitch
+          label="Include photos in exports"
+          description={settings.includePhotosInExport ? 'On — exports may be much larger' : 'Off — privacy-preserving default'}
+          checked={settings.includePhotosInExport}
+          onchange={(checked) => setPreference('includePhotosInExport', checked)}
+        />
         <div class="actions"><a class="button-link" href={`${base}/profile`}>Export profile and data</a><button class="danger secondary" onclick={() => deleteDialog?.showModal()}>Delete everything</button></div>
+        <div class="recovery"><h3>Storage recovery</h3><p>The event log is authoritative; the app can rebuild its editable views without changing source events.</p><button class="secondary" onclick={rebuildProjection}>Rebuild local views</button>{#if recoveryMessage}<p class="notice" role="status">{recoveryMessage}</p>{/if}</div>
+      </section>
+
+      <section>
+        <h2>Accessibility</h2>
+        <p>Appearance, text size, contrast, and reduced motion follow this device and browser.</p>
+        <ToggleSwitch
+          label="Reduced prompts"
+          description={settings.reducedPrompts ? 'On — check-ins use shorter guidance' : 'Off — check-ins include gentle guidance'}
+          checked={settings.reducedPrompts}
+          onchange={(checked) => setPreference('reducedPrompts', checked)}
+        />
+        {#if preferenceMessage}<p class="diagnostic" role="status">{preferenceMessage}</p>{/if}
       </section>
 
       <section>
         <h2>Support</h2>
         {#if supportEligible(episodes) && !settings.dismissedSupport}
-          <aside class="support-card"><h3>Would a pause or extra support feel useful?</h3><p>Several recent check-ins ended with strong discomfort. You can pause this guide, change how you use it, or talk with a qualified health professional. This app cannot diagnose what is happening.</p><div class="actions"><button onclick={() => setProgramStatus('paused')}>Pause the program</button><button class="secondary" onclick={dismissSupport}>Dismiss this note</button></div></aside>
-        {:else}<p>Pause whenever check-ins feel unhelpful. For medical or eating concerns, a qualified health professional can offer individual support.</p>{/if}
+          <aside class="support-card"><h3>Would a pause or extra support feel useful?</h3><p>If eating feels out of control, brings guilt or distress, or often ends in extreme discomfort, a qualified healthcare professional can help.</p><p>You can pause this program at any time.</p><div class="actions"><button onclick={() => setProgramStatus('paused')}>Pause check-ins</button><button class="secondary" onclick={() => supportDialog?.showModal()}>Learn about support</button><button class="secondary" onclick={dismissSupport}>Dismiss</button></div></aside>
+        {:else}<p>Pause whenever check-ins feel unhelpful. This learning tool cannot diagnose or replace individual care.</p><div class="actions"><button class="secondary" onclick={() => supportDialog?.showModal()}>Learn about support</button>{#if settings.dismissedSupport}<button class="secondary" onclick={restoreSupport}>Show support note again</button>{/if}</div>{/if}
       </section>
 
       <footer class="build-information">
@@ -194,10 +248,17 @@
     <label class="confirm"><input type="checkbox" bind:checked={restartConfirmed} />I understand this starts a new program</label>
     <button disabled={!restartConfirmed} onclick={restartProgram}>Start new program</button>
   </dialog>
+  <dialog bind:this={supportDialog}>
+    <form method="dialog"><button class="close" aria-label="Close support information">×</button></form>
+    <h2>Support is a valid next step</h2>
+    <p>If eating feels out of control, brings guilt or distress, or often ends in extreme discomfort, a qualified healthcare professional can help.</p>
+    <p>This app is a private learning tool, not medical advice. It does not diagnose an eating disorder or prescribe how much to eat.</p>
+    <p>You can pause this program at any time. Country-specific services are not listed here because they require maintained, locally reviewed information.</p>
+    <button onclick={() => { setProgramStatus('paused'); supportDialog?.close(); }}>Pause check-ins</button>
+  </dialog>
 {:else}<div data-status="loading" aria-live="polite">Opening your private records…</div>{/if}
 
 <style>
-  .scale-anchor { position: absolute; }
   .eyebrow { margin: 0 0 8px; color: var(--primary); font-size: 13px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
   h1 { margin: 0 0 28px; font-size: 38px; }
   section { padding: 24px 0; border-top: 1px solid var(--border); }
@@ -214,6 +275,7 @@
   .program-action { margin-top: 14px; }
   .diagnostic { font-size: 14px; }
   .support-card { margin-top: 14px; padding: 20px; border: 1px solid var(--border); border-radius: 14px; background: var(--surface); }
+  .recovery { margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--border); }
   .danger { color: var(--danger) !important; }
   dialog { width: min(100% - 32px, 520px); padding: 28px; border: 0; border-radius: 18px; color: var(--ink); background: var(--surface); }
   dialog::backdrop { background: rgb(20 30 26 / .55); }

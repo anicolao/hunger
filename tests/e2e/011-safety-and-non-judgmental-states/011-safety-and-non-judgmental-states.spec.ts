@@ -19,16 +19,16 @@ test('repeated strong discomfort opens a quiet, dismissible support path', async
   await steps.step('quiet-support-card', {
     description: 'A calm card offers pause, dismissal, and outside support after repeated discomfort',
     verifications: [
-      { spec: 'The copy observes recent discomfort without diagnosis, alarm, or moral judgement', check: async () => { await expect(page.getByRole('heading', { name: 'Would a pause or extra support feel useful?' })).toBeVisible(); await expect(page.getByText(/cannot diagnose/)).toBeVisible(); } },
-      { spec: 'Pause and dismissal remain independent choices', check: async () => { await expect(page.getByRole('button', { name: 'Pause the program' })).toBeVisible(); await expect(page.getByRole('button', { name: 'Dismiss this note' })).toBeVisible(); } },
+      { spec: 'The copy observes recent discomfort without diagnosis, alarm, or moral judgement', check: async () => { const card = page.getByRole('complementary'); await expect(card.getByRole('heading', { name: 'Would a pause or extra support feel useful?' })).toBeVisible(); await expect(card.getByText(/qualified healthcare professional can help/)).toBeVisible(); } },
+      { spec: 'Pause, learning, and dismissal remain independent choices', check: async () => { await expect(page.getByRole('complementary').getByRole('button', { name: 'Pause check-ins' })).toBeVisible(); await expect(page.getByRole('button', { name: 'Learn about support' })).toBeVisible(); await expect(page.getByRole('button', { name: 'Dismiss', exact: true })).toBeVisible(); } },
       { spec: 'Rendered copy contains no forbidden achievement or eating-morality language', check: async () => { const text = await page.locator('body').innerText(); expect(text).not.toMatch(/\b(clean|cheat|failed|perfect|on track|fell off|missed your goal)\b/i); } }
     ]
   });
 
-  await page.getByRole('button', { name: 'Pause the program' }).click();
+  await page.getByRole('complementary').getByRole('button', { name: 'Pause check-ins' }).click();
   await expect(page.getByText(/guided program is paused/)).toBeVisible();
   await page.reload(); await expect(page.getByText(/guided program is paused/)).toBeVisible();
-  await page.getByRole('button', { name: 'Dismiss this note' }).click();
+  await page.getByRole('button', { name: 'Dismiss', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Would a pause or extra support feel useful?' })).toHaveCount(0);
   await page.reload(); await expect(page.getByRole('heading', { name: 'Would a pause or extra support feel useful?' })).toHaveCount(0);
   steps.generateDocs();

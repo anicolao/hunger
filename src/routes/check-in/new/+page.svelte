@@ -5,7 +5,7 @@
   import ContextDisclosure from '$lib/components/ContextDisclosure.svelte';
   import SensationScale from '$lib/components/SensationScale.svelte';
   import { getRepository } from '$lib/data/repository';
-  import type { EatingEpisode, Occasion, PhotoRecord, Program } from '$lib/data/schema';
+  import type { AppSettings, EatingEpisode, Occasion, PhotoRecord, Program } from '$lib/data/schema';
   import { createOpenEpisode, markEpisodeUnfinished } from '$lib/domain/episodes';
   import { reconcileStoredReminders } from '$lib/platform/reminders';
   import { runtime } from '$lib/platform/runtime';
@@ -13,6 +13,7 @@
 
   let program = $state<Program | null>(null);
   let existing = $state<EatingEpisode | null>(null);
+  let settings = $state<AppSettings | null>(null);
   let level = $state<number | null>(null);
   let occasion = $state<Occasion | null>(null);
   let photo = $state<PhotoRecord | null>(null);
@@ -24,6 +25,7 @@
     program = await reconcileProgramLifecycle(runtime.now(), repository);
     if (!program) return goto(`${base}/onboarding`);
     existing = await repository.getOpenEpisode(program.id);
+    settings = await repository.getSettings();
     status = 'ready';
   });
 
@@ -90,7 +92,7 @@
   <header>
     <a href={`${base}/`}>← Back</a>
     <strong>Before eating</strong>
-    <a href={`${base}/settings#scale`}>Scale help</a>
+    <a href={`${base}/scale?returnTo=${encodeURIComponent('/check-in/new')}`}>Scale help</a>
   </header>
 
   <main>
@@ -118,10 +120,11 @@
       <form onsubmit={save}>
         <p class="eyebrow">Before eating</p>
         <h1>How does your body feel?</h1>
-        <p class="intro">Choose the closest description right now. Nothing is preselected.</p>
+        {#if !settings?.reducedPrompts}<p class="intro">Choose the closest description right now. Nothing is preselected.</p>{/if}
         <SensationScale value={level} onselect={(nextLevel) => (level = nextLevel)} />
         <ContextDisclosure
           programId={program.id}
+          reduced={settings?.reducedPrompts}
           {occasion}
           onoccasion={(nextOccasion) => (occasion = nextOccasion)}
           onphoto={(nextPhoto) => (photo = nextPhoto)}
