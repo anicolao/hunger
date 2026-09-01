@@ -4,6 +4,7 @@ import XCTest
 final class NativeReminderUITests: XCTestCase {
     func testSchedulesDuringOnboardingAndCancelsFromSettings() {
         let app = XCUIApplication()
+        defer { app.terminate() }
         app.launchArguments = ["--reset-web-data", "--notification-ui-test"]
         app.launch()
         completeOnboarding(in: app)

@@ -4,6 +4,7 @@ import XCTest
 final class NativeBridgeUITests: XCTestCase {
     func testPackagedApplicationCompletesTheVersionedHandshake() {
         let app = XCUIApplication()
+        defer { app.terminate() }
         app.launchArguments = ["--bridge-ui-test"]
         app.launch()
 

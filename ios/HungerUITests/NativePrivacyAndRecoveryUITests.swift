@@ -4,6 +4,7 @@ import XCTest
 final class NativePrivacyAndRecoveryUITests: XCTestCase {
     func testDeleteEverythingRecreatesAFirstRunOfflineShell() {
         let app = XCUIApplication()
+        defer { app.terminate() }
         app.launchArguments = ["--reset-web-data", "--notification-ui-test"]
         app.launch()
         completeOnboarding(in: app)
@@ -34,6 +35,7 @@ final class NativePrivacyAndRecoveryUITests: XCTestCase {
 
         app.terminate()
         let relaunched = XCUIApplication()
+        defer { relaunched.terminate() }
         relaunched.launch()
         XCTAssertTrue(
             element(label: "Learn your appetite.", in: relaunched).waitForExistence(timeout: 20)

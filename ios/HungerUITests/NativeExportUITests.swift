@@ -4,6 +4,7 @@ import XCTest
 final class NativeExportUITests: XCTestCase {
     func testPresentsAndCleansUpPrivateJsonExport() {
         let app = XCUIApplication()
+        defer { app.terminate() }
         app.launchArguments = ["--reset-web-data"]
         app.launch()
         completeOnboarding(in: app)
@@ -27,6 +28,8 @@ final class NativeExportUITests: XCTestCase {
         ).firstMatch
         if closeShareSheet.waitForExistence(timeout: 2) {
             closeShareSheet.tap()
+        } else if app.otherElements["PopoverDismissRegion"].exists {
+            app.otherElements["PopoverDismissRegion"].tap()
         } else {
             shareSheet.swipeDown()
         }
