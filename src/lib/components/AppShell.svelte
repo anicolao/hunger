@@ -1,7 +1,7 @@
 <script lang="ts">
   import { base } from '$app/paths';
   import type { Snippet } from 'svelte';
-  import gearIcon from '$lib/assets/gear.svg?url';
+  import gearIcon from '$lib/assets/gear.svg?no-inline';
   import Brand from './Brand.svelte';
 
   let {
