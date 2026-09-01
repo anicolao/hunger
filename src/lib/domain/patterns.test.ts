@@ -60,6 +60,14 @@ describe('progression patterns', () => {
     });
   });
 
+  it('suppresses an apparent effect created by one outlier', () => {
+    const history = [
+      episode('1', 1, 9, 17), episode('2', 1, 6, 17), episode('3', 2, 6, 17), episode('4', 2, 6, 17),
+      episode('5', 4, 6, 12), episode('6', 4, 6, 12), episode('7', 5, 6, 12), episode('8', 5, 6, 12)
+    ];
+    expect(generatePatternInsights(history).some((result) => result.kind === 'urgent-start-association')).toBe(false);
+  });
+
   it.each([
     [1, false, 'Up to two chosen windows'],
     [2, false, 'One chosen window'],

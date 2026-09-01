@@ -1,9 +1,11 @@
-import type { EatingEpisode } from '../data/schema';
+import type { EatingEpisode, InsightSnapshot } from '../data/schema';
 import { getSensationLevel } from './scale';
 
 export const INSIGHT_ALGORITHM_VERSION = 1;
 export const FIRST_INSIGHT_PAIR_REQUIREMENT = 4;
 export const FIRST_INSIGHT_TOTAL_STEPS = FIRST_INSIGHT_PAIR_REQUIREMENT + 1;
+export const INSIGHT_RECENCY_DAYS = 21;
+export const INSIGHT_PUBLICATION_INTERVAL_DAYS = 7;
 export type InsightKind = 'typical-start' | 'typical-end';
 
 export interface InsightResult {
@@ -50,16 +52,61 @@ export function generateEarlyInsights(episodes: EatingEpisode[]): InsightResult[
   const paired = pairedEpisodes(episodes);
   if (paired.length < FIRST_INSIGHT_PAIR_REQUIREMENT) return [];
   const strength = paired.length >= 8 ? 'recurring' : 'early';
+  const results: InsightResult[] = [];
+  const starts = paired.map((episode) => episode.beforeLevel);
+  const endings = paired.map((episode) => episode.afterLevel as number);
+  if (new Set(starts).size > 1) results.push(createResult('typical-start', starts, paired, strength));
+  if (new Set(endings).size > 1) results.push(createResult('typical-end', endings, paired, strength));
+  return results;
+}
 
-  return [
-    createResult('typical-start', paired.map((episode) => episode.beforeLevel), paired, strength),
-    createResult(
-      'typical-end',
-      paired.map((episode) => episode.afterLevel as number),
-      paired,
-      strength
-    )
-  ];
+interface PublishableInsight {
+  id: string;
+  sampleSize: number;
+  evidenceEpisodeIds: string[];
+}
+
+function snapshotResultId(snapshot: InsightSnapshot): string | null {
+  if (!snapshot.result || typeof snapshot.result !== 'object' || !('id' in snapshot.result)) return null;
+  return typeof snapshot.result.id === 'string' ? snapshot.result.id : null;
+}
+
+export function selectInsightForPublication<T extends PublishableInsight>(
+  candidates: T[],
+  snapshots: InsightSnapshot[],
+  episodes: EatingEpisode[],
+  now: number
+): T | null {
+  const interval = INSIGHT_PUBLICATION_INTERVAL_DAYS * 86_400_000;
+  if (snapshots.some((snapshot) => now - snapshot.shownAt < interval)) return null;
+  const publishedIds = new Set(snapshots.map(snapshotResultId).filter((id): id is string => id !== null));
+  const byId = new Map(episodes.map((episode) => [episode.id, episode]));
+  const recencyCutoff = now - INSIGHT_RECENCY_DAYS * 86_400_000;
+  const unique = new Set<string>();
+  return candidates.find((candidate) => {
+    if (unique.has(candidate.id) || publishedIds.has(candidate.id)) return false;
+    unique.add(candidate.id);
+    const evidence = candidate.evidenceEpisodeIds.map((id) => byId.get(id));
+    return candidate.sampleSize >= FIRST_INSIGHT_PAIR_REQUIREMENT &&
+      evidence.length === candidate.sampleSize && evidence.every(Boolean) &&
+      Math.max(...evidence.map((episode) => episode?.startedAt ?? 0)) >= recencyCutoff;
+  }) ?? null;
+}
+
+export function insightSnapshotSourceStatus(
+  snapshot: InsightSnapshot,
+  episodes: EatingEpisode[]
+): 'current' | 'changed' | 'deleted' {
+  if (!snapshot.result || typeof snapshot.result !== 'object' || !('evidenceEpisodeIds' in snapshot.result)) {
+    return snapshot.sourceStatus ?? (snapshot.sourceChanged ? 'changed' : 'current');
+  }
+  const ids = Array.isArray(snapshot.result.evidenceEpisodeIds)
+    ? snapshot.result.evidenceEpisodeIds.filter((id): id is string => typeof id === 'string')
+    : [];
+  const byId = new Map(episodes.map((episode) => [episode.id, episode]));
+  if (ids.some((id) => !byId.has(id))) return 'deleted';
+  if (ids.some((id) => (byId.get(id)?.updatedAt ?? 0) >= snapshot.shownAt)) return 'changed';
+  return 'current';
 }
 
 function createResult(

@@ -51,6 +51,7 @@ export interface InsightSnapshot {
   result: unknown;
   feedback: 'helpful' | 'not-for-me' | null;
   sourceChanged: boolean;
+  sourceStatus?: 'current' | 'changed' | 'deleted';
 }
 
 export interface ExperimentRecord {
