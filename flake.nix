@@ -71,8 +71,13 @@
                 [.devices | to_entries[] as $runtime
                   | $runtime.value[]
                   | select(.isAvailable == true and (.name | startswith("iPhone")))
-                  | {udid, name, runtime: $runtime.key}]
-                | sort_by(.runtime, .name) | reverse | .[0].udid // empty
+                  | {
+                      udid,
+                      name,
+                      runtime: $runtime.key,
+                      preference: (if (.name | test("Pro( Max)?$")) then 3 elif (.name | test("^iPhone [0-9]+$")) then 2 else 1 end)
+                    }]
+                | sort_by(.runtime, .preference, .name) | reverse | .[0].udid // empty
               ' <<< "$devices_json"
             )"
 

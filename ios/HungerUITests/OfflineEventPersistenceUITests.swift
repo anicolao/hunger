@@ -4,6 +4,7 @@ import XCTest
 final class OfflineEventPersistenceUITests: XCTestCase {
     func testProgramAndOpenEpisodeSurviveRelaunch() {
         let app = XCUIApplication()
+        defer { app.terminate() }
         app.launchArguments = ["--reset-web-data"]
         app.launch()
 
@@ -36,6 +37,7 @@ final class OfflineEventPersistenceUITests: XCTestCase {
         app.terminate()
 
         let relaunched = XCUIApplication()
+        defer { relaunched.terminate() }
         relaunched.launch()
         XCTAssertTrue(element(label: "Today", in: relaunched).waitForExistence(timeout: 20))
         XCTAssertTrue(
