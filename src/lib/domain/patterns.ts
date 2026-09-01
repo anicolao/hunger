@@ -69,6 +69,14 @@ function comparisonResult(input: {
   const comparison = input.outcome(input.comparison);
   const difference = primary.rate - comparison.rate;
   if (Math.abs(difference) < 0.25) return null;
+  const stableWithoutEachPoint = [...input.primary, ...input.comparison].every((removed) => {
+    const reducedPrimary = input.primary.filter((episode) => episode.id !== removed.id);
+    const reducedComparison = input.comparison.filter((episode) => episode.id !== removed.id);
+    if (reducedPrimary.length < 3 || reducedComparison.length < 3) return false;
+    const reducedDifference = input.outcome(reducedPrimary).rate - input.outcome(reducedComparison).rate;
+    return Math.abs(reducedDifference) >= 0.25 && Math.sign(reducedDifference) === Math.sign(difference);
+  });
+  if (!stableWithoutEachPoint) return null;
   const evidence = [...input.primary, ...input.comparison];
   return {
     id: `${input.kind}-${input.context ?? 'overall'}-v1`,

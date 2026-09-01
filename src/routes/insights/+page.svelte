@@ -8,8 +8,10 @@
   import {
     firstInsightProgress,
     generateEarlyInsights,
+    insightSnapshotSourceStatus,
     remainingForFirstInsight,
     renderInsight,
+    selectInsightForPublication,
     type InsightResult
   } from '$lib/domain/insights';
   import {
@@ -25,10 +27,13 @@
   let episodes = $state<EatingEpisode[]>([]);
   let snapshots = $state<InsightSnapshot[]>([]);
   let ready = $state(false);
-  let results = $derived<AnyInsightResult[]>([
+  let candidates = $derived<AnyInsightResult[]>([
     ...generatePatternInsights(episodes),
     ...generateEarlyInsights(episodes)
-  ].slice(0, 3));
+  ]);
+  let results = $derived<AnyInsightResult[]>(candidates
+    .filter((result) => snapshots.some((snapshot) => resultIdForSnapshot(snapshot) === result.id))
+    .slice(0, 3));
   let remaining = $derived(remainingForFirstInsight(episodes));
   let insightProgress = $derived(firstInsightProgress(episodes));
 
@@ -39,37 +44,60 @@
     episodes = await repository.listEpisodes(program.id);
     snapshots = await repository.listInsightSnapshots(program.id);
 
-    for (const result of [
-      ...generatePatternInsights(episodes),
-      ...generateEarlyInsights(episodes)
-    ]) {
-      const id = `${program.id}-${result.id}`;
-      if (!snapshots.some((snapshot) => snapshot.id === id)) {
-        const shownAt = runtime.now();
+    for (const snapshot of snapshots) {
+      const sourceStatus = insightSnapshotSourceStatus(snapshot, episodes);
+      if (snapshot.sourceStatus !== sourceStatus || snapshot.sourceChanged !== (sourceStatus !== 'current')) {
+        const updated = JSON.parse(JSON.stringify({
+          ...snapshot,
+          sourceStatus,
+          sourceChanged: sourceStatus !== 'current'
+        })) as InsightSnapshot;
         await repository.append({
           type: 'insight/snapshot-recorded',
-          occurredAt: shownAt,
-          payload: {
-            snapshot: {
-              id,
-              programId: program.id,
-              shownAt,
-              algorithmVersion: result.algorithmVersion,
-              copyVersion: 1,
-              result,
-              feedback: null,
-              sourceChanged: false
-            }
-          }
+          occurredAt: runtime.now(),
+          payload: { snapshot: updated }
         });
       }
+    }
+    snapshots = await repository.listInsightSnapshots(program.id);
+    const publication = selectInsightForPublication(candidates, snapshots, episodes, runtime.now());
+    if (publication) {
+      const shownAt = runtime.now();
+      await repository.append({
+        type: 'insight/snapshot-recorded',
+        occurredAt: shownAt,
+        payload: {
+          snapshot: {
+            id: `${program.id}-${publication.id}-${shownAt}`,
+            programId: program.id,
+            shownAt,
+            algorithmVersion: publication.algorithmVersion,
+            copyVersion: 1,
+            result: JSON.parse(JSON.stringify(publication)) as AnyInsightResult,
+            feedback: null,
+            sourceChanged: false,
+            sourceStatus: 'current'
+          }
+        }
+      });
     }
     snapshots = await repository.listInsightSnapshots(program.id);
     ready = true;
   });
 
   function snapshotFor(result: AnyInsightResult): InsightSnapshot | undefined {
-    return snapshots.find((snapshot) => snapshot.id.endsWith(result.id));
+    return snapshots.find((snapshot) => resultIdForSnapshot(snapshot) === result.id);
+  }
+
+  function resultIdForSnapshot(snapshot: InsightSnapshot): string | null {
+    if (!snapshot.result || typeof snapshot.result !== 'object' || !('id' in snapshot.result)) return null;
+    return typeof snapshot.result.id === 'string' ? snapshot.result.id : null;
+  }
+
+  function resultForSnapshot(snapshot: InsightSnapshot): AnyInsightResult | null {
+    if (!snapshot.result || typeof snapshot.result !== 'object') return null;
+    if (!('id' in snapshot.result) || !('kind' in snapshot.result) || !('evidenceEpisodeIds' in snapshot.result)) return null;
+    return snapshot.result as AnyInsightResult;
   }
 
   async function recordFeedback(result: AnyInsightResult, feedback: 'helpful' | 'not-for-me') {
@@ -126,7 +154,11 @@
         <section class="learning-card" aria-labelledby="learning-title">
           <span class="badge">Still learning</span>
           <h2 id="learning-title">
-            {remaining} more paired {remaining === 1 ? 'check-in' : 'check-ins'} will help compare where you started and finished.
+            {#if remaining === 0}
+              Your check-ins are recorded. More varied moments may support an observation.
+            {:else}
+              {remaining} more paired {remaining === 1 ? 'check-in' : 'check-ins'} will help compare where you started and finished.
+            {/if}
           </h2>
           <div
             class="progress"
@@ -199,6 +231,39 @@
           {/each}
         </div>
       {/if}
+
+      {#if snapshots.length > 0}
+        <section class="history" aria-labelledby="history-title">
+          <h2 id="history-title">Observation history</h2>
+          <p>Past observations keep the evidence and wording that were shown at the time.</p>
+          <ol>
+            {#each snapshots as snapshot}
+              {@const historical = resultForSnapshot(snapshot)}
+              {#if historical}
+                {@const rendered = renderAny(historical)}
+                {@const sourceStatus = insightSnapshotSourceStatus(snapshot, episodes)}
+                <li>
+                  <div><strong>{rendered.title}</strong><span>{shortDate(snapshot.shownAt)} · Algorithm v{snapshot.algorithmVersion} · {historical.sampleSize} source records</span></div>
+                  {#if sourceStatus === 'deleted'}<p class="source-note">One or more source records were deleted. This saved observation was not rewritten.</p>
+                  {:else if sourceStatus === 'changed'}<p class="source-note">One or more source records changed after this was shown. This saved observation was not rewritten.</p>{/if}
+                  <details>
+                    <summary>Historical evidence</summary>
+                    <p>{rendered.finding}</p>
+                    <ul>
+                      {#each historical.evidenceEpisodeIds as id}
+                        {@const source = episodeFor(id)}
+                        {#if source}<li><a href={`${base}/episode?episode=${id}`}>{shortDate(source.startedAt)} · {source.beforeLevel} → {source.afterLevel}</a></li>
+                        {:else}<li>Deleted source record</li>{/if}
+                      {/each}
+                    </ul>
+                    <p>Feedback: {snapshot.feedback === 'helpful' ? 'Helpful' : snapshot.feedback === 'not-for-me' ? 'Not for me' : 'Not provided'}</p>
+                  </details>
+                </li>
+              {/if}
+            {/each}
+          </ol>
+        </section>
+      {/if}
     </div>
   </AppShell>
 {:else}
@@ -239,5 +304,13 @@
   .feedback > span { width: 100%; font-size: 14px; font-weight: 700; }
   .feedback button { min-height: 44px; padding: 0 14px; border: 1px solid var(--border-strong); border-radius: 999px; color: var(--ink); background: var(--surface); }
   .feedback button.selected { border: 2px solid var(--primary); background: var(--primary-soft); }
+  .history { margin-top: 34px; padding-top: 28px; border-top: 1px solid var(--border); }
+  .history > h2 { margin-top: 0; }
+  .history > p { color: var(--ink-muted); }
+  .history ol { margin: 18px 0 0; padding: 0; display: grid; gap: 12px; list-style: none; }
+  .history ol > li { padding: 16px; border: 1px solid var(--border); border-radius: 14px; background: var(--surface); }
+  .history li > div { display: grid; gap: 3px; }
+  .history li span { color: var(--ink-muted); font-size: 13px; }
+  .source-note { margin-bottom: 0; padding: 10px; border-radius: 9px; color: var(--ink) !important; background: var(--accent-soft); }
   @media (min-width: 760px) { .insight-list { grid-template-columns: 1fr 1fr; } }
 </style>

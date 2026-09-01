@@ -3,10 +3,12 @@ import type { EatingEpisode } from '../data/schema';
 import {
   firstInsightProgress,
   generateEarlyInsights,
+  insightSnapshotSourceStatus,
   median,
   pairedEpisodes,
   remainingForFirstInsight,
-  renderInsight
+  renderInsight,
+  selectInsightForPublication
 } from './insights';
 
 function episode(id: string, before: number, after: number | null, status: EatingEpisode['status'] = 'complete'): EatingEpisode {
@@ -100,7 +102,35 @@ describe('early insight engine', () => {
   });
 
   it('promotes strength only at eight complete pairs', () => {
-    const episodes = Array.from({ length: 8 }, (_, index) => episode(String(index + 1), 4, 6));
+    const episodes = Array.from({ length: 8 }, (_, index) => episode(String(index + 1), 4 + index % 2, 6 + index % 2));
     expect(generateEarlyInsights(episodes)[0].strength).toBe('recurring');
+  });
+
+  it('suppresses a claim when its evidence has no variation', () => {
+    expect(generateEarlyInsights(Array.from({ length: 4 }, (_, index) => episode(String(index + 1), 4, 6)))).toEqual([]);
+  });
+
+  it('publishes at most one recent novel observation in seven days', () => {
+    const now = Date.UTC(2026, 7, 29);
+    const episodes = [episode('1', 3, 6), episode('2', 4, 7), episode('3', 5, 6), episode('4', 4, 8)]
+      .map((item, index) => ({ ...item, startedAt: now - index * 86_400_000 }));
+    const candidates = generateEarlyInsights(episodes);
+    expect(selectInsightForPublication(candidates, [], episodes, now)?.id).toBe('typical-start-v1');
+    const snapshot = {
+      id: 'snapshot', programId: 'program-1', shownAt: now - 2 * 86_400_000,
+      algorithmVersion: 1, copyVersion: 1, result: candidates[0], feedback: null,
+      sourceChanged: false, sourceStatus: 'current' as const
+    };
+    expect(selectInsightForPublication(candidates, [snapshot], episodes, now)).toBeNull();
+    expect(selectInsightForPublication(candidates, [{ ...snapshot, shownAt: now - 8 * 86_400_000 }], episodes, now)?.id).toBe('typical-end-v1');
+  });
+
+  it('labels immutable snapshot evidence as changed or deleted', () => {
+    const result = generateEarlyInsights([episode('1', 3, 6), episode('2', 4, 7), episode('3', 5, 6), episode('4', 4, 8)])[0];
+    const snapshot = { id: 'snapshot', programId: 'program-1', shownAt: 10, algorithmVersion: 1, copyVersion: 1, result, feedback: null, sourceChanged: false };
+    const unchanged = result.evidenceEpisodeIds.map((id) => ({ ...episode(id, 3, 6), updatedAt: 9 }));
+    expect(insightSnapshotSourceStatus(snapshot, unchanged)).toBe('current');
+    expect(insightSnapshotSourceStatus(snapshot, unchanged.map((item, index) => index === 0 ? { ...item, updatedAt: 10 } : item))).toBe('changed');
+    expect(insightSnapshotSourceStatus(snapshot, unchanged.slice(1))).toBe('deleted');
   });
 });
