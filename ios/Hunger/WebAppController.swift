@@ -19,6 +19,8 @@ final class WebAppController: NSObject, ObservableObject {
     private var recoveryAttempts = 0
     private var lastSafeURL = PersistenceConstants.rootURL
     private let maximumRecoveryAttempts = 2
+    private var webApplicationReady = false
+    private var pendingForegroundLifecycle = false
 
     func startIfNeeded() async {
         guard !started else { return }
@@ -37,6 +39,7 @@ final class WebAppController: NSObject, ObservableObject {
 
     private func buildAndLoad(resetData: Bool) async {
         state = .loading
+        webApplicationReady = false
         do {
             if resetData {
                 try await removePersistentDataStore()
@@ -81,7 +84,8 @@ final class WebAppController: NSObject, ObservableObject {
 #endif
         let bridge = NativeBridge(
             notifications: notifications,
-            uiTestEvidenceEnabled: ProcessInfo.processInfo.arguments.contains("--bridge-ui-test")
+            uiTestEvidenceEnabled: ProcessInfo.processInfo.arguments.contains("--bridge-ui-test"),
+            onAppReady: { [weak self] in self?.webApplicationBecameReady() }
         )
         configuration.userContentController.addUserScript(NativeBridge.bootstrapScript)
         configuration.userContentController.addScriptMessageHandler(
@@ -103,7 +107,10 @@ final class WebAppController: NSObject, ObservableObject {
     }
 
     func sendForegroundLifecycle() async {
-        guard state == .ready, let webView, let bridge else { return }
+        guard state == .ready, webApplicationReady, let webView, let bridge else {
+            pendingForegroundLifecycle = true
+            return
+        }
         await bridge.sendLifecycle([
             "reason": "foreground",
             "occurredAt": Int(Date().timeIntervalSince1970 * 1000)
@@ -111,7 +118,7 @@ final class WebAppController: NSObject, ObservableObject {
     }
 
     private func sendNotificationLifecycle(_ event: NotificationRouteEvent) async {
-        guard state == .ready, let webView, let bridge else {
+        guard state == .ready, webApplicationReady, let webView, let bridge else {
             NotificationRouteCenter.shared.deferUntilReady(event)
             return
         }
@@ -121,6 +128,16 @@ final class WebAppController: NSObject, ObservableObject {
             "route": event.route,
             "kind": event.kind
         ], to: webView)
+    }
+
+    private func webApplicationBecameReady() {
+        guard !webApplicationReady else { return }
+        webApplicationReady = true
+        NotificationRouteCenter.shared.webAppBecameReady()
+        if pendingForegroundLifecycle {
+            pendingForegroundLifecycle = false
+            Task { await sendForegroundLifecycle() }
+        }
     }
 
     private func compileRuleList(_ source: String) async throws -> WKContentRuleList {
@@ -181,7 +198,6 @@ extension WebAppController: WKNavigationDelegate {
         }
         recoveryAttempts = 0
         state = .ready
-        NotificationRouteCenter.shared.webAppBecameReady()
     }
 
     func webView(
@@ -198,6 +214,7 @@ extension WebAppController: WKNavigationDelegate {
             return
         }
         recoveryAttempts += 1
+        webApplicationReady = false
         state = .loading
         webView.load(URLRequest(url: lastSafeURL, cachePolicy: .reloadIgnoringLocalCacheData))
     }

@@ -78,6 +78,13 @@ export async function completeNativeDelete(): Promise<boolean> {
   return true;
 }
 
+export async function signalNativeAppReady(): Promise<boolean> {
+  const capabilities = await nativeCapabilities();
+  if (!capabilities?.commands.includes('app.ready')) return false;
+  await nativeRequest('app.ready');
+  return true;
+}
+
 export function resetNativeCapabilityCacheForTests(): void {
   capabilitiesPromise = null;
 }

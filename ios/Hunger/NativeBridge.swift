@@ -12,6 +12,7 @@ enum NativeBridgeConstants {
 
 enum NativeBridgeCommand: String, CaseIterable {
     case capabilitiesGet = "capabilities.get"
+    case appReady = "app.ready"
     case notificationStatus = "notifications.authorizationStatus"
     case notificationRequest = "notifications.requestAuthorization"
     case notificationReplace = "notifications.replaceSchedule"
@@ -206,15 +207,18 @@ final class NativeBridge: NSObject, WKScriptMessageHandlerWithReply {
     private let uiTestEvidenceEnabled: Bool
     private let notifications: NotificationCoordinating
     private let shareCoordinator: ShareCoordinating
+    private let onAppReady: @MainActor () -> Void
 
     init(
         notifications: NotificationCoordinating = NotificationCoordinator(),
         shareCoordinator: ShareCoordinating = ShareCoordinator(),
-        uiTestEvidenceEnabled: Bool = false
+        uiTestEvidenceEnabled: Bool = false,
+        onAppReady: @escaping @MainActor () -> Void = {}
     ) {
         self.notifications = notifications
         self.shareCoordinator = shareCoordinator
         self.uiTestEvidenceEnabled = uiTestEvidenceEnabled
+        self.onAppReady = onAppReady
     }
 
     static var bootstrapScript: WKUserScript {
@@ -267,12 +271,14 @@ final class NativeBridge: NSObject, WKScriptMessageHandlerWithReply {
                     "platform": "ios",
                     "commands": NativeBridgeCommand.allCases.map(\.rawValue)
                 ]), nil)
-                addUITestEvidenceIfNeeded(to: message.webView)
                 return
             }
             Task { @MainActor in
                 do {
                     let value = try await dispatch(request)
+                    if request.command == .appReady {
+                        self.addUITestEvidenceIfNeeded(to: message.webView)
+                    }
                     replyHandler(self.success(id: request.id, value: value), nil)
                 } catch let error as NativeBridgeValidationError {
                     replyHandler(self.failure(id: request.id, error: error), nil)
@@ -292,6 +298,9 @@ final class NativeBridge: NSObject, WKScriptMessageHandlerWithReply {
         switch request.command {
         case .capabilitiesGet:
             return [:]
+        case .appReady:
+            onAppReady()
+            return ["ready": true]
         case .notificationStatus:
             return ["status": await notifications.authorizationStatus().rawValue]
         case .notificationRequest:
