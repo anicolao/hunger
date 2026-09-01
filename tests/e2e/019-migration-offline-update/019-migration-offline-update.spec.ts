@@ -39,7 +39,9 @@ test('source events migrate, unsupported data recovers, and the versioned shell 
     database.close();
   });
   await page.reload();
-  await expect(page.getByRole('heading', { name: /Finish the check-in/ })).toBeVisible();
+  // Rebuilding every disposable projection from the event log can exceed the
+  // suite's two-second UI assertion budget on a contended CI runner.
+  await expect(page.getByRole('heading', { name: /Finish the check-in/ })).toBeVisible({ timeout: 10_000 });
 
   await page.evaluate(async () => {
     const database = await new Promise<IDBDatabase>((resolve, reject) => {
