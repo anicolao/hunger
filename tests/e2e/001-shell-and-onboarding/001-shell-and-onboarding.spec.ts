@@ -296,7 +296,16 @@ test('application shell activates the local-first 30-day program', async ({ page
       {
         spec: 'Settings uses the bundled SVG gear and no gear emoji',
         check: async () => {
-          await expect(page.locator('[data-icon="settings"]')).toHaveCount(2);
+          const settingsIcons = page.locator('[data-icon="settings"]');
+          await expect(settingsIcons).toHaveCount(2);
+          const maskImages = await settingsIcons.evaluateAll((icons) =>
+            icons.map((icon) => getComputedStyle(icon).maskImage)
+          );
+          for (const maskImage of maskImages) {
+            expect(maskImage).toContain('gear');
+            expect(maskImage).toContain('.svg');
+            expect(maskImage).not.toContain('data:');
+          }
           await expect(page.getByText('⚙')).toHaveCount(0);
         }
       }
