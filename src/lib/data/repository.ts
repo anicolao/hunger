@@ -54,6 +54,7 @@ export interface AppetiteRepository {
   append(...events: NewAppetiteEvent[]): Promise<void>;
   listEvents(): Promise<AppetiteEvent[]>;
   rebuildProjection(): Promise<void>;
+  exportOriginalData(): Promise<string>;
   importFixture(fixture: FixtureSnapshot): Promise<void>;
   clearAll(): Promise<void>;
   deleteAll(): Promise<void>;
@@ -164,6 +165,11 @@ export class IndexedDbRepository implements AppetiteRepository {
     await this.materialize(await this.ready());
   }
 
+  async exportOriginalData(): Promise<string> {
+    const events = await this.readAll<AppetiteEvent>(await this.open(), EVENT_STORE_NAME);
+    return `${JSON.stringify({ exportVersion: 1, databaseVersion: DATABASE_VERSION, events }, null, 2)}\n`;
+  }
+
   async importFixture(fixture: FixtureSnapshot): Promise<void> {
     await this.clearAll();
     const events: NewAppetiteEvent[] = [
@@ -205,8 +211,7 @@ export class IndexedDbRepository implements AppetiteRepository {
   }
 
   async deleteAll(): Promise<void> {
-    await this.clearAll();
-    const database = await this.databasePromise;
+    const database = await this.databasePromise?.catch(() => null);
     database?.close();
     this.databasePromise = null;
     this.readyPromise = null;
@@ -252,6 +257,11 @@ export class IndexedDbRepository implements AppetiteRepository {
       await this.importLegacyProjectionOnce(database);
       await this.materialize(database);
       return database;
+    }).catch((error) => {
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('hunger:storage-error', { detail: error }));
+      }
+      throw error;
     });
     return this.readyPromise;
   }
