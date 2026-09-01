@@ -1,6 +1,14 @@
 import { expect, type BrowserContext, type Page } from '@playwright/test';
 
 export async function blockExternalRequests(context: BrowserContext) {
+  await context.addInitScript(() => {
+    if (navigator.storage) {
+      Object.defineProperty(navigator.storage, 'estimate', {
+        configurable: true,
+        value: async () => ({ usage: 32_000, quota: 1_000_000_000 })
+      });
+    }
+  });
   await context.route('**/*', async (route) => {
     const url = new URL(route.request().url());
     if (url.hostname !== '127.0.0.1') throw new Error(`external request blocked: ${url}`);
