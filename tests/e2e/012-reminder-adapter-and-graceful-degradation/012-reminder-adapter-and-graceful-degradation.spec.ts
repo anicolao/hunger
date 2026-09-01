@@ -44,6 +44,7 @@ test('browser reminder preferences remain honest about unavailable background de
   await expect(page.getByText('Week 4 · One experiment reminder while an experiment is active')).toBeVisible();
   await page.getByRole('button', { name: 'Pause reminders' }).click();
   await expect(page.getByText('Week 4 · Paused')).toBeVisible();
+  await expect(page.getByRole('status')).toHaveText('Reminder preferences are paused.');
 
   await context.addInitScript(() => {
     const calls: Array<{ command: string; payload: Record<string, unknown> }> = [];
