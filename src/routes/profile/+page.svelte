@@ -4,10 +4,10 @@
   import { onMount } from 'svelte';
   import AppShell from '$lib/components/AppShell.svelte';
   import { getRepository } from '$lib/data/repository';
-  import type { EatingEpisode, ExperimentRecord, Program } from '$lib/data/schema';
+  import type { AppSettings, EatingEpisode, ExperimentRecord, Program } from '$lib/data/schema';
   import { buildProfile, type AppetiteProfile } from '$lib/domain/profile';
   import { getProgramProgress, type ProgramProgress } from '$lib/domain/progression';
-  import { buildExport, exportHtml, exportJson, shareExport } from '$lib/platform/export';
+  import { buildExport, encodeExportPhotos, exportHtml, exportJson, shareExport } from '$lib/platform/export';
   import { runtime } from '$lib/platform/runtime';
   import { reconcileStoredReminders } from '$lib/platform/reminders';
   import { reconcileProgramLifecycle } from '$lib/platform/program';
@@ -19,6 +19,8 @@
   let progress = $state<ProgramProgress | null>(null);
   let ready = $state(false);
   let exportMessage = $state('');
+  let settings = $state<AppSettings | null>(null);
+  let exporting = $state(false);
 
   onMount(async () => {
     const repository = getRepository();
@@ -28,17 +30,39 @@
     if (progress.complete) await reconcileStoredReminders(runtime.now());
     episodes = await repository.listEpisodes(program.id);
     experiments = await repository.listExperiments(program.id);
+    settings = await repository.getSettings();
     profile = buildProfile(program, episodes, experiments, runtime.now());
     ready = true;
   });
 
   async function download(format: 'json' | 'html') {
-    if (!program || !profile) return;
-    const data = buildExport(program, profile, episodes, experiments, runtime.now());
-    const destination = format === 'json'
-      ? await shareExport('appetite-profile.json', 'application/json', exportJson(data))
-      : await shareExport('appetite-profile.html', 'text/html', exportHtml(data));
-    exportMessage = destination === 'native-ios' ? 'Private export closed and temporary file removed.' : '';
+    if (!program || !profile || !settings || exporting) return;
+    exporting = true;
+    exportMessage = '';
+    try {
+      const photos = settings.includePhotosInExport
+        ? await encodeExportPhotos(episodes, (id) => getRepository().getPhoto(id))
+        : [];
+      const data = buildExport(
+        program,
+        profile,
+        episodes,
+        experiments,
+        runtime.now(),
+        photos,
+        settings.includePhotosInExport
+      );
+      const destination = format === 'json'
+        ? await shareExport('appetite-profile.json', 'application/json', exportJson(data))
+        : await shareExport('appetite-profile.html', 'text/html', exportHtml(data));
+      exportMessage = destination === 'native-ios'
+        ? 'Private export closed and temporary file removed.'
+        : `Private export downloaded${data.photoPolicy.omittedCount ? `; ${data.photoPolicy.omittedCount} photo${data.photoPolicy.omittedCount === 1 ? '' : 's'} omitted by the selected policy or size limit` : ''}.`;
+    } catch {
+      exportMessage = 'The private export could not be shared. No temporary copy was kept.';
+    } finally {
+      exporting = false;
+    }
   }
 </script>
 
@@ -75,8 +99,8 @@
 
       <section class="export-card">
         <h2>Keep a private copy</h2>
-        <p>Download a readable summary or structured data. Photos are excluded by default.</p>
-        <div><button onclick={() => download('html')}>Download readable profile</button><button class="secondary" onclick={() => download('json')}>Download JSON</button></div>
+        <p>Download a readable summary or structured data. {settings?.includePhotosInExport ? 'Photos are included only because you enabled them in Settings, up to a 750 KB source-photo limit.' : 'Photos are excluded by default.'}</p>
+        <div><button disabled={exporting} onclick={() => download('html')}>Download readable profile</button><button class="secondary" disabled={exporting} onclick={() => download('json')}>Download JSON</button></div>
         {#if exportMessage}<p role="status">{exportMessage}</p>{/if}
       </section>
     </div>

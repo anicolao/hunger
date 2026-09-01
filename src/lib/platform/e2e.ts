@@ -24,7 +24,8 @@ export function installE2EFixtureBoundary() {
         eventCount: events.length,
         eventTypes: events.map(({ type }) => type)
       };
-    }
+    },
+    failNextPhotoWrite: () => getRepository().simulateNextPhotoAppendFailure()
   };
   document.documentElement.dataset.e2eFixture = 'ready';
 }

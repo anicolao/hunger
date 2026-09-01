@@ -196,7 +196,7 @@
         {/if}
       </section>
 
-      <section>
+      <section id="manage-data">
         <h2>Your data</h2><p>{episodes.length} local eating moment{episodes.length === 1 ? '' : 's'}. Storage is not end-to-end encrypted and may be visible to someone with this browser profile.</p>
         <p class="diagnostic">{storageSummary}</p>
         <ToggleSwitch

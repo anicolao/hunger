@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { PhotoRecord } from '$lib/data/schema';
+  import { onDestroy } from 'svelte';
   import { preparePhoto } from '$lib/platform/photos';
   import { runtime } from '$lib/platform/runtime';
 
@@ -11,6 +12,10 @@
   let status = $state<'idle' | 'preparing' | 'ready' | 'error'>('idle');
   let message = $state('');
   let preview = $state('');
+
+  onDestroy(() => {
+    if (preview) URL.revokeObjectURL(preview);
+  });
 
   async function selectPhoto(event: Event) {
     const file = (event.currentTarget as HTMLInputElement).files?.[0];

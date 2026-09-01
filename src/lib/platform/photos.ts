@@ -1,5 +1,17 @@
 import type { PhotoRecord } from '$lib/data/schema';
 
+export function storablePhoto(photo: PhotoRecord): PhotoRecord {
+  return {
+    id: photo.id,
+    programId: photo.programId,
+    blob: photo.blob,
+    mediaType: photo.mediaType,
+    width: photo.width,
+    height: photo.height,
+    bytes: photo.bytes
+  };
+}
+
 const MAX_EDGE = 1280;
 const TARGET_BYTES = 350 * 1024;
 

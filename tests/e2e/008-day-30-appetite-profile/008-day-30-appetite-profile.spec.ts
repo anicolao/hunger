@@ -86,6 +86,7 @@ test('day 30 assembles only supported profile sections and private exports', asy
   expect(htmlDownload.suggestedFilename()).toBe('appetite-profile.html');
   expect(html).toContain('<h1>My Appetite Profile</h1>');
   expect(html).not.toContain('secret-local-photo-id');
+  await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
 
   await steps.step('private-export', {
     description: 'Readable and structured exports are explicit and exclude photos by default',
