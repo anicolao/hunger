@@ -13,6 +13,9 @@ const config = {
     }),
     paths: {
       base: process.env.PUBLIC_BASE_PATH ?? ''
+    },
+    serviceWorker: {
+      register: process.env.VITE_NATIVE_SHELL !== 'ios'
     }
   }
 };

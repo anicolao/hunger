@@ -1,7 +1,7 @@
 import { base } from '$app/paths';
 export async function registerOfflineShell(): Promise<ServiceWorkerRegistration | null> {
   if (!('serviceWorker' in navigator)) return null;
-  try { return await navigator.serviceWorker.register(`${base}/service-worker.js`, { scope: base ? `${base}/` : '/' }); }
+  try { return await navigator.serviceWorker.register(`${base}/service-worker.js`, { scope: base ? `${base}/` : '/', type: 'module' }); }
   catch { return null; }
 }
 export async function clearDeviceCaches(): Promise<void> {
