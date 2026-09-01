@@ -2,9 +2,10 @@
 @import '@fontsource/atkinson-hyperlegible/700.css';
 
 :root {
+  color-scheme: light dark;
   font-family: 'Atkinson Hyperlegible', system-ui, sans-serif;
-  color: #25312d;
-  background: #f7f4ee;
+  color: var(--ink);
+  background: var(--canvas);
   font-synthesis: none;
   --canvas: #f7f4ee;
   --surface: #ffffff;
@@ -21,6 +22,25 @@
   --danger: #b42318;
   --focus: #0b5fff;
   --shell-safe-area-bottom: env(safe-area-inset-bottom);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --canvas: #111713;
+    --surface: #1b241f;
+    --ink: #f3f5f2;
+    --ink-muted: #b8c4bd;
+    --primary: #79c8b8;
+    --primary-hover: #9ad9cc;
+    --primary-soft: #263d37;
+    --accent: #e9a36b;
+    --accent-soft: #4a3021;
+    --accent-ink: #ffd4b2;
+    --border: #3e4c45;
+    --border-strong: #65756c;
+    --danger: #ff938a;
+    --focus: #85aaff;
+  }
 }
 
 html[data-native-shell='ios'] {
@@ -71,4 +91,9 @@ a {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
   }
+}
+
+@media (forced-colors: active) {
+  :focus-visible { outline-color: Highlight; }
+  button, a, input, [role='switch'] { forced-color-adjust: auto; }
 }

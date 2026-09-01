@@ -300,3 +300,12 @@ Remediation is complete only when:
   preview deployment checks; and
 - physical-device-only checklist items are either completed with recorded build
   evidence or explicitly reported as remaining blockers.
+
+## Implementation record
+
+Slices 1–10 are implemented on the remediation branch with numbered browser
+tracers `013`–`020`, pure-rule coverage, native unit/UI coverage, versioned
+offline packaging, and the flake-managed release gate. Simulator, browser, and
+static-payload evidence is automated; the physical-device rows in
+`IOS_RELEASE_CHECKLIST.md` intentionally remain unchecked until exercised on
+the uploaded TestFlight candidate.
