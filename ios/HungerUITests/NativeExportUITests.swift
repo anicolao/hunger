@@ -40,7 +40,10 @@ final class NativeExportUITests: XCTestCase {
     }
 
     private func completeOnboarding(in app: XCUIApplication) {
-        XCTAssertTrue(element(label: "Learn your appetite.", in: app).waitForExistence(timeout: 20))
+        // A reset performs a full WKWebsiteDataStore purge before reloading the
+        // packaged shell. Loaded CI simulators can take longer than the normal
+        // navigation timeout to finish that cold start.
+        XCTAssertTrue(element(label: "Learn your appetite.", in: app).waitForExistence(timeout: 45))
         app.swipeUp()
         app.links["Begin the 30-day program"].tap()
         XCTAssertTrue(app.buttons["Begin"].waitForExistence(timeout: 10))
