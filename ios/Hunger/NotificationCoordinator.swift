@@ -99,11 +99,8 @@ final class NotificationCoordinator: NotificationCoordinating {
     }
 
     func authorizationStatus() async -> NotificationAuthorization {
-        await withCheckedContinuation { continuation in
-            center.getNotificationSettings { settings in
-                continuation.resume(returning: Self.map(settings.authorizationStatus))
-            }
-        }
+        let settings = await center.notificationSettings()
+        return Self.map(settings.authorizationStatus)
     }
 
     func requestAuthorization() async throws -> NotificationAuthorization {
@@ -158,15 +155,10 @@ final class NotificationCoordinator: NotificationCoordinating {
     }
 
     func pendingIdentifiers() async -> [String] {
-        await withCheckedContinuation { continuation in
-            center.getPendingNotificationRequests { requests in
-                let owned = requests
-                    .map(\.identifier)
-                    .filter(NotificationSchedule.identifiers.contains)
-                    .sorted()
-                continuation.resume(returning: owned)
-            }
-        }
+        await center.pendingNotificationRequests()
+            .map(\.identifier)
+            .filter(NotificationSchedule.identifiers.contains)
+            .sorted()
     }
 
     nonisolated static func map(_ status: UNAuthorizationStatus) -> NotificationAuthorization {
