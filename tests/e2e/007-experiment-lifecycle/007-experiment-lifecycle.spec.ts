@@ -72,10 +72,10 @@ test('a supported observation can become one optional experiment and a neutral c
   await steps.step('one-active-experiment', {
     description: 'One record is active and remains freely pausable or stoppable',
     verifications: [
-      { spec: 'The active view names its baseline and offers pause, finish, and stop paths', check: async () => {
+      { spec: 'The active view names its baseline and offers pause, timed comparison, and stop paths', check: async () => {
         await expect(page.getByText(/7 recent paired check-ins/)).toBeVisible();
         await expect(page.getByRole('button', { name: 'Pause' })).toBeVisible();
-        await expect(page.getByRole('button', { name: 'Finish and compare' })).toBeVisible();
+        await expect(page.getByRole('button', { name: 'Compare in 7 days' })).toBeDisabled();
         await expect(page.getByRole('button', { name: 'Stop without a result' })).toBeVisible();
       } }
     ]

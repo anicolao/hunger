@@ -17,7 +17,7 @@ A passed observation can offer one optional, stoppable, non-causal seven-day com
 
 **Verifications:**
 
-- [x] The active view names its baseline and offers pause, finish, and stop paths
+- [x] The active view names its baseline and offers pause, timed comparison, and stop paths
 
 ## Completed results report only the predeclared measure with cautious language
 

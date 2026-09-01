@@ -8,6 +8,8 @@
   import {
     activeExperiment,
     evaluateExperiment,
+    experimentDaysRemaining,
+    experimentIntervalComplete,
     experimentResultCopy,
     offerForInsight,
     type ExperimentOffer
@@ -24,6 +26,7 @@
   let offer = $state<ExperimentOffer | null>(null);
   let ready = $state(false);
   let saving = $state(false);
+  let message = $state('');
   let current = $derived(activeExperiment(experiments));
 
   onMount(async () => {
@@ -32,6 +35,20 @@
     if (!program) return goto(`${base}/`);
     episodes = await repository.listEpisodes(program.id);
     experiments = await repository.listExperiments(program.id);
+    const running = activeExperiment(experiments);
+    if (running && experimentIntervalComplete(running, runtime.now(), program.timeZone)) {
+      const now = runtime.now();
+      const completed: ExperimentRecord = {
+        ...running,
+        baselineEpisodeIds: [...running.baselineEpisodeIds],
+        target: { ...running.target },
+        status: 'complete',
+        endedAt: now,
+        result: evaluateExperiment(running, episodes, now, program.timeZone)
+      };
+      await repository.append({ type: 'experiment/changed', occurredAt: now, payload: { experiment: completed } });
+      experiments = await repository.listExperiments(program.id);
+    }
     const requested = new URL(location.href).searchParams.get('insight');
     sourceInsight = generatePatternInsights(episodes).find((insight) => insight.id === requested) ?? null;
     offer = sourceInsight ? offerForInsight(sourceInsight) : null;
@@ -81,8 +98,13 @@
   }
 
   async function finish() {
-    if (!current) return;
-    const result = evaluateExperiment(current, episodes, runtime.now());
+    if (!current || !program) return;
+    if (!experimentIntervalComplete(current, runtime.now(), program.timeZone)) {
+      const remaining = experimentDaysRemaining(current, runtime.now(), program.timeZone);
+      message = `The comparison will be available in ${remaining} local ${remaining === 1 ? 'day' : 'days'}.`;
+      return;
+    }
+    const result = evaluateExperiment(current, episodes, runtime.now(), program.timeZone);
     await persist({ ...current, status: 'complete', endedAt: runtime.now(), result });
   }
 </script>
@@ -94,7 +116,7 @@
     <main class="experiment-page" data-status={ready ? 'ready' : 'loading'}>
       <p class="eyebrow">Optional experiment</p>
       <h1>Try one small noticing practice</h1>
-      <p class="intro">For seven elapsed days, observe one predeclared measure. There is no target, streak, or pass/fail result.</p>
+      <p class="intro">For seven local calendar days, observe one predeclared measure. There is no target, streak, or pass/fail result.</p>
 
       {#if current}
         <section class="experiment-card active-card">
@@ -108,9 +130,14 @@
             {:else}
               <button class="secondary" onclick={() => setStatus('paused')}>Pause</button>
             {/if}
-            <button class="secondary" onclick={finish}>Finish and compare</button>
+            <button class="secondary" disabled={!program || !experimentIntervalComplete(current, runtime.now(), program.timeZone)} onclick={finish}>
+              {#if program && experimentDaysRemaining(current, runtime.now(), program.timeZone) > 0}
+                Compare in {experimentDaysRemaining(current, runtime.now(), program.timeZone)} days
+              {:else}Finish and compare{/if}
+            </button>
             <button class="text-button" onclick={() => setStatus('stopped')}>Stop without a result</button>
           </div>
+          {#if message}<p class="notice" role="status">{message}</p>{/if}
           {#if offer && sourceInsight && current.insightId !== sourceInsight.id}
             <aside class="replace-offer">
               <h3>Another supported option</h3>
@@ -177,6 +204,7 @@
   button.secondary { border: 1px solid var(--border-strong); color: var(--ink); background: var(--surface); }
   button.text-button { color: var(--danger); background: transparent; }
   button:disabled { opacity: .65; }
+  .notice { padding: 10px 12px; border-radius: 10px; color: var(--ink); background: var(--primary-soft); }
   dl { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
   .replace-offer { margin-top: 26px; padding-top: 20px; border-top: 1px solid var(--border); }
   dl div { padding: 16px; border-radius: 12px; background: var(--primary-soft); }
