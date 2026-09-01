@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { EatingEpisode, ExperimentRecord } from '../data/schema';
-import { activeExperiment, evaluateExperiment, offerForInsight } from './experiments';
+import { activeExperiment, evaluateExperiment, experimentDaysRemaining, experimentIntervalComplete, offerForInsight } from './experiments';
 import type { PatternInsightResult } from './patterns';
 
 const DAY = 86_400_000;
@@ -35,5 +35,15 @@ describe('experiments', () => {
       ...during.map((after, index) => episode(`d${index + 1}`, now - (6 - index) * DAY, after))
     ];
     expect(evaluateExperiment(record(), episodes, now).state).toBe(state);
+  });
+
+  it('uses local calendar boundaries for the declared interval across DST', () => {
+    const springStart = Date.UTC(2026, 2, 6, 17);
+    const experiment = { ...record(), startedAt: springStart };
+    const before = Date.UTC(2026, 2, 12, 16);
+    const complete = Date.UTC(2026, 2, 13, 16);
+    expect(experimentDaysRemaining(experiment, before, 'America/Toronto')).toBe(1);
+    expect(experimentIntervalComplete(experiment, before, 'America/Toronto')).toBe(false);
+    expect(experimentIntervalComplete(experiment, complete, 'America/Toronto')).toBe(true);
   });
 });

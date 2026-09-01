@@ -7,7 +7,7 @@ import {
   type AppetiteEvent,
   type NewAppetiteEvent
 } from './events';
-import { SCHEMA_VERSION, type Program } from './schema';
+import { SCHEMA_VERSION, type ExperimentRecord, type Program } from './schema';
 
 const program: Program = {
   id: 'program-1',
@@ -102,5 +102,20 @@ describe('appetite event projection', () => {
     expect(() =>
       projectAppetiteEvents([{ ...event, version: 99 } as unknown as AppetiteEvent])
     ).toThrow(UnsupportedEventError);
+  });
+
+  it('preserves the one-active-experiment invariant during playback', () => {
+    const experiment = (id: string): ExperimentRecord => ({
+      id, programId: program.id, insightId: 'insight', kind: 'midway-pause',
+      startedAt: program.startedAt, endedAt: null, baselineEpisodeIds: [],
+      target: { label: 'Pause', measure: 'comfortable-ending-rate', direction: 'higher', days: 7 },
+      status: 'active', result: null, algorithmVersion: 1
+    });
+    const projection = projectAppetiteEvents([
+      stored(1, { type: 'experiment/changed', occurredAt: 1, payload: { experiment: experiment('one') } }),
+      stored(2, { type: 'experiment/changed', occurredAt: 2, payload: { experiment: experiment('two') } })
+    ]);
+    expect(projection.experiments.find(({ id }) => id === 'one')).toMatchObject({ status: 'stopped', endedAt: 2 });
+    expect(projection.experiments.find(({ id }) => id === 'two')).toMatchObject({ status: 'active' });
   });
 });

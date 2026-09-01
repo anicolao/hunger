@@ -118,6 +118,14 @@ export function projectAppetiteEvents(events: AppetiteEvent[]): AppetiteProjecti
         upsert(projection.insights, event.payload.snapshot);
         break;
       case 'experiment/changed':
+        if (event.payload.experiment.status === 'active' || event.payload.experiment.status === 'paused') {
+          projection.experiments = projection.experiments.map((experiment) =>
+            experiment.id !== event.payload.experiment.id &&
+            (experiment.status === 'active' || experiment.status === 'paused')
+              ? { ...experiment, status: 'stopped', endedAt: event.occurredAt }
+              : experiment
+          );
+        }
         upsert(projection.experiments, event.payload.experiment);
         break;
       default:

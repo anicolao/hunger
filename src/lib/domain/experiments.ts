@@ -1,5 +1,6 @@
 import type { EatingEpisode, ExperimentRecord } from '../data/schema';
 import type { PatternInsightResult } from './patterns';
+import { localCalendarDay } from './progression';
 
 export type ExperimentKind = ExperimentRecord['kind'];
 
@@ -54,7 +55,8 @@ function successful(episode: EatingEpisode, measure: ExperimentRecord['target'][
 export function evaluateExperiment(
   experiment: ExperimentRecord,
   episodes: EatingEpisode[],
-  now: number
+  now: number,
+  timeZone = 'UTC'
 ): NonNullable<ExperimentRecord['result']> {
   const baseline = experiment.baselineEpisodeIds
     .map((id) => episodes.find((episode) => episode.id === id))
@@ -65,7 +67,7 @@ export function evaluateExperiment(
   const baselineCount = baseline.filter((episode) => successful(episode, experiment.target.measure)).length;
   const experimentCount = intervention.filter((episode) => successful(episode, experiment.target.measure)).length;
   const common = { baselineCount, baselineTotal: baseline.length, experimentCount, experimentTotal: intervention.length };
-  if (baseline.length < 3 || intervention.length < 3 || now - experiment.startedAt < 7 * 86_400_000) {
+  if (baseline.length < 3 || intervention.length < 3 || !experimentIntervalComplete(experiment, now, timeZone)) {
     return { state: 'learning', ...common };
   }
   const baselineRate = baselineCount / baseline.length;
@@ -73,6 +75,30 @@ export function evaluateExperiment(
   const difference = experimentRate - baselineRate;
   const changed = experiment.target.direction === 'lower' ? difference <= -0.25 : difference >= 0.25;
   return { state: changed ? 'changed' : 'similar', ...common };
+}
+
+export function experimentElapsedDays(
+  experiment: ExperimentRecord,
+  now: number,
+  timeZone: string
+): number {
+  return Math.max(0, localCalendarDay(now, timeZone) - localCalendarDay(experiment.startedAt, timeZone));
+}
+
+export function experimentIntervalComplete(
+  experiment: ExperimentRecord,
+  now: number,
+  timeZone: string
+): boolean {
+  return experimentElapsedDays(experiment, now, timeZone) >= experiment.target.days;
+}
+
+export function experimentDaysRemaining(
+  experiment: ExperimentRecord,
+  now: number,
+  timeZone: string
+): number {
+  return Math.max(0, experiment.target.days - experimentElapsedDays(experiment, now, timeZone));
 }
 
 export function activeExperiment(experiments: ExperimentRecord[]): ExperimentRecord | null {

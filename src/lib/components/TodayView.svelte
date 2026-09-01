@@ -3,7 +3,8 @@
   import { page } from '$app/state';
   import { onMount } from 'svelte';
   import { getRepository } from '$lib/data/repository';
-  import type { EatingEpisode } from '$lib/data/schema';
+  import type { EatingEpisode, ExperimentRecord } from '$lib/data/schema';
+  import { activeExperiment, evaluateExperiment, experimentDaysRemaining, experimentIntervalComplete } from '$lib/domain/experiments';
   import { getProgramProgress, sameLocalCalendarDay } from '$lib/domain/progression';
   import { getSensationLevel } from '$lib/domain/scale';
   import { isOpenEpisodeStale, markEpisodeUnfinished } from '$lib/domain/episodes';
@@ -14,6 +15,7 @@
   let { program, now = runtime.now() }: { program: Program; now?: number } = $props();
   let progress = $derived(getProgramProgress(program.startedAt, now, program.timeZone));
   let episodes = $state<EatingEpisode[]>([]);
+  let experiments = $state<ExperimentRecord[]>([]);
   let loaded = $state(false);
   let openEpisode = $derived(episodes.find((episode) => episode.status === 'open') ?? null);
   let todayCount = $derived(
@@ -21,9 +23,24 @@
       (episode) => sameLocalCalendarDay(episode.startedAt, now, program.timeZone)
     ).length
   );
+  let currentExperiment = $derived(activeExperiment(experiments));
+  let latestCompletedExperiment = $derived(experiments.find((experiment) => experiment.status === 'complete') ?? null);
 
   onMount(async () => {
     episodes = await getRepository().listEpisodes(program.id);
+    experiments = await getRepository().listExperiments(program.id);
+    if (currentExperiment && experimentIntervalComplete(currentExperiment, now, program.timeZone)) {
+      const completed: ExperimentRecord = {
+        ...currentExperiment,
+        baselineEpisodeIds: [...currentExperiment.baselineEpisodeIds],
+        target: { ...currentExperiment.target },
+        status: 'complete',
+        endedAt: now,
+        result: evaluateExperiment(currentExperiment, episodes, now, program.timeZone)
+      };
+      await getRepository().append({ type: 'experiment/changed', occurredAt: now, payload: { experiment: completed } });
+      experiments = await getRepository().listExperiments(program.id);
+    }
     loaded = true;
   });
 
@@ -37,6 +54,22 @@
     });
     await reconcileStoredReminders(now);
     episodes = await getRepository().listEpisodes(program.id);
+  }
+
+  async function setExperimentStatus(status: 'active' | 'paused' | 'stopped') {
+    if (!currentExperiment) return;
+    const updated: ExperimentRecord = {
+      ...currentExperiment,
+      baselineEpisodeIds: [...currentExperiment.baselineEpisodeIds],
+      target: { ...currentExperiment.target },
+      result: currentExperiment.result ? { ...currentExperiment.result } : null,
+      status,
+      endedAt: status === 'stopped' ? runtime.now() : null
+    };
+    const changedAt = runtime.now();
+    await getRepository().append({ type: 'experiment/changed', occurredAt: changedAt, payload: { experiment: updated } });
+    await reconcileStoredReminders(changedAt);
+    experiments = await getRepository().listExperiments(program.id);
   }
 
   function displayTime(timestamp: number): string {
@@ -84,6 +117,27 @@
       <h2 id="notice-title">{program.status === 'complete' ? 'Continue in your own way.' : 'Begin with how your body feels.'}</h2>
       <p>{progress.prompt}</p>
       <a class="primary-button" href={`${base}/check-in/new`}>{program.status === 'complete' ? 'Start an occasional check-in' : 'Check in before eating'}</a>
+    </section>
+  {/if}
+
+  {#if currentExperiment}
+    {@const remainingDays = experimentDaysRemaining(currentExperiment, now, program.timeZone)}
+    <section class="experiment-summary" aria-labelledby="experiment-title">
+      <p class="eyebrow">Optional noticing experiment</p>
+      <h2 id="experiment-title">{currentExperiment.target.label}</h2>
+      <p>{remainingDays} local {remainingDays === 1 ? 'day' : 'days'} until the comparison is available.</p>
+      <div class="experiment-actions">
+        <a href={`${base}/experiment?insight=${encodeURIComponent(currentExperiment.insightId)}`}>View experiment</a>
+        {#if currentExperiment.status === 'paused'}<button onclick={() => setExperimentStatus('active')}>Resume</button>
+        {:else}<button onclick={() => setExperimentStatus('paused')}>Pause</button>{/if}
+        <button class="stop" onclick={() => setExperimentStatus('stopped')}>Stop</button>
+      </div>
+    </section>
+  {:else if latestCompletedExperiment}
+    <section class="experiment-summary" aria-labelledby="experiment-title">
+      <p class="eyebrow">Experiment comparison ready</p>
+      <h2 id="experiment-title">Your seven-day observation is available.</h2>
+      <a class="result-link" href={`${base}/experiment`}>View the comparison</a>
     </section>
   {/if}
 
@@ -158,7 +212,8 @@
 
   .notice-card,
   .plain-card,
-  .empty-history {
+  .empty-history,
+  .experiment-summary {
     border: 1px solid var(--border);
     border-radius: 16px;
     background: var(--surface);
@@ -220,9 +275,16 @@
   }
 
   .plain-card,
-  .empty-history {
+  .empty-history,
+  .experiment-summary {
     padding: 20px;
   }
+
+  .experiment-summary { margin-top: 20px; border-color: var(--primary); }
+  .experiment-summary > p:not(.eyebrow) { color: var(--ink-muted); }
+  .experiment-actions { margin-top: 14px; display: flex; flex-wrap: wrap; gap: 8px; }
+  .experiment-actions a, .experiment-actions button, .result-link { min-height: 46px; padding: 0 14px; border: 1px solid var(--border-strong); border-radius: 11px; display: inline-flex; align-items: center; color: var(--ink); background: var(--surface); font-weight: 700; }
+  .experiment-actions .stop { color: var(--danger); }
 
   ul {
     margin: 14px 0 0;
