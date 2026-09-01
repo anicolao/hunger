@@ -9,6 +9,7 @@
   import { createOpenEpisode, markEpisodeUnfinished } from '$lib/domain/episodes';
   import { reconcileStoredReminders } from '$lib/platform/reminders';
   import { runtime } from '$lib/platform/runtime';
+  import { reconcileProgramLifecycle } from '$lib/platform/program';
 
   let program = $state<Program | null>(null);
   let existing = $state<EatingEpisode | null>(null);
@@ -20,7 +21,7 @@
 
   onMount(async () => {
     const repository = getRepository();
-    program = await repository.getProgram();
+    program = await reconcileProgramLifecycle(runtime.now(), repository);
     if (!program) return goto(`${base}/onboarding`);
     existing = await repository.getOpenEpisode(program.id);
     status = 'ready';
@@ -93,7 +94,15 @@
   </header>
 
   <main>
-    {#if existing}
+    {#if program?.status === 'paused'}
+      <section class="collision" aria-labelledby="paused-title">
+        <p class="eyebrow">Check-ins paused</p>
+        <h1 id="paused-title">Your program is taking a pause.</h1>
+        <p>Your existing records remain available. Resume from Settings whenever this feels useful again.</p>
+        <a class="primary" href={`${base}/settings`}>Review program settings</a>
+        <a class="text-action" href={`${base}/`}>Go back</a>
+      </section>
+    {:else if existing}
       <section class="collision" aria-labelledby="open-title">
         <p class="eyebrow">Open eating moment</p>
         <h1 id="open-title">Finish the check-in you started?</h1>

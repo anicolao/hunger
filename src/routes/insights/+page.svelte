@@ -19,6 +19,7 @@
     type PatternInsightResult
   } from '$lib/domain/patterns';
   import { runtime } from '$lib/platform/runtime';
+  import { reconcileProgramLifecycle } from '$lib/platform/program';
 
   let program = $state<Program | null>(null);
   let episodes = $state<EatingEpisode[]>([]);
@@ -33,7 +34,7 @@
 
   onMount(async () => {
     const repository = getRepository();
-    program = await repository.getProgram();
+    program = await reconcileProgramLifecycle(runtime.now(), repository);
     if (!program) return goto(`${base}/`);
     episodes = await repository.listEpisodes(program.id);
     snapshots = await repository.listInsightSnapshots(program.id);

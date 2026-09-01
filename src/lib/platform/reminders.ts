@@ -1,6 +1,7 @@
 import { getRepository } from '../data/repository';
 import { deriveReminderSchedule, type ReminderSchedule } from '../domain/reminders';
 import { nativeCapabilities, nativeRequest } from './native';
+import { reconcileProgramLifecycle } from './program';
 
 export interface BrowserReminderResult {
   capability: 'browser-unavailable';
@@ -109,7 +110,7 @@ export async function reconcileStoredReminders(
   requestPermission = false
 ): Promise<ReminderResult> {
   const repository = getRepository();
-  const program = await repository.getProgram();
+  const program = await reconcileProgramLifecycle(now, repository);
   if (!program) {
     await cancelNativeReminders();
     return configureBrowserReminders();

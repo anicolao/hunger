@@ -57,7 +57,7 @@ export function emptyReminderSchedule(): ReminderSchedule {
 
 export function deriveReminderSchedule(state: ReminderState): ReminderSchedule {
   const { program, settings, episodes, experiments, now } = state;
-  const progress = getProgramProgress(program.startedAt, now);
+  const progress = getProgramProgress(program.startedAt, now, program.timeZone);
   if (program.status !== 'active' || settings.remindersPaused || progress.complete) {
     return emptyReminderSchedule();
   }
