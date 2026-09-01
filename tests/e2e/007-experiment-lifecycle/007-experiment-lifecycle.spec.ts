@@ -22,7 +22,7 @@ async function importFixture(page: Page, fixture: ReturnType<typeof buildHistory
 }
 
 function completedExperiment(state: 'changed' | 'similar' | 'learning'): ExperimentRecord {
-  const values = state === 'changed' ? [4, 4] : state === 'similar' ? [3, 4] : [3, 2];
+  const values = state === 'changed' ? [0, 4] : state === 'similar' ? [4, 4] : [2, 2];
   return {
     id: `experiment-${state}`,
     programId: 'fixture-program',
@@ -90,13 +90,13 @@ test('a supported observation can become one optional experiment and a neutral c
     if (state === 'learning') await expect(page.getByText(/a few more paired check-ins/)).toBeVisible();
   }
 
-  const changedFixture = { ...fixture, experiments: [completedExperiment('changed')] };
-  await page.evaluate(async (value) => window.__HUNGER_E2E__?.importFixture(value), changedFixture);
+  const similarFixture = { ...fixture, experiments: [completedExperiment('similar')] };
+  await page.evaluate(async (value) => window.__HUNGER_E2E__?.importFixture(value), similarFixture);
   await page.goto('/experiment');
   await steps.step('neutral-comparison', {
     description: 'Completed results report only the predeclared measure with cautious language',
     verifications: [
-      { spec: 'Changed, similar, and still-learning states were all rendered from deterministic records', check: async () => expect(page.getByRole('heading', { name: 'Appeared to change' })).toBeVisible() },
+      { spec: 'Changed, similar, and still-learning states were all rendered from deterministic records', check: async () => expect(page.getByRole('heading', { name: 'Appeared similar' })).toBeVisible() },
       { spec: 'The result shows before and during counts and explicitly rejects causality', check: async () => {
         await expect(page.getByText('4 of 4')).toHaveCount(2);
         await expect(page.getByText(/not proof that the practice caused/)).toBeVisible();
