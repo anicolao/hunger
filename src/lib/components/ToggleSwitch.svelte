@@ -39,7 +39,7 @@
   .copy { display: grid; gap: 2px; }
   .copy small { color: var(--ink-muted); font-size: 14px; font-weight: 400; line-height: 1.35; }
   .switch { position: relative; width: 51px; height: 44px; flex: 0 0 51px; display: grid; place-items: center; }
-  .switch input { position: absolute; z-index: 1; width: 51px; height: 44px; margin: 0; opacity: 0; cursor: pointer; }
+  .switch input { position: absolute; z-index: 1; width: 51px; height: 44px; margin: 0; opacity: 0; font: inherit; font-size: 16px; cursor: pointer; }
   .track { position: relative; width: 51px; height: 31px; border-radius: 999px; display: block; background: #e9e9ea; transition: background-color 160ms ease; }
   .track::after { content: ''; position: absolute; top: 2px; left: 2px; width: 27px; height: 27px; border-radius: 50%; background: white; box-shadow: 0 2px 5px rgb(0 0 0 / 20%); transition: transform 160ms ease; }
   input:checked + .track { background: #34c759; }
