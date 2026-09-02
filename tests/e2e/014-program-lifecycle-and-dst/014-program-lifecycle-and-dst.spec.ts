@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { blockExternalRequests } from '../helpers/app-fixture';
+import { blockExternalRequests, openSettingsGroup } from '../helpers/app-fixture';
 import { buildHistoryFixture } from '../helpers/fixture-builder';
 import { TestStepHelper } from '../helpers/test-step-helper';
 
@@ -32,11 +32,13 @@ test('program pause, calendar completion, and restart stay authoritative', async
   });
 
   await page.getByRole('link', { name: 'Review program settings' }).click();
+  await openSettingsGroup(page, 'Program & scale');
   await page.getByRole('button', { name: 'Resume check-ins' }).click();
   await expect(page.getByRole('button', { name: 'Pause check-ins' })).toBeVisible();
   await page.goto('/');
   await expect(page.getByRole('link', { name: 'Check in before eating' })).toBeVisible();
   await page.goto('/settings');
+  await openSettingsGroup(page, 'Program & scale');
   await page.getByRole('button', { name: 'Pause check-ins' }).click();
   await expect(page.getByRole('button', { name: 'Resume check-ins' })).toBeVisible();
   await page.goto('/check-in/new');
@@ -46,6 +48,7 @@ test('program pause, calendar completion, and restart stay authoritative', async
   day30.program.status = 'active';
   await page.evaluate(async (fixture) => window.__HUNGER_E2E__?.importFixture(fixture), day30);
   await page.goto('/settings');
+  await openSettingsGroup(page, 'Program & scale');
   await expect(page.getByText('Day 30 of 30')).toBeVisible();
   await expect(page.getByText(/30-day guide is complete/)).toBeVisible();
   await page.getByRole('button', { name: 'Start a new 30-day program' }).click();

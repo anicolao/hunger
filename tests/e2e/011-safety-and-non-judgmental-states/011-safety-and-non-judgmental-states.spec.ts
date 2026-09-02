@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { blockExternalRequests } from '../helpers/app-fixture';
+import { blockExternalRequests, openSettingsGroup } from '../helpers/app-fixture';
 import { buildHistoryFixture } from '../helpers/fixture-builder';
 import { TestStepHelper } from '../helpers/test-step-helper';
 
@@ -15,6 +15,7 @@ test('repeated strong discomfort opens a quiet, dismissible support path', async
   await page.goto('/'); await expect(page.locator('html')).toHaveAttribute('data-e2e-fixture', 'ready');
   await page.evaluate(async (value) => window.__HUNGER_E2E__?.importFixture(value), fixture);
   await page.goto('/settings');
+  await openSettingsGroup(page, 'Support');
 
   await steps.step('quiet-support-card', {
     description: 'A calm card offers pause, dismissal, and outside support after repeated discomfort',
@@ -26,8 +27,12 @@ test('repeated strong discomfort opens a quiet, dismissible support path', async
   });
 
   await page.getByRole('complementary').getByRole('button', { name: 'Pause check-ins' }).click();
+  await openSettingsGroup(page, 'Program & scale');
   await expect(page.getByText(/guided program is paused/)).toBeVisible();
-  await page.reload(); await expect(page.getByText(/guided program is paused/)).toBeVisible();
+  await page.reload();
+  await openSettingsGroup(page, 'Program & scale');
+  await expect(page.getByText(/guided program is paused/)).toBeVisible();
+  await openSettingsGroup(page, 'Support');
   await page.getByRole('button', { name: 'Dismiss', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Would a pause or extra support feel useful?' })).toHaveCount(0);
   await page.reload(); await expect(page.getByRole('heading', { name: 'Would a pause or extra support feel useful?' })).toHaveCount(0);

@@ -116,7 +116,7 @@
     <main class="experiment-page" data-status={ready ? 'ready' : 'loading'}>
       <p class="eyebrow">Optional experiment</p>
       <h1>Try one small noticing practice</h1>
-      <p class="intro">For seven local calendar days, observe one predeclared measure. There is no target, streak, or pass/fail result.</p>
+      <p class="intro">Try this for 7 days. No pass or fail.</p>
 
       {#if current}
         <section class="experiment-card active-card">
@@ -190,18 +190,18 @@
   .experiment-page { max-width: 760px; }
   .eyebrow { margin: 0 0 8px; color: var(--primary); font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; }
   h1 { max-width: 680px; margin: 0; font-size: clamp(34px, 8vw, 46px); line-height: 1.05; }
-  .intro { max-width: 650px; color: var(--ink-muted); font-size: 18px; line-height: 1.5; }
-  .experiment-card { margin-top: 30px; padding: clamp(22px, 6vw, 34px); border: 1px solid var(--border); border-radius: 18px; background: var(--surface); }
+  .intro { max-width: 650px; margin: 8px 0 0; color: var(--ink-muted); line-height: 1.4; }
+  .experiment-card { margin-top: 16px; padding: clamp(20px, 5vw, 28px); border: 1px solid var(--rim); border-radius: 22px; background: var(--glass); box-shadow: var(--shadow); backdrop-filter: blur(22px) saturate(130%); }
   .active-card { border-color: var(--primary); }
   .badge { min-height: 28px; padding: 0 10px; border-radius: 999px; display: inline-flex; align-items: center; color: var(--accent-ink); background: var(--accent-soft); font-weight: 700; font-size: 13px; }
-  h2 { margin: 18px 0 8px; font-size: 26px; }
-  p { line-height: 1.55; }
-  .practice { font-size: 20px; color: var(--ink); }
-  details { margin: 22px 0; border-block: 1px solid var(--border); }
+  h2 { margin: 14px 0 8px; font-size: 25px; }
+  p { line-height: 1.4; }
+  .practice { font-size: 19px; color: var(--ink); }
+  details { margin: 16px 0; border-block: 1px solid var(--border); }
   summary { min-height: 52px; display: flex; align-items: center; color: var(--primary); font-weight: 700; cursor: pointer; }
-  .actions { margin-top: 26px; display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
-  button, .actions a, .result-card > a { min-height: 48px; padding: 0 20px; border: 0; border-radius: 12px; display: inline-flex; align-items: center; justify-content: center; color: white; background: var(--primary); font-weight: 700; }
-  button.secondary { border: 1px solid var(--border-strong); color: var(--ink); background: var(--surface); }
+  .actions { margin-top: 18px; display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+  button, .actions a, .result-card > a { min-height: 48px; padding: 0 20px; border: 0; border-radius: 14px; display: inline-flex; align-items: center; justify-content: center; color: var(--on-primary); background: var(--primary); font-weight: 700; }
+  button.secondary { border: 1px solid var(--border-strong); color: var(--ink); background: var(--glass); }
   button.text-button { color: var(--danger); background: transparent; }
   button:disabled { opacity: .65; }
   .notice { padding: 10px 12px; border-radius: 10px; color: var(--ink); background: var(--primary-soft); }

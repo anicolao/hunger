@@ -1,5 +1,6 @@
 <script lang="ts">
   import { base } from '$app/paths';
+  import { goto } from '$app/navigation';
   import { onMount } from 'svelte';
   import AppShell from '$lib/components/AppShell.svelte';
   import TodayView from '$lib/components/TodayView.svelte';
@@ -13,6 +14,9 @@
 
   onMount(async () => {
     program = await reconcileProgramLifecycle(runtime.now());
+    if (!program && import.meta.env.VITE_NATIVE_SHELL === 'ios') {
+      return goto(`${base}/onboarding`, { replaceState: true });
+    }
     loaded = true;
   });
 

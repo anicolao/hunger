@@ -145,9 +145,9 @@
   <AppShell active="insights">
     <div class="insights-page" data-status={ready ? 'ready' : 'loading'}>
       <header class="page-heading">
-        <p class="eyebrow">Your observations</p>
+        <p class="eyebrow">What repeats</p>
         <h1>Insights</h1>
-        <p>Personal observations appear only when your paired check-ins provide enough evidence.</p>
+        <p>Your patterns will show up here.</p>
       </header>
 
       {#if results.length === 0}
@@ -233,9 +233,9 @@
       {/if}
 
       {#if snapshots.length > 0}
-        <section class="history" aria-labelledby="history-title">
-          <h2 id="history-title">Observation history</h2>
-          <p>Past observations keep the evidence and wording that were shown at the time.</p>
+        <details class="history" aria-labelledby="history-title">
+          <summary><span id="history-title">Past insights</span><small>{snapshots.length}</small></summary>
+          <p>Saved exactly as you saw them, with their original evidence.</p>
           <ol>
             {#each snapshots as snapshot}
               {@const historical = resultForSnapshot(snapshot)}
@@ -262,7 +262,7 @@
               {/if}
             {/each}
           </ol>
-        </section>
+        </details>
       {/if}
     </div>
   </AppShell>
@@ -274,12 +274,12 @@
   .page-heading { max-width: 650px; }
   .eyebrow { margin: 0 0 8px; color: var(--primary); font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; }
   h1 { margin: 0; font-size: clamp(34px, 8vw, 42px); }
-  .page-heading > p:last-child { color: var(--ink-muted); line-height: 1.5; }
-  .learning-card, article { margin-top: 28px; padding: clamp(22px, 5vw, 30px); border: 1px solid var(--border); border-radius: 16px; background: var(--surface); }
+  .page-heading > p:last-child { margin: 6px 0 0; color: var(--ink-muted); line-height: 1.4; }
+  .learning-card, article { margin-top: 14px; padding: clamp(20px, 5vw, 26px); border: 1px solid var(--rim); border-radius: 22px; background: var(--glass); box-shadow: var(--shadow); backdrop-filter: blur(22px) saturate(130%); }
   .badge { width: fit-content; min-height: 28px; padding: 0 10px; border-radius: 999px; display: inline-flex; align-items: center; color: var(--accent-ink); background: var(--accent-soft); font-size: 13px; font-weight: 700; }
-  h2 { margin: 18px 0 0; font-size: 23px; line-height: 1.25; }
-  .learning-card p, article p { color: var(--ink-muted); line-height: 1.5; }
-  .progress { height: 8px; margin: 24px 0 10px; border-radius: 999px; overflow: hidden; background: var(--primary-soft); }
+  h2 { margin: 14px 0 0; font-size: 22px; line-height: 1.2; }
+  .learning-card p, article p { color: var(--ink-muted); line-height: 1.4; }
+  .progress { height: 8px; margin: 18px 0 9px; border-radius: 999px; overflow: hidden; background: var(--primary-soft); }
   .progress span { height: 100%; display: block; background: var(--primary); }
   .learning-card > strong { display: block; }
   .completed-step { display: block; color: var(--ink); font-weight: 700; }
@@ -295,20 +295,21 @@
   .rate-bars span { min-width: 2px; height: 12px; border-radius: 999px; display: block; background: var(--primary); }
   .rate-bars span:last-child { background: var(--accent); }
   .evidence-count { font-weight: 700; }
-  .experiment-link { min-height: 44px; width: fit-content; display: inline-flex; align-items: center; color: var(--primary); font-weight: 700; }
+  .experiment-link { min-height: 48px; width: 100%; margin-top: 8px; padding: 0 16px; border-radius: 14px; display: inline-flex; align-items: center; justify-content: center; color: var(--on-primary); background: var(--primary); font-weight: 700; text-decoration: none; }
   details { border-top: 1px solid var(--border); }
   summary { min-height: 48px; display: flex; align-items: center; color: var(--primary); font-weight: 700; cursor: pointer; }
   ul { padding-left: 22px; }
   li a { min-height: 44px; display: inline-flex; align-items: center; color: var(--primary); }
   .feedback { margin-top: 18px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
   .feedback > span { width: 100%; font-size: 14px; font-weight: 700; }
-  .feedback button { min-height: 44px; padding: 0 14px; border: 1px solid var(--border-strong); border-radius: 999px; color: var(--ink); background: var(--surface); }
+  .feedback button { min-height: 44px; padding: 0 14px; border: 1px solid var(--border-strong); border-radius: 999px; color: var(--ink); background: var(--glass); }
   .feedback button.selected { border: 2px solid var(--primary); background: var(--primary-soft); }
-  .history { margin-top: 34px; padding-top: 28px; border-top: 1px solid var(--border); }
-  .history > h2 { margin-top: 0; }
+  .history { margin-top: 18px; padding-top: 0; border-top: 1px solid var(--border); }
+  .history > summary { justify-content: space-between; }
+  .history > summary small { min-width: 28px; min-height: 28px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; color: var(--ink); background: var(--primary-soft); }
   .history > p { color: var(--ink-muted); }
   .history ol { margin: 18px 0 0; padding: 0; display: grid; gap: 12px; list-style: none; }
-  .history ol > li { padding: 16px; border: 1px solid var(--border); border-radius: 14px; background: var(--surface); }
+  .history ol > li { padding: 16px; border: 1px solid var(--border); border-radius: 14px; background: var(--glass); }
   .history li > div { display: grid; gap: 3px; }
   .history li span { color: var(--ink-muted); font-size: 13px; }
   .source-note { margin-bottom: 0; padding: 10px; border-radius: 9px; color: var(--ink) !important; background: var(--accent-soft); }

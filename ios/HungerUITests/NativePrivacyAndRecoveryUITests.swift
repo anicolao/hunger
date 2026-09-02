@@ -10,12 +10,17 @@ final class NativePrivacyAndRecoveryUITests: XCTestCase {
         completeOnboarding(in: app)
 
         XCTAssertTrue(element(label: "Today", in: app).waitForExistence(timeout: 20))
-        app.tapBottomNavigation(.settings)
-        XCTAssertTrue(element(label: "PRIVATE ON THIS DEVICE", in: app).waitForExistence(timeout: 10))
+        app.links["Settings"].tap()
+        XCTAssertTrue(element(label: "Appearance", in: app).waitForExistence(timeout: 10))
+        element(label: "Your data", in: app).tap()
         let openDeleteConfirmation = app.buttons["Delete everything"]
-        for _ in 0..<4 where !openDeleteConfirmation.exists {
-            app.swipeUp()
-        }
+        XCTAssertTrue(openDeleteConfirmation.waitForExistence(timeout: 10))
+        // Move the destructive action clear of the floating tab bar. WebKit can
+        // report an element under that bar as hittable even though the bar wins
+        // the tap at the same coordinate.
+        app.swipeUp()
+        app.swipeUp()
+        XCTAssertTrue(openDeleteConfirmation.isHittable)
         openDeleteConfirmation.tap()
 
         XCTAssertTrue(
@@ -27,7 +32,7 @@ final class NativePrivacyAndRecoveryUITests: XCTestCase {
             NSPredicate(format: "label == 'Delete everything' AND isEnabled == true")
         ).firstMatch.tap()
 
-        XCTAssertTrue(element(label: "Learn your appetite.", in: app).waitForExistence(timeout: 20))
+        XCTAssertTrue(element(label: "Choose your look", in: app).waitForExistence(timeout: 20))
         let attachment = XCTAttachment(screenshot: app.screenshot())
         attachment.name = "phone-private-deletion-first-run"
         attachment.lifetime = .keepAlways
@@ -38,7 +43,7 @@ final class NativePrivacyAndRecoveryUITests: XCTestCase {
         defer { relaunched.terminate() }
         relaunched.launch()
         XCTAssertTrue(
-            element(label: "Learn your appetite.", in: relaunched).waitForExistence(timeout: 20)
+            element(label: "Choose your look", in: relaunched).waitForExistence(timeout: 20)
         )
         let relaunchAttachment = XCTAttachment(screenshot: relaunched.screenshot())
         relaunchAttachment.name = "phone-private-deletion-relaunch"
@@ -47,9 +52,8 @@ final class NativePrivacyAndRecoveryUITests: XCTestCase {
     }
 
     private func completeOnboarding(in app: XCUIApplication) {
-        XCTAssertTrue(element(label: "Learn your appetite.", in: app).waitForExistence(timeout: 20))
-        app.swipeUp()
-        app.links["Begin the 30-day program"].tap()
+        XCTAssertTrue(element(label: "Choose your look", in: app).waitForExistence(timeout: 20))
+        app.buttons["Use light mode"].tap()
         XCTAssertTrue(app.buttons["Begin"].waitForExistence(timeout: 10))
         app.buttons["Begin"].tap()
         XCTAssertTrue(

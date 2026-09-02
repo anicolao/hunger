@@ -1,6 +1,6 @@
 # Accessible release journey
 
-The primary phone journey follows system appearance, keyboard and motion preferences, and remains usable at layout extremes.
+The primary phone journey respects the chosen appearance, keyboard and motion preferences, and remains usable at layout extremes.
 
 ## A paired check-in completes in system dark appearance with visible keyboard focus
 
@@ -8,7 +8,7 @@ The primary phone journey follows system appearance, keyboard and motion prefere
 
 **Verifications:**
 
-- [x] System dark colors are active without changing semantic content
+- [x] Chosen dark colors are active without changing semantic content
 - [x] Reduced motion and keyboard focus remain observable
 
 ## Settings remains semantic at 200% text, forced colors, smallest phone, landscape, and tablet sizes

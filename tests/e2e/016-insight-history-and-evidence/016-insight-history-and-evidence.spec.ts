@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { blockExternalRequests } from '../helpers/app-fixture';
+import { blockExternalRequests, openSettingsGroup } from '../helpers/app-fixture';
 import { buildHistoryFixture } from '../helpers/fixture-builder';
 import { TestStepHelper } from '../helpers/test-step-helper';
 
@@ -54,9 +54,10 @@ test('insight publication stays conservative and history stays immutable', async
   await page.getByRole('button', { name: 'Save changes' }).click();
   await expect(page.getByText('Check-in updated. Your observations may update too.')).toBeVisible();
   await page.goto('/insights');
+  await page.getByText('Past insights', { exact: true }).click();
   await expect(page.getByText(/source records changed after this was shown/)).toBeVisible();
 
-  const history = page.getByRole('region', { name: 'Observation history' });
+  const history = page.locator('details.history');
   await history.getByText('Historical evidence').click();
   await history.getByRole('link').first().click();
   await page.getByRole('button', { name: 'Delete this check-in' }).click();
@@ -64,10 +65,12 @@ test('insight publication stays conservative and history stays immutable', async
   await page.getByRole('dialog').getByRole('button', { name: 'Delete this check-in' }).click();
   await expect(page.getByRole('heading', { level: 1, name: 'Today' })).toBeVisible();
   await page.goto('/settings');
+  await openSettingsGroup(page, 'Your data');
   await page.getByRole('button', { name: 'Rebuild local views' }).click();
   await expect(page.getByText('Local views were rebuilt from the source event log.')).toBeVisible();
   await page.goto('/insights');
   await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
+  await page.getByText('Past insights', { exact: true }).click();
 
   await steps.step('immutable-history-after-source-changes', {
     description: 'The saved observation survives edits, deletion, and projection replay with explicit provenance',
@@ -78,7 +81,7 @@ test('insight publication stays conservative and history stays immutable', async
       } },
       { spec: 'History retains evidence count, algorithm version, and optional feedback', check: async () => {
         await expect(page.getByText(/Algorithm v1 · 8 source records/)).toBeVisible();
-        await page.getByRole('region', { name: 'Observation history' }).getByText('Historical evidence').click();
+        await page.locator('details.history').getByText('Historical evidence').click();
         await expect(page.getByText('Feedback: Helpful')).toBeVisible();
         await expect(page.getByText('Deleted source record')).toBeVisible();
       } },

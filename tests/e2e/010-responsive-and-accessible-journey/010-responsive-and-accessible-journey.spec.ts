@@ -1,5 +1,5 @@
 import { expect, test, type Locator } from '@playwright/test';
-import { blockExternalRequests } from '../helpers/app-fixture';
+import { blockExternalRequests, openRecentCheckins } from '../helpers/app-fixture';
 import { buildHistoryFixture } from '../helpers/fixture-builder';
 import { TestStepHelper } from '../helpers/test-step-helper';
 
@@ -38,6 +38,7 @@ test('the primary journey reflows and remains operable by keyboard', async ({ pa
   const after = page.getByRole('radio', { name: '6, Satisfied' }); await after.focus(); await after.press('Space');
   await press(page.getByRole('button', { name: 'Finish check-in' }));
   await expect(page.getByText('Check-in complete')).toBeVisible();
+  await openRecentCheckins(page);
 
   await steps.step('keyboard-landscape-check-in', {
     description: 'The complete paired loop works from the keyboard in a short landscape viewport',

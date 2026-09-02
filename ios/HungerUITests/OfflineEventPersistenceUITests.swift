@@ -8,10 +8,8 @@ final class OfflineEventPersistenceUITests: XCTestCase {
         app.launchArguments = ["--reset-web-data"]
         app.launch()
 
-        XCTAssertTrue(element(label: "Learn your appetite.", in: app).waitForExistence(timeout: 20))
-        app.swipeUp()
-        app.links["Begin the 30-day program"].tap()
-
+        XCTAssertTrue(element(label: "Choose your look", in: app).waitForExistence(timeout: 20))
+        app.buttons["Use light mode"].tap()
         XCTAssertTrue(app.buttons["Begin"].waitForExistence(timeout: 10))
         app.buttons["Begin"].tap()
         XCTAssertTrue(

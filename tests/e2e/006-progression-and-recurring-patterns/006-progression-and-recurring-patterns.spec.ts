@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
-import { blockExternalRequests } from '../helpers/app-fixture';
+import { blockExternalRequests, openRecentCheckins, openSettingsGroup } from '../helpers/app-fixture';
 import { buildHistoryFixture, type EpisodeFixture } from '../helpers/fixture-builder';
 import { TestStepHelper } from '../helpers/test-step-helper';
 
@@ -33,6 +33,7 @@ test('elapsed weeks unlock a conservatively gated recurring pattern', async ({ p
   );
   await blockExternalRequests(context);
   await importHistory(page, 22);
+  await openRecentCheckins(page);
 
   await steps.step('week-four-today', {
     description: 'Elapsed time reaches personal patterns without a streak or reset',
@@ -80,6 +81,7 @@ test('elapsed weeks unlock a conservatively gated recurring pattern', async ({ p
   });
 
   await page.goto('/settings');
+  await openSettingsGroup(page, 'Reminders');
   await expect(page.getByText(/Week 4 · One experiment reminder/)).toBeVisible();
   await page.getByRole('button', { name: 'Pause reminders' }).click();
   await expect(page.getByText('Week 4 · Paused')).toBeVisible();

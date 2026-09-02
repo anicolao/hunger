@@ -3,6 +3,7 @@ import {
   activateProgram,
   blockExternalRequests,
   finishAfter,
+  openRecentCheckins,
   saveBefore
 } from '../helpers/app-fixture';
 import { TestStepHelper } from '../helpers/test-step-helper';
@@ -23,6 +24,7 @@ test('Today supports unfinished, correction, and event-based deletion', async ({
   await page.getByRole('button', { name: 'Mark unfinished' }).click();
   await expect(page.getByRole('heading', { name: 'How does your body feel?' })).toBeVisible();
   await page.goto('/');
+  await openRecentCheckins(page);
 
   await steps.step('complete-and-unfinished-history', {
     description: 'Today distinguishes complete and deliberately unfinished moments',
@@ -69,9 +71,11 @@ test('Today supports unfinished, correction, and event-based deletion', async ({
   await page.getByRole('button', { name: 'Delete this check-in' }).click();
   await page.getByLabel('I understand this cannot be undone').check();
   await page.getByRole('dialog').getByRole('button', { name: 'Delete this check-in' }).click();
+  await openRecentCheckins(page);
   await expect(page.getByText(/2 → —/)).toBeVisible();
   await expect(page.getByText(/4 → 8/)).toHaveCount(0);
   await page.reload();
+  await openRecentCheckins(page);
   await expect(page.getByText(/2 → —/)).toBeVisible();
   await expect(page.getByText(/4 → 8/)).toHaveCount(0);
   steps.generateDocs();

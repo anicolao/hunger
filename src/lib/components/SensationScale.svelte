@@ -5,11 +5,13 @@
     value = null,
     legend = 'How does your body feel?',
     name = 'sensation-level',
+    compact = false,
     onselect
   }: {
     value?: number | null;
     legend?: string;
     name?: string;
+    compact?: boolean;
     onselect: (level: number) => void;
   } = $props();
 
@@ -17,10 +19,10 @@
 </script>
 
 <fieldset class="scale" aria-describedby="scale-direction">
-  <legend>{legend}</legend>
+  <legend class:visually-hidden={compact}>{legend}</legend>
   <p id="scale-direction" class="anchors">
     <span><strong>1</strong> Urgent hunger</span>
-    <span><strong>5</strong> Neutral</span>
+    {#if !compact}<span><strong>5</strong> Neutral</span>{/if}
     <span><strong>10</strong> Painfully full</span>
   </p>
   <div class="number-grid">
@@ -66,6 +68,18 @@
     line-height: 1.25;
   }
 
+  .visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
   .anchors {
     margin: 0 0 9px;
     display: flex;
@@ -81,7 +95,11 @@
     display: grid;
   }
 
-  .anchors span:nth-child(2) {
+  .anchors span:only-child { width: auto; }
+
+  .anchors:has(span:nth-child(2):last-child) span { width: 48%; }
+
+  .anchors span:nth-child(2):not(:last-child) {
     text-align: center;
   }
 

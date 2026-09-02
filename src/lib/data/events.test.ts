@@ -7,7 +7,7 @@ import {
   type AppetiteEvent,
   type NewAppetiteEvent
 } from './events';
-import { SCHEMA_VERSION, type ExperimentRecord, type Program } from './schema';
+import { initialSettings, SCHEMA_VERSION, type ExperimentRecord, type Program } from './schema';
 
 const program: Program = {
   id: 'program-1',
@@ -117,5 +117,17 @@ describe('appetite event projection', () => {
     ]);
     expect(projection.experiments.find(({ id }) => id === 'one')).toMatchObject({ status: 'stopped', endedAt: 2 });
     expect(projection.experiments.find(({ id }) => id === 'two')).toMatchObject({ status: 'active' });
+  });
+
+  it('derives the chosen appearance from the latest settings event', () => {
+    const light = { ...initialSettings, appearance: 'light' as const };
+    const dark = { ...initialSettings, appearance: 'dark' as const };
+    const events = [
+      stored(1, { type: 'settings/changed', occurredAt: 1, payload: { settings: light } }),
+      stored(2, { type: 'settings/changed', occurredAt: 2, payload: { settings: dark } })
+    ];
+
+    expect(projectAppetiteEvents(events).settings).toEqual(dark);
+    expect(events[0].payload).toEqual({ settings: light });
   });
 });
