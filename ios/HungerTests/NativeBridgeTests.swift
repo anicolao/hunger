@@ -10,6 +10,16 @@ final class NativeBridgeTests: XCTestCase {
         port: 0
     )
 
+    @MainActor
+    func testNativeViewportPreventsFormFocusZoomWithoutChangingTheWebsite() {
+        let script = NativeViewport.bootstrapScript
+
+        XCTAssertEqual(script.injectionTime, .atDocumentEnd)
+        XCTAssertTrue(script.isForMainFrameOnly)
+        XCTAssertTrue(script.source.contains("maximum-scale=1"))
+        XCTAssertFalse(script.source.contains("user-scalable=no"))
+    }
+
     func testAcceptsOnlyTheExactCapabilityRequest() throws {
         let request = try NativeBridgeValidator.decode(body: [
             "version": 1,
