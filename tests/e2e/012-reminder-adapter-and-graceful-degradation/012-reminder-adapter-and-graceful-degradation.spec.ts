@@ -81,6 +81,7 @@ test('browser reminder preferences remain honest about unavailable background de
   await openSettingsGroup(page, 'Reminders');
   await page.getByLabel('Morning').check();
   await page.getByLabel('Midday').check();
+  await expect(page.getByRole('status')).toHaveText('Scheduled 2 private iOS reminders.');
   await page.getByLabel('Evening').check();
   await expect(page.getByRole('status')).toHaveText('Choose up to two reminder windows.');
   await page.getByRole('button', { name: 'Pause reminders' }).click();
