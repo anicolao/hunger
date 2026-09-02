@@ -219,7 +219,7 @@ check-in.
 
 ### Stage 3 — How learning works
 
-<img src="design/ux-overhaul/onboarding-03-learning.png"
+<img src="design/ux-overhaul/onboarding-03-learning-v2.png"
      alt="Dark-mode onboarding learning screen showing three compact connected steps from before check-in to after check-in to evidence-backed patterns"
      width="320" align="right">
 
@@ -242,7 +242,7 @@ streak, or promise that an insight will appear after a fixed number of days.
 
 ### Stage 4 — Privacy and choice
 
-<img src="design/ux-overhaul/onboarding-04-privacy.png"
+<img src="design/ux-overhaul/onboarding-04-privacy-v2.png"
      alt="Dark-mode onboarding privacy screen with three compact privacy promises, data and support links, reminder choice, and Start day 1 button above the fold"
      width="320" align="right">
 
@@ -652,3 +652,8 @@ The first board received one targeted edit to correct both generated bottom
 navigation bars to **Today**, **Insights**, **Profile**, and **Settings**. No
 source PDF, third-party application screenshot, or licensed design asset was
 used as an image-generation input.
+
+The learning and privacy onboarding screens each received one targeted edit so
+their visual heading hierarchy exactly matches the written specification. The
+original generated variants remain as provenance; the document references the
+corrected `-v2` assets.
