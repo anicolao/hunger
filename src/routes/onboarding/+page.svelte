@@ -271,7 +271,6 @@
   .scale-step :global(.scale) { margin-top: 14px; }
   .scale-step :global(.scale legend) { margin-bottom: 8px; font-size: 17px; }
   .scale-step :global(.anchors) { margin-bottom: 8px; }
-  .scale-step :global(.description) { display: none; }
   .scale-step :global(.number-grid label) { min-height: 48px; }
   .practice-note { margin: 10px 0 0; padding: 10px 12px; border: 1px solid var(--border); border-radius: 14px; color: var(--ink-muted); background: var(--primary-soft); font-size: 14px; }
   .practice-note strong { color: var(--ink); }
