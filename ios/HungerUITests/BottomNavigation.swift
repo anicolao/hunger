@@ -9,14 +9,20 @@ enum BottomNavigationTab: String {
 
 extension XCUIApplication {
     func tapBottomNavigation(_ tab: BottomNavigationTab) {
-        let visibleLink = links.matching(
+        let matches = links.matching(
             NSPredicate(format: "label == %@", tab.rawValue)
-        ).allElementsBoundByIndex
-            .filter { $0.exists && $0.frame.midY > frame.midY && $0.frame.maxY <= frame.maxY }
-            .max { $0.frame.midY < $1.frame.midY }
-        XCTAssertNotNil(visibleLink, "The visible \(tab.rawValue) tab must be accessible.")
-        visibleLink?.coordinate(
-            withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)
-        ).tap()
+        )
+        let deadline = Date().addingTimeInterval(20)
+        repeat {
+            if let link = matches.allElementsBoundByIndex.last(where: {
+                $0.exists && $0.isHittable && $0.isEnabled
+            }) {
+                link.tap()
+                return
+            }
+            RunLoop.current.run(until: Date().addingTimeInterval(0.1))
+        } while Date() < deadline
+
+        XCTFail("The visible \(tab.rawValue) tab was not ready to tap.")
     }
 }
