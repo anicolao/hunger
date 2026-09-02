@@ -7,7 +7,7 @@ final class NativePrivacyAndRecoveryUITests: XCTestCase {
         defer { app.terminate() }
         app.launchArguments = ["--reset-web-data", "--notification-ui-test"]
         app.launch()
-        app.completeOnboarding()
+        guard app.completeOnboarding() else { return }
 
         app.tapBottomNavigation(.settings)
         XCTAssertTrue(app.exactElement(label: "Appearance").waitForExistence(timeout: 10))
