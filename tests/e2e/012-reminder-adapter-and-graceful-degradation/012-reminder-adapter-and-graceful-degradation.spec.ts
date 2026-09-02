@@ -22,6 +22,7 @@ test('browser reminder preferences remain honest about unavailable background de
   await openSettingsGroup(page, 'Reminders');
   await expect(page.getByText(/Week 1 · Up to two/)).toBeVisible();
   await page.getByLabel('Morning').check();
+  await expect(page.getByLabel('Morning')).toHaveCSS('font-size', '16px');
   const morningSwitch = page.getByLabel('Morning').locator('xpath=following-sibling::span');
   await expect(morningSwitch).toHaveCSS('width', '51px');
   await expect(morningSwitch).toHaveCSS('height', '31px');
@@ -34,6 +35,7 @@ test('browser reminder preferences remain honest about unavailable background de
     verifications: [
       { spec: 'The adapter is triggered only after a window is selected', check: async () => expect(page.getByLabel('Morning')).toBeChecked() },
       { spec: 'Reminder choices retain checkbox semantics in an iOS-sized switch', check: async () => expect(morningSwitch).toHaveCSS('width', '51px') },
+      { spec: 'The focused switch uses a zoom-safe iOS control font size', check: async () => expect(page.getByLabel('Morning')).toHaveCSS('font-size', '16px') },
       { spec: 'The app says browser background reminders are unavailable', check: async () => expect(page.getByRole('status')).toHaveText('Background reminders are unavailable in this browser. Your window preferences are still saved on this device.') },
       { spec: 'Pause is available and no native scheduling claim is rendered', check: async () => { await expect(page.getByRole('button', { name: 'Pause reminders' })).toBeVisible(); await expect(page.getByText(/notification scheduled|will notify you/i)).toHaveCount(0); } }
     ]

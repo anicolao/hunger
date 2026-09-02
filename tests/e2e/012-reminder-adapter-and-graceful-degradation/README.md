@@ -10,6 +10,7 @@ Reminder settings taper with the program and accurately describe browser capabil
 
 - [x] The adapter is triggered only after a window is selected
 - [x] Reminder choices retain checkbox semantics in an iOS-sized switch
+- [x] The focused switch uses a zoom-safe iOS control font size
 - [x] The app says browser background reminders are unavailable
 - [x] Pause is available and no native scheduling claim is rendered
 
