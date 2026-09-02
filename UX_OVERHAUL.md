@@ -120,7 +120,169 @@ used only for the initial selection. This keeps the first choice legible and
 ensures that a user who deliberately chooses dark does not unexpectedly change
 appearance later.
 
-## 5. The decision viewport
+## 5. Complete onboarding flow
+
+Onboarding keeps the approved four-step product sequence and adds the appearance
+choice in front of it. It should feel like a short guided setup, not a terms
+document or a first check-in. At standard text size, each stage occupies one
+phone viewport and exposes its primary action without scrolling.
+
+The whole path is:
+
+```mermaid
+flowchart TD
+    A[First launch] --> B[Choose appearance]
+    B --> C[1 of 4: Promise]
+    C --> D[2 of 4: Scale practice]
+    D --> E[3 of 4: Learning loop]
+    E --> F[4 of 4: Privacy and choice]
+    F -->|Not now| G[Start day 1]
+    F -->|Set up reminders| H[Reminder sheet]
+    H --> I[Allow reminders and start]
+    G --> J[Today]
+    I --> J
+```
+
+Appearance setup precedes onboarding, so it has no artificial `0 of 4` label.
+The four numbered stages retain the established product meaning. Back is
+available after the first stage, and moving backward does not discard choices
+made during the current run.
+
+### Stage 0 — Choose appearance
+
+This is the first interactive screen after launch:
+
+- Brand: **Learn Your Appetite**.
+- Heading: **Choose your look**.
+- Supporting line: **Pick what feels good. Change it anytime.**
+- Two large live previews: **Light** and **Dark**.
+- The device appearance preselects one tile, but both remain equally available.
+- Primary action: **Use light mode** or **Use dark mode**, matching the selected
+  preview.
+
+Selecting a tile updates the screen immediately so the choice is understood
+before confirmation. Confirmation applies the preview to the rest of
+onboarding, but does not activate the program or append a user event. No privacy
+copy, account prompt, or explanation of design terminology appears here.
+
+### Stage 1 — Promise
+
+This screen answers only “why would I do this?”:
+
+- Position: **1 of 4**.
+- Heading: **Learn your appetite**.
+- Lead: **30 days. About 10 seconds at a time.**
+- Body: **Notice hunger, fullness, and what shapes your eating—without
+  counting.**
+- Primary action: **Begin**.
+
+One quiet abstract path or growth motif may support the promise. It must not
+depict a body, portion, weighing scale, measuring tape, or before/after person.
+The action remains in the decision viewport; decorative art yields space before
+the copy or action does.
+
+### Stage 2 — One scale
+
+This is education, not data collection:
+
+- Position: **2 of 4**.
+- Heading: **One scale, every time**.
+- Body: **Numbers describe a moment. They are not grades.**
+- Anchors: `1` **Urgent hunger**, `5` **Neutral**, and `10` **Painfully full**.
+- Control label: **Try the scale (optional)**.
+- Primary action: **Continue**; secondary action: **Back**.
+
+Nothing is selected by default. A user may tap values to see the corresponding
+phrase or continue without touching the scale. A compact line beside the
+control says **Practice only—not a check-in. Nothing here is saved.** A practice
+selection never creates an episode, never counts as insight evidence, and never
+appears in history.
+
+### Stage 3 — How learning works
+
+This screen turns the product model into three compact, scannable steps:
+
+1. **Check in before** — Notice your starting cues.
+2. **Check in after** — Notice how the moment ended.
+3. **See what repeats** — Every observation shows its evidence.
+
+The position is **3 of 4**, the heading is **Small moments become patterns**,
+and the supporting line is **When there is enough evidence, you will see what
+the app noticed.** The primary action is **Continue** and the secondary action
+is **Back**. Methodology, thresholds, charts, and experiment rules stay out of
+onboarding and remain available where they become relevant.
+
+### Stage 4 — Privacy and choice
+
+The final screen establishes trust and offers reminders without making them a
+condition of use:
+
+- Position: **4 of 4**.
+- Heading: **Private by default**.
+- Three concise rows: **Saved on this device**, **Only a sensation is
+  required**, and **Pause or delete anytime**.
+- Links: **Your data** and **Support**, opening focused detail without losing
+  onboarding progress.
+- Reminder choices: **Set up reminders** and **Not now**.
+
+Choosing **Not now** exposes the primary action **Start day 1**. Choosing **Set
+up reminders** opens a focused sheet so reminder controls cannot push the
+activation action below the fold.
+
+### Reminder setup branch
+
+The reminder sheet uses iOS-style switches for **Morning**, **Midday**, and
+**Evening**, with a maximum of two windows. It says that reminders stay on this
+device and can be changed later in Settings. Toggling a switch does not request
+system permission.
+
+Closing the sheet returns to the unchanged final stage. When at least one
+window is selected, its primary action becomes **Allow reminders and start**.
+That explicit action is the only point at which iOS requests notification
+permission. If permission is denied or unavailable, activation still completes,
+no delivery claim is made, and Settings provides the recovery path. Browser
+use likewise saves the preference without claiming background delivery.
+
+### Activation and arrival on Today
+
+The final action is one transaction from the user's perspective:
+
+1. create the 30-day program;
+2. append the confirmed appearance and reminder settings through the
+   authoritative event path;
+3. reconcile native reminders when permission and capability permit; and
+4. replace onboarding with Today at **Day 1 · Week 1**.
+
+The first Today viewport shows the normal primary check-in action. It does not
+open a check-in automatically. Completed onboarding supplies the first honest
+insight-progress step, so the first progress meter reads `1 of 5` (20%) before
+any eating moments exist; the scale practice does not supply that progress.
+
+### Interruption, accessibility, and error behavior
+
+- Before activation, no program, episode, insight evidence, or durable settings
+  event exists. Relaunching starts at appearance choice rather than pretending
+  setup was completed.
+- Back preserves the in-memory theme preview, practice selection, and reminder
+  draft for the current run.
+- The focused heading receives focus after every forward or backward transition;
+  VoiceOver announces the new position and heading once.
+- The scale and reminder switches retain their existing semantic controls,
+  44-point targets, keyboard behavior, and non-color state cues.
+- At large text sizes the page may scroll, but the action area receives opaque
+  backing and safe-area inset; it never obscures focused content.
+- A storage or activation failure leaves the user on the final stage, preserves
+  the draft, cancels any newly scheduled reminders on a best-effort basis, and
+  offers the same labelled action to retry.
+- Offline mode changes none of the flow. No screen waits for a network request.
+
+Onboarding is complete only after the activation events are successfully
+appended. Its E2E tracer must cover light and dark choices, the reminder and
+no-reminder branches, permission denial, back navigation, relaunch before
+activation, practice-scale non-persistence, the `1 of 5` insight starting
+state, and geometric CTA visibility at the phone baseline.
+
+## 6. The decision viewport
 
 The primary design unit is a `393 × 852` point phone viewport including safe
 areas and the bottom navigation. Every common task must expose the following
@@ -155,7 +317,7 @@ Within the first viewport, a common screen may contain:
 Anything else is disclosed through a focused route, sheet, collapsed row, or
 detail action.
 
-## 6. Core-task mockups
+## 7. Core-task mockups
 
 ![Compact check-ins and primary insight](design/ux-overhaul/02-check-in-and-insight.png)
 
@@ -192,7 +354,7 @@ Insights opens with one useful statement rather than its methodology:
 the non-causal explanation remain available on the detail route. Evidence is
 not removed; it is progressively disclosed.
 
-## 7. Compact destinations
+## 8. Compact destinations
 
 ![Settings hub, reminder detail, and Profile](design/ux-overhaul/03-settings-reminders-profile.png)
 
@@ -228,7 +390,7 @@ Profile leads with the small number of supported things the app knows now.
 Evidence details remain one tap away. The export CTA is visible before history
 or incomplete sections.
 
-## 8. Screen-by-screen restructure
+## 9. Screen-by-screen restructure
 
 | Screen | First viewport | Moved behind disclosure |
 | --- | --- | --- |
@@ -249,7 +411,7 @@ Scrolling remains valid for history, evidence, legal/privacy explanation,
 large text, and destructive confirmations. It is not the default interaction
 for completing a check-in or finding a primary action.
 
-## 9. Copy overhaul
+## 10. Copy overhaul
 
 The new voice is still careful, but less institutional. Lead with the action or
 observation; explain only when requested.
@@ -276,7 +438,7 @@ Copy limits:
 Safety, consent, destructive action, permission, storage failure, and evidence
 caveats may exceed these limits when accuracy requires it.
 
-## 10. Before and after
+## 11. Before and after
 
 The generated boards are direction artifacts, not screenshots or pixel
 baselines. The “before” column uses current phone E2E evidence; the “after”
@@ -318,7 +480,7 @@ finding before exposing its audit trail.
 Settings becomes navigable rather than scroll-searchable. Everyday choices no
 longer compete with recovery, support, and developer diagnostics.
 
-## 11. Theme tokens
+## 12. Theme tokens
 
 These are starting values for implementation and contrast review, not final
 pixel approvals.
@@ -339,7 +501,7 @@ All text and meaningful control boundaries must meet WCAG 2.2 AA in both
 themes and with transparency disabled. Forced-colors mode replaces decorative
 materials with system colors and borders.
 
-## 12. Shape, type, and motion
+## 13. Shape, type, and motion
 
 - Keep Atkinson Hyperlegible for continuity and offline packaging.
 - Reduce phone H1 from the current visual dominance to approximately `30/34`;
@@ -354,7 +516,7 @@ materials with system colors and borders.
 - Do not animate ambient backgrounds continuously.
 - Honor reduced motion by removing scale/translation and shortening fades.
 
-## 13. Interaction patterns
+## 14. Interaction patterns
 
 ### Focused sheets
 
@@ -385,7 +547,7 @@ screens, never during focused check-ins.
 - Use haptics only from native-owned confirmation points, never as the sole
   indication of state.
 
-## 14. Accessibility and privacy constraints
+## 15. Accessibility and privacy constraints
 
 Visual richness cannot weaken the existing contracts:
 
@@ -400,7 +562,7 @@ Visual richness cannot weaken the existing contracts:
 - no remote font, texture, image, or animation is introduced; and
 - the packaged iOS shell remains fully offline.
 
-## 15. Acceptance criteria for implementation
+## 16. Acceptance criteria for implementation
 
 The direction is implemented only when:
 
@@ -421,7 +583,7 @@ The direction is implemented only when:
 - new phone-first E2E scenarios compare light and dark layouts and assert CTA
   visibility geometrically rather than relying only on screenshots.
 
-## 16. Review decisions
+## 17. Review decisions
 
 Approval of this document approves the following direction:
 
@@ -438,7 +600,7 @@ This approval does not treat generated raster details as exact implementation
 specifications. Semantic HTML, contrast, real content, iOS behavior, and the
 rules above take precedence.
 
-## 17. Mockup provenance
+## 18. Mockup provenance
 
 The three boards were generated with the built-in OpenAI image-generation tool
 on 2026-09-02 using the `ui-mockup` workflow. The prompts specified shippable
