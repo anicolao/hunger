@@ -43,6 +43,7 @@ A new user can understand the promise and unified scale, choose private reminder
 - [x] The scale retains urgent hunger, neutral, and painful fullness anchors
 - [x] The optional practice is explicitly not saved as a check-in
 - [x] The interface says numbers describe rather than grade a moment
+- [x] Practising with the shared picker teaches the selected value and body cue
 
 ## Paired moments lead to evidence-backed patterns
 

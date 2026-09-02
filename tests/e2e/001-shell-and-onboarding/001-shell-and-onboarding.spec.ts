@@ -198,6 +198,18 @@ test('application shell activates the local-first 30-day program', async ({ page
         spec: 'The interface says numbers describe rather than grade a moment',
         check: async () =>
           expect(page.getByText('Numbers describe a moment. They are not grades.')).toBeVisible()
+      },
+      {
+        spec: 'Practising with the shared picker teaches the selected value and body cue',
+        check: async () => {
+          await page.getByRole('radio', { name: '7, Comfortably full' }).check();
+          await expect(page.getByText('7 · Comfortably full')).toBeVisible();
+          await expect(page.getByText('Little interest in more food.')).toBeVisible();
+          await expect(page.locator('input[name="onboarding-practice-level"]:checked')).toHaveValue('7');
+          if (testInfo.project.name === 'phone') {
+            await expect(page.getByRole('button', { name: 'Continue' })).toBeInViewport();
+          }
+        }
       }
     ]
   });
