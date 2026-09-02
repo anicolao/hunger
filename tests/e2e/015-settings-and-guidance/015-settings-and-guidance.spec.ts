@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { blockExternalRequests } from '../helpers/app-fixture';
+import { blockExternalRequests, openSettingsGroup } from '../helpers/app-fixture';
 import { buildHistoryFixture } from '../helpers/fixture-builder';
 import { TestStepHelper } from '../helpers/test-step-helper';
 
@@ -27,6 +27,7 @@ test('guidance, preferences, recovery, and support remain reachable', async ({ p
   await page.evaluate(async (value) => window.__HUNGER_E2E__?.importFixture(value), fixture);
 
   await page.goto('/settings');
+  await openSettingsGroup(page, 'Program & scale');
   await page.getByRole('link', { name: 'Review all scale words' }).click();
   await expect(page.getByRole('heading', { name: 'One direction, every time' })).toBeVisible();
   await expect(page.getByText('10', { exact: true })).toBeVisible();
@@ -50,11 +51,15 @@ test('guidance, preferences, recovery, and support remain reachable', async ({ p
   await expect(page.getByRole('heading', { name: 'How does your body feel now?' })).toBeVisible();
 
   await page.goto('/settings');
+  await openSettingsGroup(page, 'Accessibility');
   await page.getByRole('checkbox', { name: /Reduced prompts/ }).check();
   await expect(page.getByText('Reduced prompt preference saved.')).toBeVisible();
+  await openSettingsGroup(page, 'Your data');
   await page.getByRole('checkbox', { name: /Include photos in exports/ }).check();
   await expect(page.getByText('Photo export preference saved.')).toBeVisible();
   await page.reload();
+  await openSettingsGroup(page, 'Accessibility');
+  await openSettingsGroup(page, 'Your data');
   await expect(page.getByRole('checkbox', { name: /Reduced prompts/ })).toBeChecked();
   await expect(page.getByRole('checkbox', { name: /Include photos in exports/ })).toBeChecked();
   await page.getByRole('button', { name: 'Rebuild local views' }).click();
@@ -74,6 +79,7 @@ test('guidance, preferences, recovery, and support remain reachable', async ({ p
     ]
   });
 
+  await openSettingsGroup(page, 'Support');
   await page.getByRole('button', { name: 'Learn about support' }).click();
   const supportDialog = page.getByRole('dialog');
   await expect(supportDialog.getByRole('heading', { name: 'Support is a valid next step' })).toBeVisible();
@@ -83,6 +89,7 @@ test('guidance, preferences, recovery, and support remain reachable', async ({ p
   await expect(page.getByRole('button', { name: 'Show support note again' })).toBeVisible();
   await page.getByRole('button', { name: 'Show support note again' }).click();
   await page.getByRole('complementary').getByRole('button', { name: 'Pause check-ins' }).click();
+  await openSettingsGroup(page, 'Program & scale');
   await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
 
   await steps.step('complete-support-path', {

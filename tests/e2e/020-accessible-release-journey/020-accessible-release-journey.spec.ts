@@ -1,16 +1,16 @@
 import { expect, test } from '@playwright/test';
-import { activateProgram, blockExternalRequests, finishAfter, saveBefore } from '../helpers/app-fixture';
+import { activateProgram, blockExternalRequests, finishAfter, openSettingsGroup, saveBefore } from '../helpers/app-fixture';
 import { TestStepHelper } from '../helpers/test-step-helper';
 
-test('the release journey follows system appearance and remains operable across supported layouts', async ({ page, context }, testInfo) => {
+test('the release journey respects chosen appearance and remains operable across supported layouts', async ({ page, context }, testInfo) => {
   const steps = new TestStepHelper(page, testInfo);
   steps.setMetadata(
     'Accessible release journey',
-    'The primary phone journey follows system appearance, keyboard and motion preferences, and remains usable at layout extremes.'
+    'The primary phone journey respects the chosen appearance, keyboard and motion preferences, and remains usable at layout extremes.'
   );
   await blockExternalRequests(context);
   await page.emulateMedia({ colorScheme: 'dark', reducedMotion: 'reduce' });
-  await activateProgram(page);
+  await activateProgram(page, 'dark');
   await saveBefore(page, 4);
   await finishAfter(page, 6);
   await page.keyboard.press('Tab');
@@ -19,7 +19,7 @@ test('the release journey follows system appearance and remains operable across 
   await steps.step('dark-phone-keyboard-journey', {
     description: 'A paired check-in completes in system dark appearance with visible keyboard focus',
     verifications: [
-      { spec: 'System dark colors are active without changing semantic content', check: async () => {
+      { spec: 'Chosen dark colors are active without changing semantic content', check: async () => {
         expect(await page.evaluate(() => getComputedStyle(document.documentElement).colorScheme)).toContain('dark');
         await expect(page.getByText('1 moment noticed')).toBeVisible();
       } },
@@ -45,6 +45,7 @@ test('the release journey follows system appearance and remains operable across 
   await page.setViewportSize({ width: 393, height: 852 });
   await page.emulateMedia({ colorScheme: 'dark', reducedMotion: 'reduce', forcedColors: 'active' });
   await page.goto('/settings');
+  await openSettingsGroup(page, 'Accessibility');
   await expect(page.getByRole('checkbox', { name: /Reduced prompts/ })).toBeVisible();
   await page.getByRole('checkbox', { name: /Reduced prompts/ }).check();
   await page.evaluate(() => { document.body.style.zoom = '2'; });
@@ -65,6 +66,7 @@ test('the release journey follows system appearance and remains operable across 
   await page.getByRole('button', { name: 'Download JSON' }).click();
   await download;
   await page.goto('/settings');
+  await openSettingsGroup(page, 'Your data');
   const deleteButton = page.getByRole('button', { name: 'Delete everything' });
   for (let attempt = 0; attempt < 6 && !await deleteButton.isVisible(); attempt += 1) {
     await page.mouse.wheel(0, 600);

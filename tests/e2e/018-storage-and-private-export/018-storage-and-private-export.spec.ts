@@ -1,5 +1,5 @@
 import { expect, test, type Download, type Page } from '@playwright/test';
-import { activateProgram, blockExternalRequests } from '../helpers/app-fixture';
+import { activateProgram, blockExternalRequests, openRecentCheckins, openSettingsGroup } from '../helpers/app-fixture';
 import { TestStepHelper } from '../helpers/test-step-helper';
 
 const onePixelPng = Buffer.from(
@@ -14,6 +14,7 @@ async function choosePhoto(page: Page) {
     name: 'moment.png', mimeType: 'image/png', buffer: onePixelPng
   });
   await expect(page.getByText('Stored only on this device')).toBeVisible();
+  await page.getByRole('button', { name: 'Done' }).click();
 }
 
 async function text(download: Download): Promise<string> {
@@ -54,7 +55,8 @@ test('storage pressure preserves sensations and photo exports require explicit c
   await page.getByRole('link', { name: 'How do you feel now?' }).click();
   await page.getByRole('radio', { name: /^6,/ }).check();
   await page.getByRole('button', { name: 'Finish check-in' }).click();
-  await page.locator('section[aria-labelledby="recent-title"] li a').first().click();
+  await openRecentCheckins(page);
+  await page.locator('details.empty-history li a').first().click();
   await page.getByRole('button', { name: 'Edit check-in' }).click();
   await choosePhoto(page);
   await page.evaluate(() => window.__HUNGER_E2E__?.failNextPhotoWrite());
@@ -75,6 +77,7 @@ test('storage pressure preserves sensations and photo exports require explicit c
   expect(JSON.parse(privateJson).photoPolicy).toMatchObject({ included: false, omittedCount: 1 });
 
   await page.goto('/settings');
+  await openSettingsGroup(page, 'Your data');
   await page.getByRole('checkbox', { name: /Include photos in exports/ }).check();
   await expect(page.getByText('Photo export preference saved.')).toBeVisible();
   await page.goto('/profile');
@@ -94,7 +97,8 @@ test('storage pressure preserves sensations and photo exports require explicit c
   });
 
   await page.goto('/');
-  await page.locator('section[aria-labelledby="recent-title"] li a').first().click();
+  await openRecentCheckins(page);
+  await page.locator('details.empty-history li a').first().click();
   await page.getByRole('button', { name: 'Delete this check-in' }).click();
   await page.getByLabel('I understand this cannot be undone').check();
   await page.getByRole('dialog').getByRole('button', { name: 'Delete this check-in' }).click();

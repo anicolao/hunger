@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { TestStepHelper } from '../helpers/test-step-helper';
+import { openSettingsGroup } from '../helpers/app-fixture';
 
 declare global {
   interface Window {
@@ -259,7 +260,7 @@ test('application shell activates the local-first 30-day program', async ({ page
         check: async () => {
           await expect(page.getByRole('heading', { level: 1 })).toHaveText('Today');
           await expect(page.getByText('Day 1 · Week 1')).toBeVisible();
-          await expect(page.getByText('There is no daily target.')).toBeVisible();
+          await expect(page.getByText('There is no daily target.')).toHaveCount(0);
           await expect(page.getByText('No moments yet')).toBeVisible();
         }
       },
@@ -314,6 +315,7 @@ test('application shell activates the local-first 30-day program', async ({ page
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
 
   await page.goto('/settings');
+  await openSettingsGroup(page, 'Reminders');
   await steps.step('settings-navigation-and-build', {
     description: 'Settings owns the build identity and the fourth navigation tab',
     verifications: [

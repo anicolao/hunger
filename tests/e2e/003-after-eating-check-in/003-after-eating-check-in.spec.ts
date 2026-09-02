@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { activateProgram, blockExternalRequests, saveBefore } from '../helpers/app-fixture';
+import { activateProgram, blockExternalRequests, openRecentCheckins, saveBefore } from '../helpers/app-fixture';
 import { TestStepHelper } from '../helpers/test-step-helper';
 
 const onePixelPng = Buffer.from(
@@ -58,7 +58,9 @@ test('an after-eating sensation completes the same episode with optional context
     ]
   });
 
+  await page.getByRole('button', { name: 'Done' }).click();
   await page.getByRole('button', { name: 'Finish check-in' }).click();
+  await openRecentCheckins(page);
   await steps.step('paired-episode-complete', {
     description: 'Today shows one completed paired episode',
     verifications: [
@@ -78,6 +80,7 @@ test('an after-eating sensation completes the same episode with optional context
   });
 
   await page.reload();
+  await openRecentCheckins(page);
   await expect(page.getByText(/8 → 3/)).toBeVisible();
   steps.generateDocs();
 });

@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { blockExternalRequests } from '../helpers/app-fixture';
+import { blockExternalRequests, openSettingsGroup } from '../helpers/app-fixture';
 import { buildHistoryFixture } from '../helpers/fixture-builder';
 import { TestStepHelper } from '../helpers/test-step-helper';
 import { initialSettings } from '$lib/data/schema';
@@ -19,6 +19,7 @@ test('browser reminder preferences remain honest about unavailable background de
   await page.goto('/'); await expect(page.locator('html')).toHaveAttribute('data-e2e-fixture', 'ready');
   await page.evaluate(async (value) => window.__HUNGER_E2E__?.importFixture(value), fixture);
   await page.goto('/settings');
+  await openSettingsGroup(page, 'Reminders');
   await expect(page.getByText(/Week 1 · Up to two/)).toBeVisible();
   await page.getByLabel('Morning').check();
   const morningSwitch = page.getByLabel('Morning').locator('xpath=following-sibling::span');
@@ -41,6 +42,7 @@ test('browser reminder preferences remain honest about unavailable background de
   const weekFour = buildHistoryFixture(22, [{ before: 3, after: 6, localHour: 12 }]);
   await page.evaluate(async (value) => window.__HUNGER_E2E__?.importFixture(value), weekFour);
   await page.reload();
+  await openSettingsGroup(page, 'Reminders');
   await expect(page.getByText('Week 4 · One experiment reminder while an experiment is active')).toBeVisible();
   await page.getByRole('button', { name: 'Pause reminders' }).click();
   await expect(page.getByText('Week 4 · Paused')).toBeVisible();
@@ -76,6 +78,7 @@ test('browser reminder preferences remain honest about unavailable background de
   });
   await page.evaluate(async (value) => window.__HUNGER_E2E__?.importFixture(value), fixture);
   await page.reload();
+  await openSettingsGroup(page, 'Reminders');
   await page.getByLabel('Morning').check();
   await page.getByLabel('Midday').check();
   await page.getByLabel('Evening').check();

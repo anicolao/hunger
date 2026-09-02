@@ -110,7 +110,7 @@
     <section class="notice-card paused" aria-labelledby="notice-title">
       <p class="eyebrow">Check-ins paused</p>
       <h2 id="notice-title">Your history is still here.</h2>
-      <p>Resume whenever check-ins feel useful again.</p>
+      <p>Resume whenever check-ins feel useful again. The calendar continues without a streak.</p>
       <a class="primary-button" href={`${base}/settings`}>Review program settings</a>
     </section>
   {:else}

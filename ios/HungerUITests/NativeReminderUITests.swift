@@ -24,6 +24,7 @@ final class NativeReminderUITests: XCTestCase {
             "The packaged Settings screen must expose the source commit, not a placeholder."
         )
 
+        element(label: "Reminders", in: app).tap()
         XCTAssertTrue(element(label: "Morning, on", in: app).waitForExistence(timeout: 10))
         XCTAssertTrue(element(label: "iOS has 1 private reminder pending.", in: app).waitForExistence(timeout: 10))
 
@@ -42,9 +43,8 @@ final class NativeReminderUITests: XCTestCase {
     }
 
     private func completeOnboarding(in app: XCUIApplication) {
-        XCTAssertTrue(element(label: "Learn your appetite.", in: app).waitForExistence(timeout: 20))
-        app.swipeUp()
-        app.links["Begin the 30-day program"].tap()
+        XCTAssertTrue(element(label: "Choose your look", in: app).waitForExistence(timeout: 20))
+        app.buttons["Use light mode"].tap()
         XCTAssertTrue(app.buttons["Begin"].waitForExistence(timeout: 10))
         app.buttons["Begin"].tap()
         XCTAssertTrue(
@@ -62,6 +62,7 @@ final class NativeReminderUITests: XCTestCase {
         XCTAssertTrue(morning.waitForExistence(timeout: 10))
         morning.tap()
         XCTAssertTrue(element(label: "Morning, on", in: app).waitForExistence(timeout: 10))
+        app.buttons["Done"].tap()
         app.buttons["Allow reminders and start"].tap()
     }
 

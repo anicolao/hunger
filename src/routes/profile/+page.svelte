@@ -79,6 +79,13 @@
         <p class="intro">Your profile grows only where your paired check-ins provide enough evidence.</p>
       {/if}
 
+      <section class="export-card">
+        <h2>Keep a private copy</h2>
+        <p>Export a readable summary or structured data. {settings?.includePhotosInExport ? 'Photos are included only because you enabled them in Settings.' : 'Photos are excluded by default.'}</p>
+        <div><button aria-label="Download readable profile" disabled={exporting} onclick={() => download('html')}>Export profile</button><button class="secondary" disabled={exporting} onclick={() => download('json')}>Download JSON</button></div>
+        {#if exportMessage}<p role="status">{exportMessage}</p>{/if}
+      </section>
+
       <div class="profile-grid">
         {#each profile.sections as section}
           <section class:sparse={!section.supported}>
@@ -97,12 +104,6 @@
         {:else}<p>Practices appear only when an observed pattern supports them.</p>{/if}
       </section>
 
-      <section class="export-card">
-        <h2>Keep a private copy</h2>
-        <p>Download a readable summary or structured data. {settings?.includePhotosInExport ? 'Photos are included only because you enabled them in Settings, up to a 750 KB source-photo limit.' : 'Photos are excluded by default.'}</p>
-        <div><button disabled={exporting} onclick={() => download('html')}>Download readable profile</button><button class="secondary" disabled={exporting} onclick={() => download('json')}>Download JSON</button></div>
-        {#if exportMessage}<p role="status">{exportMessage}</p>{/if}
-      </section>
     </div>
   </AppShell>
 {:else}<div data-status="loading" aria-live="polite">Opening your private records…</div>{/if}
@@ -110,16 +111,18 @@
 <style>
   .eyebrow, section > span { margin: 0 0 8px; color: var(--primary); font-size: 13px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
   h1 { margin: 0; font-size: clamp(34px, 8vw, 44px); }
-  .intro { max-width: 680px; color: var(--ink-muted); font-size: 18px; line-height: 1.5; }
-  .profile-grid { margin-top: 28px; display: grid; gap: 16px; }
-  section { padding: 24px; border: 1px solid var(--border); border-radius: 16px; background: var(--surface); }
+  .intro { max-width: 680px; margin: 8px 0 0; color: var(--ink-muted); line-height: 1.4; }
+  .profile-grid { margin-top: 14px; display: grid; gap: 12px; }
+  section { padding: 20px; border: 1px solid var(--rim); border-radius: 20px; background: var(--glass); box-shadow: var(--shadow); backdrop-filter: blur(22px) saturate(130%); }
   section.sparse { border-style: dashed; background: color-mix(in srgb, var(--surface) 70%, var(--canvas)); }
   h2 { margin: 10px 0 8px; font-size: 22px; }
   section p, li { color: var(--ink-muted); line-height: 1.5; }
-  .practices, .export-card { margin-top: 18px; }
+  .practices, .export-card { margin-top: 14px; }
   .practices li { margin-block: 10px; }
   .export-card > div { display: flex; flex-wrap: wrap; gap: 10px; }
-  button { min-height: 48px; padding: 0 18px; border: 0; border-radius: 12px; color: white; background: var(--primary); font-weight: 700; }
-  button.secondary { border: 1px solid var(--border-strong); color: var(--ink); background: var(--surface); }
+  button { min-height: 48px; padding: 0 18px; border: 0; border-radius: 14px; color: var(--on-primary); background: var(--primary); font-weight: 700; }
+  button.secondary { border: 1px solid var(--border-strong); color: var(--ink); background: var(--glass); }
+  .export-card h2 { margin-top: 0; }
+  .export-card p { margin: 6px 0 14px; }
   @media (min-width: 680px) { .profile-grid { grid-template-columns: 1fr 1fr; } }
 </style>

@@ -57,7 +57,7 @@ test('an experiment remains secondary on Today until its seven-day comparison is
     description: 'Today keeps the check-in primary while exposing reversible experiment controls',
     verifications: [
       { spec: 'The active experiment is a secondary card with pause and stop controls', check: async () => {
-        await expect(page.getByRole('heading', { name: 'Begin with how your body feels.' })).toBeVisible();
+        await expect(page.getByRole('heading', { name: 'What do you notice?' })).toBeVisible();
         await expect(page.getByRole('heading', { name: 'Notice hunger a little earlier' })).toBeVisible();
         await page.getByRole('button', { name: 'Pause' }).click();
         await expect(page.getByRole('button', { name: 'Resume' })).toBeVisible();

@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { blockExternalRequests } from '../helpers/app-fixture';
+import { blockExternalRequests, openSettingsGroup } from '../helpers/app-fixture';
 import { buildHistoryFixture } from '../helpers/fixture-builder';
 import { TestStepHelper } from '../helpers/test-step-helper';
 
@@ -31,17 +31,19 @@ test('private records migrate, survive offline, and can be physically cleared', 
     ]
   });
   await page.goto('/settings');
+  await openSettingsGroup(page, 'Your data');
   await expect(page.getByText('4 local eating moments.')).toBeVisible();
   await page.evaluate(async () => { if ('serviceWorker' in navigator) await navigator.serviceWorker.ready; });
   await page.reload();
   await expect(page.getByRole('heading', { name: 'Settings' })).toBeVisible();
+  await openSettingsGroup(page, 'Your data');
   await context.setOffline(true);
   await page.evaluate(() => dispatchEvent(new Event('offline')));
 
   await steps.step('private-and-offline', {
     description: 'Version-one records migrate through the real repository and reopen without a network',
     verifications: [
-      { spec: 'The offline shell reports its real state and retains all four local moments', check: async () => { await expect(page.getByText('App ready offline')).toBeVisible(); await expect(page.getByText('4 local eating moments.')).toBeVisible(); } },
+      { spec: 'The offline shell reports its real state and retains all four local moments', check: async () => { await expect(page.getByText('Available offline')).toBeVisible(); await expect(page.getByText('4 local eating moments.')).toBeVisible(); } },
       { spec: 'Five immutable source events replay into the same program and four episode projections', check: async () => expect(replay?.eventCount).toBe(5) },
       { spec: 'Privacy copy names browser-profile visibility and provides export access', check: async () => { await expect(page.getByText(/not end-to-end encrypted/)).toBeVisible(); await expect(page.getByRole('link', { name: 'Export profile and data' })).toBeVisible(); } }
     ]
@@ -50,6 +52,7 @@ test('private records migrate, survive offline, and can be physically cleared', 
   await context.setOffline(false);
   await page.evaluate(() => dispatchEvent(new Event('online')));
   await page.reload();
+  await openSettingsGroup(page, 'Your data');
   await expect(page.getByText('4 local eating moments.')).toBeVisible();
   await page.getByRole('button', { name: 'Delete everything' }).click();
   await steps.step('deliberate-delete-all', {

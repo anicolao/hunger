@@ -1,8 +1,8 @@
 # Learn Your Appetite — UX Overhaul
 
-Status: proposed direction for approval. This document changes presentation,
-navigation depth, and copy density only. It does not authorize implementation
-or change the product, evidence, privacy, or event-sourcing contracts in
+Status: approved and implemented on the UX-overhaul pull request. This document
+changes presentation, navigation depth, and copy density only; it does not
+change the product, evidence, privacy, or event-sourcing contracts in
 `MVP_DESIGN.md`.
 
 ## 1. Why this overhaul

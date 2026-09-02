@@ -106,6 +106,7 @@
         <SensationScale
           value={level}
           legend="Choose your sensation after eating"
+          compact
           onselect={(nextLevel) => (level = nextLevel)}
         />
         <ContextDisclosure
@@ -140,7 +141,7 @@
 <style>
   .check-in-page { min-height: 100svh; padding: env(safe-area-inset-top) 16px calc(14px + env(safe-area-inset-bottom)); }
   header { width: min(100%, 720px); min-height: 64px; margin-inline: auto; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; }
-  header a { min-height: 48px; display: inline-flex; align-items: center; color: var(--primary); font-weight: 700; }
+  header a { min-width: 44px; min-height: 48px; display: inline-flex; align-items: center; color: var(--primary); font-weight: 700; }
   header a:last-child { justify-self: end; }
   main { width: min(100%, 620px); margin: 6px auto; }
   form, .missing { min-height: min(700px, calc(100svh - 82px - env(safe-area-inset-top) - env(safe-area-inset-bottom))); padding: clamp(18px, 4vw, 30px); border: 1px solid var(--rim); border-radius: 24px; background: var(--glass); box-shadow: var(--shadow); backdrop-filter: blur(24px) saturate(130%); }
