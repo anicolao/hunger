@@ -73,6 +73,8 @@
     height: 44px;
     margin: 0;
     opacity: 0;
+    font: inherit;
+    font-size: 16px;
     cursor: pointer;
   }
 
