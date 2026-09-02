@@ -11,10 +11,11 @@
 
   let program = $state<Program | null>(null);
   let loaded = $state(false);
+  const nativeShell = import.meta.env.VITE_NATIVE_SHELL === 'ios';
 
   onMount(async () => {
     program = await reconcileProgramLifecycle(runtime.now());
-    if (!program && import.meta.env.VITE_NATIVE_SHELL === 'ios') {
+    if (!program && nativeShell) {
       return goto(`${base}/onboarding`, { replaceState: true });
     }
     loaded = true;
@@ -51,7 +52,7 @@
   <AppShell active="today">
     <TodayView {program} />
   </AppShell>
-{:else}
+{:else if !nativeShell}
 <div class="site-shell" data-status={loaded ? 'ready' : 'loading'} data-e2e-layout>
   <header class="site-header">
     <a class="brand" href={`${base}/`} aria-label="Learn Your Appetite home">
