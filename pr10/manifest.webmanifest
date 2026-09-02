@@ -1,0 +1,17 @@
+{
+  "name": "Learn Your Appetite",
+  "short_name": "Appetite",
+  "description": "A 30-day program for learning hunger and fullness without calorie counting.",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#f7f4ee",
+  "theme_color": "#f7f4ee",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

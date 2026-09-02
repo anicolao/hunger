@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#f7f4ee" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data:; font-src 'self'; connect-src 'self' ws:; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'" />
+    <link rel="icon" href="/hunger/pr10/icon.svg" />
+    <link rel="manifest" href="/hunger/pr10/manifest.webmanifest" />
+    <link href="/hunger/pr10/_app/immutable/entry/start.DLxILzGA.js" rel="modulepreload">
+		<link href="/hunger/pr10/_app/immutable/chunks/Cw8i0vS1.js" rel="modulepreload">
+		<link href="/hunger/pr10/_app/immutable/chunks/BcODOhv6.js" rel="modulepreload">
+		<link href="/hunger/pr10/_app/immutable/chunks/B1xY_ZPx.js" rel="modulepreload">
+		<link href="/hunger/pr10/_app/immutable/entry/app.DHpNCB8O.js" rel="modulepreload">
+		<link href="/hunger/pr10/_app/immutable/chunks/CNkNnFwr.js" rel="modulepreload">
+		<link href="/hunger/pr10/_app/immutable/chunks/D9hsKHdE.js" rel="modulepreload">
+		<link href="/hunger/pr10/_app/immutable/chunks/43h84qdo.js" rel="modulepreload">
+		<link href="/hunger/pr10/_app/immutable/chunks/C3z0JLo-.js" rel="modulepreload">
+		<link href="/hunger/pr10/_app/immutable/nodes/0.D5qjq_pY.js" rel="modulepreload">
+		<link href="/hunger/pr10/_app/immutable/chunks/nMpjrTY2.js" rel="modulepreload">
+		<link href="/hunger/pr10/_app/immutable/chunks/CX3nLNI1.js" rel="modulepreload">
+		<link href="/hunger/pr10/_app/immutable/chunks/KoVKIneO.js" rel="modulepreload">
+		<link href="/hunger/pr10/_app/immutable/chunks/CRW8GCCX.js" rel="modulepreload">
+		<link href="/hunger/pr10/_app/immutable/chunks/DWfvEm9D.js" rel="modulepreload">
+		<link href="/hunger/pr10/_app/immutable/chunks/Br_8ZKqA.js" rel="modulepreload">
+		<link href="/hunger/pr10/_app/immutable/chunks/C00IyK1-.js" rel="modulepreload">
+		
+		<link href="/hunger/pr10/_app/immutable/assets/ToggleSwitch.CXUXSy_1.css" rel="stylesheet">
+		<link href="/hunger/pr10/_app/immutable/assets/0.9HYQi9a6.css" rel="stylesheet">
+  </head>
+  <body data-sveltekit-preload-data="hover">
+    <div style="display: contents">
+			<script>
+				{
+					__sveltekit_hme7n = {
+						base: "/hunger/pr10",
+						assets: "/hunger/pr10"
+					};
+
+					const element = document.currentScript.parentElement;
+
+					Promise.all([
+						import("/hunger/pr10/_app/immutable/entry/start.DLxILzGA.js"),
+						import("/hunger/pr10/_app/immutable/entry/app.DHpNCB8O.js")
+					]).then(([kit, app]) => {
+						kit.start(app, element);
+					});
+
+					if ('serviceWorker' in navigator) {
+						const script_url = '/hunger/pr10/service-worker.js';
+						const policy = globalThis?.window?.trustedTypes?.createPolicy(
+							'sveltekit-trusted-url',
+							{ createScriptURL(url) { return url; } }
+						);
+						const sanitised = policy?.createScriptURL(script_url) ?? script_url;
+						addEventListener('load', function () {
+							navigator.serviceWorker.register(sanitised);
+						});
+					}
+				}
+			</script>
+		</div>
+  </body>
+</html>
