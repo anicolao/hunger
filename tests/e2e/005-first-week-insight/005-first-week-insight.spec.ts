@@ -52,6 +52,10 @@ test('the fourth paired episode unlocks an evidence-backed early observation', a
   const primaryInsight = page.locator('article').first();
   await primaryInsight.getByText("Why you're seeing this").click();
   await primaryInsight.getByRole('button', { name: 'Helpful' }).click();
+  await page.evaluate(() => {
+    window.scrollTo(0, 0);
+    (document.activeElement as HTMLElement | null)?.blur();
+  });
 
   await steps.step('first-observation', {
     description: 'Four pairs unlock a transparent, feedback-ready early observation',
