@@ -1,5 +1,6 @@
 <script lang="ts">
   import { base } from '$app/paths';
+  import { animateDetails } from '$lib/actions/animateDetails';
   import { page } from '$app/state';
   import { onMount } from 'svelte';
   import { getRepository } from '$lib/data/repository';
@@ -154,7 +155,7 @@
     </section>
   {/if}
 
-  <details class="empty-history">
+  <details class="empty-history" use:animateDetails>
     <summary id="recent-title">Recent check-ins <span>{episodes.length}</span></summary>
     {#if episodes.length === 0}
       <p>Your before-and-after moments will stay private on this device.</p>

@@ -1,5 +1,6 @@
 <script lang="ts">
   import { base } from '$app/paths';
+  import { animateDetails } from '$lib/actions/animateDetails';
   import { goto } from '$app/navigation';
   import { onMount } from 'svelte';
   import AppShell from '$lib/components/AppShell.svelte';
@@ -151,7 +152,7 @@
           <span class="badge">7 days · optional</span>
           <h2>{offer.title}</h2>
           <p class="practice">{offer.practice}</p>
-          <details>
+          <details use:animateDetails>
             <summary>Why this experiment?</summary>
             <p>{renderPattern(sourceInsight).finding}</p>
             <p>That observation met the app’s sample and difference gates. It does not prove a cause.</p>

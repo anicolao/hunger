@@ -77,13 +77,15 @@
         <p class="promise">
           Notice hunger, fullness, and what shapes your eating—without calorie counting.
         </p>
-        <a class="primary-action" href="#approach">
-          See how it works
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="m8 10 4 4 4-4" />
-          </svg>
-        </a>
-        <p class="gentle-note">No targets. No streaks. Just patterns from your own experience.</p>
+        <div class="hero-actions">
+          <a class="primary-action" href={`${base}/onboarding`}>Begin the 30-day program</a>
+          <a class="secondary-action" href="#approach">
+            See how it works
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="m8 10 4 4 4-4" />
+            </svg>
+          </a>
+        </div>
       </div>
 
       <div class="hero-visual" aria-label="One consistent scale from urgent hunger to fullness">
@@ -133,7 +135,6 @@
         <p><strong>Only a sensation is required.</strong> Context, notes, and photos stay optional.</p>
         <p><strong>Every insight shows its evidence.</strong> Sparse data is labelled “Still learning.”</p>
         <p><strong>Your records stay local.</strong> The MVP needs no account or cloud food history.</p>
-        <a class="begin-action" href={`${base}/onboarding`}>Begin the 30-day program</a>
       </div>
     </section>
   </main>
@@ -257,23 +258,38 @@
     line-height: 1.5;
   }
 
-  .primary-action {
+  .hero-actions {
+    width: min(100%, 400px);
+    margin-top: 32px;
+    display: grid;
+    gap: 10px;
+  }
+
+  .primary-action,
+  .secondary-action {
     width: fit-content;
     min-height: 52px;
-    margin-top: 32px;
-    padding: 0 20px 0 24px;
+    padding: 0 24px;
     border-radius: 13px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     gap: 10px;
-    color: #fff;
-    background: var(--primary);
     font-size: 17px;
     font-weight: 700;
     text-decoration: none;
+    transition:
+      color 180ms ease-out,
+      background-color 180ms ease-out,
+      border-color 180ms ease-out,
+      box-shadow 180ms ease-out,
+      transform 180ms ease-out;
+  }
+
+  .primary-action {
+    color: var(--on-primary);
+    background: var(--primary);
     box-shadow: 0 10px 24px rgb(35 107 97 / 18%);
-    transition: background 160ms ease-out, transform 160ms ease-out;
   }
 
   .primary-action:hover {
@@ -281,21 +297,26 @@
     transform: translateY(-1px);
   }
 
-  .primary-action svg {
+  .secondary-action {
+    border: 1px solid var(--border-strong);
+    color: var(--ink);
+    background: var(--glass-strong);
+    backdrop-filter: blur(18px) saturate(130%);
+  }
+
+  .secondary-action:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+    transform: translateY(-1px);
+  }
+
+  .secondary-action svg {
     width: 22px;
     fill: none;
     stroke: currentColor;
     stroke-width: 2;
     stroke-linecap: round;
     stroke-linejoin: round;
-  }
-
-  .gentle-note {
-    max-width: 440px;
-    margin: 16px 0 0;
-    color: var(--ink-muted);
-    font-size: 14px;
-    line-height: 1.5;
   }
 
   .hero-visual {
@@ -345,8 +366,10 @@
     padding: 24px;
     border: 1px solid rgb(37 49 45 / 10%);
     border-radius: 18px;
-    background: rgb(255 255 255 / 96%);
-    box-shadow: 0 22px 55px rgb(37 49 45 / 15%);
+    color: var(--ink);
+    background: var(--glass-strong);
+    box-shadow: var(--shadow);
+    backdrop-filter: blur(24px) saturate(135%);
   }
 
   .scale-card > p {
@@ -530,19 +553,6 @@
     color: var(--ink);
   }
 
-  .begin-action {
-    min-height: 52px;
-    padding: 0 20px;
-    border-radius: 12px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    background: var(--primary);
-    font-weight: 700;
-    text-decoration: none;
-  }
-
   footer {
     min-height: 84px;
     border-top: 1px solid var(--border);
@@ -615,41 +625,81 @@
 
     .hero {
       min-height: auto;
-      padding: 50px 0 72px;
+      gap: 10px;
+      padding: 12px 0 44px;
     }
 
     h1 {
-      font-size: clamp(49px, 14vw, 62px);
+      font-size: clamp(45px, 13vw, 58px);
     }
 
     .lead {
-      font-size: 24px;
+      margin-top: 12px;
+      font-size: 22px;
     }
 
     .promise {
-      margin-top: 24px;
-      font-size: 18px;
+      margin-top: 12px;
+      font-size: 16px;
+      line-height: 1.35;
     }
 
-    .primary-action {
+    .hero-actions {
       width: 100%;
+      margin-top: 18px;
+      gap: 8px;
+    }
+
+    .primary-action,
+    .secondary-action {
+      width: 100%;
+      min-height: 48px;
     }
 
     .hero-visual {
-      min-height: 410px;
-      margin-top: 10px;
+      min-height: 166px;
+      margin-top: 4px;
+      align-items: end;
     }
 
     .landscape {
-      width: 116%;
+      position: absolute;
+      inset: -18px -12% auto;
+      width: 124%;
       max-width: none;
+      opacity: .68;
     }
 
     .scale-card {
-      right: 0;
-      bottom: 0;
-      width: 88%;
-      padding: 20px;
+      position: relative;
+      right: auto;
+      bottom: auto;
+      z-index: 1;
+      width: 100%;
+      padding: 15px 16px;
+      border-radius: 16px;
+    }
+
+    .scale-card > p {
+      font-size: 16px;
+    }
+
+    .scale-line {
+      margin: 18px 8px 9px;
+    }
+
+    .scale-labels {
+      font-size: 11px;
+    }
+
+    .scale-labels strong {
+      font-size: 14px;
+    }
+
+    .scale-card small {
+      margin-top: 10px;
+      padding-top: 9px;
+      font-size: 11px;
     }
 
     .approach {
@@ -673,6 +723,7 @@
 
   @media (forced-colors: active) {
     .primary-action,
+    .secondary-action,
     .step-number,
     .principles,
     .scale-card {

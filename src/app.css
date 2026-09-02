@@ -27,6 +27,8 @@
   --shadow: 0 18px 48px rgb(36 66 57 / 12%);
   --danger: #b42318;
   --focus: #0b5fff;
+  --ambient-art: url('./lib/assets/ambient-light.webp');
+  --ambient-wash: rgb(247 242 232 / 18%);
   --shell-safe-area-bottom: env(safe-area-inset-bottom);
 }
 
@@ -56,6 +58,8 @@ html[data-theme='dark'] {
   --shadow: 0 24px 64px rgb(0 0 0 / 34%), 0 0 30px rgb(77 218 180 / 8%);
   --danger: #ffaaa2;
   --focus: #c9ff59;
+  --ambient-art: url('./lib/assets/ambient-dark.webp');
+  --ambient-wash: rgb(7 25 23 / 12%);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -81,6 +85,8 @@ html[data-theme='dark'] {
     --shadow: 0 24px 64px rgb(0 0 0 / 34%), 0 0 30px rgb(77 218 180 / 8%);
     --danger: #ffaaa2;
     --focus: #c9ff59;
+    --ambient-art: url('./lib/assets/ambient-dark.webp');
+    --ambient-wash: rgb(7 25 23 / 12%);
   }
 }
 
@@ -102,16 +108,30 @@ body {
   min-width: 320px;
   min-height: 100vh;
   margin: 0;
-  background:
-    radial-gradient(circle at 92% 4%, color-mix(in srgb, var(--accent) 20%, transparent) 0, transparent 28rem),
-    radial-gradient(circle at 3% 82%, color-mix(in srgb, var(--primary) 16%, transparent) 0, transparent 30rem),
-    var(--canvas);
+  background-color: var(--canvas);
+  background-image: linear-gradient(var(--ambient-wash), var(--ambient-wash)), var(--ambient-art);
   background-attachment: fixed;
+  background-position: center;
+  background-size: cover;
 }
 
 button,
 a {
   font: inherit;
+}
+
+button,
+a,
+summary,
+label,
+[role='button'] {
+  transition:
+    color 180ms ease,
+    background-color 180ms ease,
+    border-color 180ms ease,
+    box-shadow 180ms ease,
+    opacity 180ms ease,
+    transform 180ms ease;
 }
 
 a {
@@ -121,6 +141,24 @@ a {
 :focus-visible {
   outline: 3px solid var(--focus);
   outline-offset: 3px;
+}
+
+dialog[open] {
+  animation: dialog-enter 220ms cubic-bezier(.2, .75, .25, 1);
+}
+
+dialog[open]::backdrop {
+  animation: backdrop-enter 180ms ease-out;
+}
+
+@keyframes dialog-enter {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes backdrop-enter {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -149,5 +187,6 @@ a {
     --glass: var(--surface-solid);
     --glass-strong: var(--surface-solid);
     --shadow: none;
+    --ambient-wash: color-mix(in srgb, var(--canvas) 82%, transparent);
   }
 }

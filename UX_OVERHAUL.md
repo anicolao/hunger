@@ -63,6 +63,11 @@ Light mode evolves the current warm ivory and teal system:
   and other functional layers; and
 - deep-teal type and controls with sparing apricot emphasis.
 
+The implementation includes a bundled portrait ambient canvas rather than
+reconstructing the artwork from flat gradients. Its translucent botanical
+forms remain concentrated around the edges so the same offline asset can sit
+behind every application screen without competing with content.
+
 Glass is not a card style applied everywhere. Apple describes Liquid Glass as
 a distinct functional layer for controls and navigation, and recommends using
 it sparingly rather than throughout the content layer. This proposal follows
@@ -84,6 +89,20 @@ this application it means:
 Dark mode may use a richer glass treatment than light mode, but content must
 remain readable when transparency is reduced, contrast is increased, or
 motion is disabled.
+
+Dark mode likewise uses a bundled portrait canvas: deep forest negative space
+surrounded by cropped aqua, emerald, and banana-lime glass forms. Both canvases
+ship inside the SPA and packaged iOS shell; neither requires a network request.
+
+### Motion
+
+Motion explains state changes without becoming decoration. Dialogs settle into
+place, disclosure containers animate between their collapsed and expanded
+heights, and changing progress fills interpolate to their new width.
+Interactive color, border, shadow, and press states ease consistently. Every
+animation is suppressed when Reduce Motion is enabled, and no essential state
+is communicated through motion alone. Page-level scaling is deliberately
+avoided so a control never shrinks below its required touch-target geometry.
 
 ### Material hierarchy
 

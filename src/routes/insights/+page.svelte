@@ -1,5 +1,6 @@
 <script lang="ts">
   import { base } from '$app/paths';
+  import { animateDetails } from '$lib/actions/animateDetails';
   import { goto } from '$app/navigation';
   import { onMount } from 'svelte';
   import AppShell from '$lib/components/AppShell.svelte';
@@ -201,7 +202,7 @@
               {#if isPattern(result) && result.eligibleExperiment}
                 <a class="experiment-link" href={`${base}/experiment?insight=${encodeURIComponent(result.id)}`}>Try a 7-day noticing experiment</a>
               {/if}
-              <details>
+              <details use:animateDetails>
                 <summary>Why you're seeing this</summary>
                 <p>{rendered.explanation}</p>
                 <p>This is an observation, not proof of cause.</p>
@@ -233,7 +234,7 @@
       {/if}
 
       {#if snapshots.length > 0}
-        <details class="history" aria-labelledby="history-title">
+        <details class="history" aria-labelledby="history-title" use:animateDetails>
           <summary><span id="history-title">Past insights</span><small>{snapshots.length}</small></summary>
           <p>Saved exactly as you saw them, with their original evidence.</p>
           <ol>
@@ -246,7 +247,7 @@
                   <div><strong>{rendered.title}</strong><span>{shortDate(snapshot.shownAt)} · Algorithm v{snapshot.algorithmVersion} · {historical.sampleSize} source records</span></div>
                   {#if sourceStatus === 'deleted'}<p class="source-note">One or more source records were deleted. This saved observation was not rewritten.</p>
                   {:else if sourceStatus === 'changed'}<p class="source-note">One or more source records changed after this was shown. This saved observation was not rewritten.</p>{/if}
-                  <details>
+                  <details use:animateDetails>
                     <summary>Historical evidence</summary>
                     <p>{rendered.finding}</p>
                     <ul>
@@ -280,7 +281,7 @@
   h2 { margin: 14px 0 0; font-size: 22px; line-height: 1.2; }
   .learning-card p, article p { color: var(--ink-muted); line-height: 1.4; }
   .progress { height: 8px; margin: 18px 0 9px; border-radius: 999px; overflow: hidden; background: var(--primary-soft); }
-  .progress span { height: 100%; display: block; background: var(--primary); }
+  .progress span { height: 100%; display: block; background: var(--primary); transition: width 320ms cubic-bezier(.2, .75, .25, 1); }
   .learning-card > strong { display: block; }
   .completed-step { display: block; color: var(--ink); font-weight: 700; }
   .insight-list { display: grid; gap: 18px; }
@@ -292,7 +293,7 @@
   .range strong { top: 7px; color: var(--primary); }
   .rate-bars { margin: 24px 0 18px; display: grid; gap: 8px; }
   .rate-bars::before, .rate-bars::after { color: var(--ink-muted); font-size: 12px; }
-  .rate-bars span { min-width: 2px; height: 12px; border-radius: 999px; display: block; background: var(--primary); }
+  .rate-bars span { min-width: 2px; height: 12px; border-radius: 999px; display: block; background: var(--primary); transition: width 320ms cubic-bezier(.2, .75, .25, 1); }
   .rate-bars span:last-child { background: var(--accent); }
   .evidence-count { font-weight: 700; }
   .experiment-link { min-height: 48px; width: 100%; margin-top: 8px; padding: 0 16px; border-radius: 14px; display: inline-flex; align-items: center; justify-content: center; color: var(--on-primary); background: var(--primary); font-weight: 700; text-decoration: none; }
