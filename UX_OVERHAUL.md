@@ -167,6 +167,10 @@ copy, account prompt, or explanation of design terminology appears here.
 
 ### Stage 1 — Promise
 
+<img src="design/ux-overhaul/onboarding-01-promise.png"
+     alt="Dark-mode onboarding promise screen with progress, an abstract path, concise program promise, and Begin button above the fold"
+     width="320" align="right">
+
 This screen answers only “why would I do this?”:
 
 - Position: **1 of 4**.
@@ -181,7 +185,16 @@ depict a body, portion, weighing scale, measuring tape, or before/after person.
 The action remains in the decision viewport; decorative art yields space before
 the copy or action does.
 
+The mockup shows dark mode. Light mode keeps the same hierarchy, content,
+geometry, and semantics while applying the light material tokens.
+
+<br clear="right">
+
 ### Stage 2 — One scale
+
+<img src="design/ux-overhaul/onboarding-02-scale.png"
+     alt="Dark-mode onboarding scale screen with an unselected one-to-ten grid, three anchors, an explicit practice-only note, and Continue button above the fold"
+     width="320" align="right">
 
 This is education, not data collection:
 
@@ -198,7 +211,17 @@ control says **Practice only—not a check-in. Nothing here is saved.** A practi
 selection never creates an episode, never counts as insight evidence, and never
 appears in history.
 
+The illustrated scale is intentionally unselected. Selection styling may be
+previewed interactively, but it must not imply that the user has begun a
+check-in.
+
+<br clear="right">
+
 ### Stage 3 — How learning works
+
+<img src="design/ux-overhaul/onboarding-03-learning.png"
+     alt="Dark-mode onboarding learning screen showing three compact connected steps from before check-in to after check-in to evidence-backed patterns"
+     width="320" align="right">
 
 This screen turns the product model into three compact, scannable steps:
 
@@ -212,7 +235,16 @@ the app noticed.** The primary action is **Continue** and the secondary action
 is **Back**. Methodology, thresholds, charts, and experiment rules stay out of
 onboarding and remain available where they become relevant.
 
+The visual connection expresses sequence only. It is not a completion meter,
+streak, or promise that an insight will appear after a fixed number of days.
+
+<br clear="right">
+
 ### Stage 4 — Privacy and choice
+
+<img src="design/ux-overhaul/onboarding-04-privacy.png"
+     alt="Dark-mode onboarding privacy screen with three compact privacy promises, data and support links, reminder choice, and Start day 1 button above the fold"
+     width="320" align="right">
 
 The final screen establishes trust and offers reminders without making them a
 condition of use:
@@ -228,6 +260,12 @@ condition of use:
 Choosing **Not now** exposes the primary action **Start day 1**. Choosing **Set
 up reminders** opens a focused sheet so reminder controls cannot push the
 activation action below the fold.
+
+The mockup shows **Not now** selected and the resulting **Start day 1** action.
+The reminder-setup branch changes the choice and action labels, not the privacy
+promises or their placement.
+
+<br clear="right">
 
 ### Reminder setup branch
 
@@ -602,9 +640,10 @@ rules above take precedence.
 
 ## 18. Mockup provenance
 
-The three boards were generated with the built-in OpenAI image-generation tool
-on 2026-09-02 using the `ui-mockup` workflow. The prompts specified shippable
-portrait iOS screens, exact minimal copy, the existing product navigation,
+The three overview boards and four individual onboarding screens were generated
+with the built-in OpenAI image-generation tool on 2026-09-02 using the
+`ui-mockup` workflow. The prompts specified shippable portrait iOS screens,
+exact minimal copy, the existing product navigation,
 light liquid-glass and dark nano-banana glass treatments, above-fold primary
 actions, and exclusions for calorie, weight, food judgment, medical imagery,
 emoji, trademarks, and watermarks.
