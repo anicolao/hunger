@@ -10,6 +10,25 @@ enum WebAppState: Equatable {
 }
 
 @MainActor
+enum NativeViewport {
+    static var bootstrapScript: WKUserScript {
+        let source = #"""
+        (() => {
+          const viewport = document.querySelector('meta[name="viewport"]');
+          if (!viewport) return;
+          const directives = viewport.content
+            .split(',')
+            .map((directive) => directive.trim())
+            .filter((directive) => !directive.startsWith('maximum-scale='));
+          directives.push('maximum-scale=1');
+          viewport.content = directives.join(', ');
+        })();
+        """#
+        return WKUserScript(source: source, injectionTime: .atDocumentEnd, forMainFrameOnly: true)
+    }
+}
+
+@MainActor
 final class WebAppController: NSObject, ObservableObject {
     @Published private(set) var webView: WKWebView?
     @Published private(set) var state: WebAppState = .idle
@@ -87,6 +106,7 @@ final class WebAppController: NSObject, ObservableObject {
             uiTestEvidenceEnabled: ProcessInfo.processInfo.arguments.contains("--bridge-ui-test"),
             onAppReady: { [weak self] in self?.webApplicationBecameReady() }
         )
+        configuration.userContentController.addUserScript(NativeViewport.bootstrapScript)
         configuration.userContentController.addUserScript(NativeBridge.bootstrapScript)
         configuration.userContentController.addScriptMessageHandler(
             bridge,
