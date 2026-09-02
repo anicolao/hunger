@@ -7,7 +7,7 @@ final class NativeReminderUITests: XCTestCase {
         defer { app.terminate() }
         app.launchArguments = ["--reset-web-data", "--notification-ui-test"]
         app.launch()
-        app.completeOnboarding(reminders: true)
+        guard app.completeOnboarding(reminders: true) else { return }
 
         XCTAssertFalse(element(labelPrefix: "Build ", in: app).exists)
         app.tapBottomNavigation(.settings)

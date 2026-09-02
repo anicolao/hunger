@@ -9,7 +9,7 @@ final class OfflineEventPersistenceUITests: XCTestCase {
         app.launch()
 
         XCTAssertFalse(app.links["Begin the 30-day program"].waitForExistence(timeout: 2))
-        app.completeOnboarding()
+        guard app.completeOnboarding() else { return }
 
         app.links["Check in before eating"].tapWhenReady()
         XCTAssertTrue(element(label: "4, Early hunger", in: app).waitForExistence(timeout: 10))

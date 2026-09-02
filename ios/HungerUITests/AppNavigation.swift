@@ -71,33 +71,90 @@ extension XCUIApplication {
     }
 
     @MainActor
-    func completeOnboarding(reminders: Bool = false) {
-        XCTAssertTrue(exactElement(label: "Choose your look").waitForExistence(timeout: 45))
-        buttons["Use light mode"].tapWhenReady()
-        buttons["Begin"].tapWhenReady()
-        XCTAssertTrue(
-            exactElement(label: "Practice only—not a check-in.").waitForExistence(timeout: 10)
+    @discardableResult
+    func tap(
+        _ trigger: XCUIElement,
+        until destination: @autoclosure () -> XCUIElement,
+        timeout: TimeInterval = 20,
+        file: StaticString = #filePath,
+        line: UInt = #line
+    ) -> Bool {
+        let deadline = Date().addingTimeInterval(timeout)
+        repeat {
+            if destination().exists {
+                return true
+            }
+
+            if trigger.waitUntilReady(timeout: max(0, min(2, deadline.timeIntervalSinceNow))) {
+                trigger.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+            }
+
+            if destination().waitForExistence(timeout: max(0, min(2, deadline.timeIntervalSinceNow))) {
+                return true
+            }
+        } while Date() < deadline
+
+        XCTFail(
+            "Tapping \(trigger) did not reveal \(destination())",
+            file: file,
+            line: line
         )
-        buttons["Continue"].tapWhenReady()
-        XCTAssertTrue(
-            exactElement(label: "Small moments become patterns").waitForExistence(timeout: 10)
-        )
-        buttons["Continue"].tapWhenReady()
+        return false
+    }
+
+    @MainActor
+    @discardableResult
+    func completeOnboarding(reminders: Bool = false) -> Bool {
+        guard exactElement(label: "Choose your look").waitForExistence(timeout: 45) else {
+            XCTFail("Onboarding did not reach the appearance step.")
+            return false
+        }
+        guard tap(buttons["Use light mode"], until: buttons["Begin"]) else { return false }
+        guard tap(
+            buttons["Begin"],
+            until: exactElement(label: "Practice only—not a check-in.")
+        ) else { return false }
+        guard tap(
+            buttons["Continue"],
+            until: exactElement(label: "Small moments become patterns")
+        ) else { return false }
+        guard tap(
+            buttons["Continue"],
+            until: exactElement(label: "Private by default")
+        ) else { return false }
 
         if reminders {
-            exactElement(label: "Set up reminders").tapWhenReady()
-            exactElement(label: "Morning, off").tapWhenReady()
-            XCTAssertTrue(exactElement(label: "Morning, on").waitForExistence(timeout: 10))
+            guard tap(
+                exactElement(label: "Set up reminders"),
+                until: exactElement(label: "Morning, off")
+            ) else { return false }
+            guard tap(
+                exactElement(label: "Morning, off"),
+                until: exactElement(label: "Morning, on")
+            ) else { return false }
             buttons["Done"].tapWhenReady()
-            buttons["Allow reminders and start"].tapWhenReady(timeout: 20)
+            guard buttons["Allow reminders and start"].waitUntilReady(timeout: 20) else {
+                XCTFail("Closing reminder setup did not reveal the enabled start action.")
+                return false
+            }
+            guard tap(
+                buttons["Allow reminders and start"],
+                until: links["Check in before eating"],
+                timeout: 30
+            ) else { return false }
         } else {
             exactElement(label: "Not now").tapWhenReady()
-            buttons["Start day 1"].tapWhenReady(timeout: 20)
+            guard buttons["Start day 1"].waitUntilReady(timeout: 20) else {
+                XCTFail("Choosing Not now did not enable Start day 1.")
+                return false
+            }
+            guard tap(
+                buttons["Start day 1"],
+                until: links["Check in before eating"],
+                timeout: 30
+            ) else { return false }
         }
 
-        XCTAssertTrue(
-            links["Check in before eating"].waitForExistence(timeout: 20),
-            "Onboarding must finish on the interactive Today screen."
-        )
+        return true
     }
 }

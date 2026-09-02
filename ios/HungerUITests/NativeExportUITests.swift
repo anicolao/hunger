@@ -7,7 +7,7 @@ final class NativeExportUITests: XCTestCase {
         defer { app.terminate() }
         app.launchArguments = ["--reset-web-data"]
         app.launch()
-        app.completeOnboarding()
+        guard app.completeOnboarding() else { return }
 
         app.tapBottomNavigation(.profile)
         XCTAssertTrue(app.exactElement(label: "Your appetite profile").waitForExistence(timeout: 10))
