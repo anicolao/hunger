@@ -54,13 +54,6 @@ jobs:
           if [[ "$UPDATE_SNAPSHOTS" == "true" ]]; then
             nix develop --command bun run test:e2e:update-snapshots
             echo "generated=true" >> "$GITHUB_OUTPUT"
-          elif [[ "${{ github.event_name }}" == "pull_request" ]]; then
-            nix develop --command bun run test:e2e:update-snapshots
-            if git status --porcelain -- tests/e2e | grep -q -- '-linux.png'; then
-              echo "generated=true" >> "$GITHUB_OUTPUT"
-            else
-              nix develop --command bun run test:e2e
-            fi
           else
             nix develop --command bun run test:e2e
           fi
