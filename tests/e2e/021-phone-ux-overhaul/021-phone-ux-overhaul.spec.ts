@@ -73,11 +73,16 @@ test('the compact phone journey preserves its action geometry in both appearance
   const darkBox = await darkAction.boundingBox();
   expect(darkBox?.width).toBe(lightBox?.width);
   expect(darkBox?.height).toBe(lightBox?.height);
+  const history = page.locator('details.empty-history');
+  await history.locator('summary').click();
+  await expect.poll(() => history.evaluate((element) => element.getAnimations().length)).toBeGreaterThan(0);
+  await expect(history).toHaveAttribute('open', '');
   await steps.step('dark-decision-viewport', {
     description: 'Event-replayed dark mode changes material, not content or action geometry',
     verifications: [
       { spec: 'Dark appearance survives projection replay and relaunch', check: async () => expect(page.locator('html')).toHaveAttribute('data-theme', 'dark') },
-      { spec: 'The dark primary action retains the light layout geometry above the fold', check: async () => expectAboveFold(page, darkAction) }
+      { spec: 'The dark primary action retains the light layout geometry above the fold', check: async () => expectAboveFold(page, darkAction) },
+      { spec: 'Expandable content animates its size change', check: async () => expect(history).toHaveAttribute('open', '') }
     ]
   });
   steps.generateDocs();

@@ -1,5 +1,6 @@
 <script lang="ts">
   import { base } from '$app/paths';
+  import { animateDetails } from '$lib/actions/animateDetails';
   import { goto } from '$app/navigation';
   import { onMount } from 'svelte';
   import AppShell from '$lib/components/AppShell.svelte';
@@ -193,7 +194,7 @@
       </section>
 
       <div class="settings-groups">
-      <details class="settings-group" bind:open={remindersOpen}>
+      <details class="settings-group" bind:open={remindersOpen} use:animateDetails>
         <summary><span><strong>Reminders</strong><small>{settings.reminderWindows.length ? settings.reminderWindows.map((window) => window[0].toUpperCase() + window.slice(1)).join(', ') : 'Off'}</small></span><b aria-hidden="true">›</b></summary>
       <section>
         <div class="section-heading"><div><h2>Reminders</h2><p>Week {progress.week} · {cadence}</p></div><span class="status">{online ? 'App ready online' : 'App ready offline'}</span></div>
@@ -207,7 +208,7 @@
         {#if reminderDiagnostics}<p class="diagnostic" role="status">iOS has {reminderDiagnostics.scheduled} private reminder{reminderDiagnostics.scheduled === 1 ? '' : 's'} pending.</p>{/if}
       </section></details>
 
-      <details class="settings-group" bind:open={programOpen}>
+      <details class="settings-group" bind:open={programOpen} use:animateDetails>
         <summary><span><strong>Program &amp; scale</strong><small>Day {progress.day} · {program.status}</small></span><b aria-hidden="true">›</b></summary>
       <section>
         <h2>Scale and program</h2>
@@ -224,7 +225,7 @@
         {/if}
       </section></details>
 
-      <details class="settings-group" id="manage-data" bind:open={dataOpen}>
+      <details class="settings-group" id="manage-data" bind:open={dataOpen} use:animateDetails>
         <summary><span><strong>Your data</strong><small>{episodes.length} moment{episodes.length === 1 ? '' : 's'} · {storageSummary}</small></span><b aria-hidden="true">›</b></summary>
       <section>
         <h2>Your data</h2><p>{episodes.length} local eating moment{episodes.length === 1 ? '' : 's'}. Storage is not end-to-end encrypted and may be visible to someone with this browser profile.</p>
@@ -240,7 +241,7 @@
         <div class="recovery"><h3>Storage recovery</h3><p>The event log is authoritative; the app can rebuild its editable views without changing source events.</p><button class="secondary" onclick={rebuildProjection}>Rebuild local views</button>{#if recoveryMessage}<p class="notice" role="status">{recoveryMessage}</p>{/if}</div>
       </section></details>
 
-      <details class="settings-group" bind:open={accessibilityOpen}>
+      <details class="settings-group" bind:open={accessibilityOpen} use:animateDetails>
         <summary><span><strong>Accessibility</strong><small>{settings.reducedPrompts ? 'Reduced prompts on' : 'Standard prompts'}</small></span><b aria-hidden="true">›</b></summary>
       <section>
         <h2>Accessibility</h2>
@@ -254,7 +255,7 @@
         {#if preferenceMessage.startsWith('Reduced')}<p class="diagnostic" role="status">{preferenceMessage}</p>{/if}
       </section></details>
 
-      <details class="settings-group" bind:open={supportOpen}>
+      <details class="settings-group" bind:open={supportOpen} use:animateDetails>
         <summary><span><strong>Support</strong><small>Available anytime</small></span><b aria-hidden="true">›</b></summary>
       <section>
         <h2>Support</h2>

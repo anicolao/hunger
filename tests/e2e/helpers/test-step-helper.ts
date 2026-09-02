@@ -36,6 +36,15 @@ export class TestStepHelper {
     for (const verification of options.verifications) await verification.check();
     await expect(this.page.locator('[data-status]')).toHaveAttribute('data-status', 'ready');
     await this.page.evaluate(() => document.fonts.ready);
+    await this.page.evaluate(async () => {
+      const animations = document
+        .getAnimations()
+        .filter((animation) => animation.effect?.getTiming().iterations !== Infinity);
+      await Promise.allSettled(animations.map((animation) => animation.finished));
+      window.scrollTo(0, 0);
+      const active = document.activeElement;
+      if (active instanceof HTMLElement && active.classList.contains('skip-link')) active.blur();
+    });
     await this.assertLayout();
     await this.page.mouse.move(0, 0);
 

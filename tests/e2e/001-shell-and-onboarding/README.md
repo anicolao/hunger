@@ -11,6 +11,8 @@ A new user can understand the promise and unified scale, choose private reminder
 - [x] The document title identifies Learn Your Appetite
 - [x] The primary promise avoids calorie tracking
 - [x] The unified scale keeps its direction and non-judgmental framing
+- [x] The phone presents activation, explanation, and the scale in that order above the fold
+- [x] The light appearance uses its bundled ambient artwork
 - [x] The page explains the complete Notice, Understand, Experiment loop
 - [x] Privacy is visible without exposing implementation details
 

@@ -78,6 +78,28 @@ test('application shell activates the local-first 30-day program', async ({ page
         }
       },
       {
+        spec: 'The phone presents activation, explanation, and the scale in that order above the fold',
+        check: async () => {
+          if (testInfo.project.name !== 'phone') return;
+          const begin = await page.getByRole('link', { name: 'Begin the 30-day program' }).boundingBox();
+          const explanation = await page.getByRole('link', { name: 'See how it works' }).boundingBox();
+          const scale = await page.locator('.scale-card').boundingBox();
+          expect(begin).not.toBeNull();
+          expect(explanation).not.toBeNull();
+          expect(scale).not.toBeNull();
+          expect(begin!.y).toBeLessThan(explanation!.y);
+          expect(explanation!.y).toBeLessThan(scale!.y);
+          expect(scale!.y + scale!.height).toBeLessThanOrEqual(page.viewportSize()!.height);
+        }
+      },
+      {
+        spec: 'The light appearance uses its bundled ambient artwork',
+        check: async () => {
+          await expect.poll(() => page.evaluate(() => getComputedStyle(document.body).backgroundImage))
+            .toContain('ambient-light');
+        }
+      },
+      {
         spec: 'The page explains the complete Notice, Understand, Experiment loop',
         check: async () => {
           await expect(page.getByRole('heading', { name: 'Notice', exact: true })).toBeVisible();
@@ -115,6 +137,8 @@ test('application shell activates the local-first 30-day program', async ({ page
           await expect(page.getByRole('radio', { name: /Dark/ })).toBeVisible();
           await page.getByRole('radio', { name: /Dark/ }).click();
           await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+          await expect.poll(() => page.evaluate(() => getComputedStyle(document.body).backgroundImage))
+            .toContain('ambient-dark');
           await expect(page.getByRole('button', { name: 'Use dark mode' })).toBeVisible();
         }
       },

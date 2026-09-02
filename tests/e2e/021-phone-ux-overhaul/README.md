@@ -28,3 +28,4 @@ The complete setup and daily shell fit the primary phone viewport, with identica
 
 - [x] Dark appearance survives projection replay and relaunch
 - [x] The dark primary action retains the light layout geometry above the fold
+- [x] Expandable content animates its size change
