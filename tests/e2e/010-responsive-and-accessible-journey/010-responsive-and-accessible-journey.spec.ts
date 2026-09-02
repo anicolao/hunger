@@ -17,6 +17,8 @@ test('the primary journey reflows and remains operable by keyboard', async ({ pa
   await page.goto('/');
   await press(page.getByRole('link', { name: 'Begin the 30-day program' }));
   await expect(page.locator('[data-status]')).toHaveAttribute('data-status', 'ready');
+  await press(page.getByRole('radio', { name: /Light/ }));
+  await press(page.getByRole('button', { name: 'Use light mode' }));
   await press(page.getByRole('button', { name: 'Begin' }));
   const onboardingRadio = page.getByRole('radio', { name: '4, Early hunger' });
   await onboardingRadio.focus(); await onboardingRadio.press('Space');

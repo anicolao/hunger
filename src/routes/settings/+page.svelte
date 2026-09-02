@@ -15,6 +15,7 @@
   import { getNativeReminderDiagnostics, openNativeNotificationSettings, reconcileStoredReminders, type NativeReminderDiagnostics } from '$lib/platform/reminders';
   import { runtime } from '$lib/platform/runtime';
   import { reconcileProgramLifecycle } from '$lib/platform/program';
+  import { applyAppearance, type Appearance } from '$lib/platform/appearance';
 
   let program = $state<Program | null>(null);
   let episodes = $state<EatingEpisode[]>([]);
@@ -64,6 +65,12 @@
       payload: { settings: plain }
     }));
     await settingsWrite;
+  }
+  async function setAppearance(appearance: Appearance) {
+    if (!settings || settings.appearance === appearance) return;
+    applyAppearance(appearance);
+    await saveSettings({ ...settings, appearance });
+    preferenceMessage = `${appearance === 'light' ? 'Light' : 'Dark'} appearance saved.`;
   }
   async function toggleReminderPause() {
     if (!settings) return;
@@ -169,6 +176,14 @@
     <div class="settings-page" data-status="ready">
       <p class="eyebrow">Private on this device</p><h1>Settings</h1>
 
+      <section class="appearance-section">
+        <h2>Appearance</h2>
+        <div class="appearance-picker" aria-label="Appearance">
+          <button class:active={settings.appearance === 'light'} aria-pressed={settings.appearance === 'light'} onclick={() => setAppearance('light')}>Light</button>
+          <button class:active={settings.appearance === 'dark'} aria-pressed={settings.appearance === 'dark'} onclick={() => setAppearance('dark')}>Dark</button>
+        </div>
+      </section>
+
       <section>
         <div class="section-heading"><div><h2>Reminders</h2><p>Week {progress.week} · {cadence}</p></div><span class="status">{online ? 'App ready online' : 'App ready offline'}</span></div>
         <ReminderWindowSwitches
@@ -266,6 +281,9 @@
   p { margin: 6px 0 0; color: var(--ink-muted); line-height: 1.5; }
   .section-heading { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; }
   .status { height: fit-content; padding: 5px 9px; border-radius: 999px; background: var(--primary-soft); font-size: 13px; font-weight: 700; }
+  .appearance-picker { margin-top: 14px; padding: 4px; border: 1px solid var(--border); border-radius: 14px; display: grid; grid-template-columns: 1fr 1fr; background: var(--glass); }
+  .appearance-picker button { min-height: 44px; border: 0; color: var(--ink); background: transparent; }
+  .appearance-picker button.active { color: var(--on-primary); background: var(--primary); }
   .actions { margin-top: 14px; display: flex; flex-wrap: wrap; gap: 10px; }
   button, .button-link, section > a { min-height: 48px; padding: 0 14px; border: 0; border-radius: 12px; display: inline-flex; align-items: center; color: white; background: var(--primary); font-weight: 700; }
   button.secondary, .button-link { border: 1px solid var(--border-strong); color: var(--ink); background: var(--surface); }

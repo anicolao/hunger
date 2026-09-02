@@ -2,6 +2,9 @@
   import { base } from '$app/paths';
   import type { Snippet } from 'svelte';
   import gearIcon from '$lib/assets/gear.svg?no-inline';
+  import todayIcon from '$lib/assets/today.svg?no-inline';
+  import insightsIcon from '$lib/assets/insights.svg?no-inline';
+  import profileIcon from '$lib/assets/profile.svg?no-inline';
   import Brand from './Brand.svelte';
 
   let {
@@ -13,9 +16,9 @@
   } = $props();
 
   const destinations = [
-    { id: 'today' as const, label: 'Today', href: `${base}/`, icon: '○' },
-    { id: 'insights' as const, label: 'Insights', href: `${base}/insights`, icon: '◇' },
-    { id: 'profile' as const, label: 'Profile', href: `${base}/profile`, icon: '◒' },
+    { id: 'today' as const, label: 'Today', href: `${base}/`, icon: todayIcon },
+    { id: 'insights' as const, label: 'Insights', href: `${base}/insights`, icon: insightsIcon },
+    { id: 'profile' as const, label: 'Profile', href: `${base}/profile`, icon: profileIcon },
     { id: 'settings' as const, label: 'Settings', href: `${base}/settings`, icon: gearIcon }
   ];
 </script>
@@ -32,11 +35,7 @@
           aria-label={destination.label}
           aria-current={active === destination.id ? 'page' : undefined}
         >
-          {#if destination.id === 'settings'}
-            <span class="svg-icon" data-icon="settings" style={`--icon: url("${destination.icon}")`} aria-hidden="true"></span>
-          {:else}
-            <span class="text-icon" aria-hidden="true">{destination.icon}</span>
-          {/if}
+          <span class="svg-icon" data-icon={destination.id} style={`--icon: url("${destination.icon}")`} aria-hidden="true"></span>
           {destination.label}
         </a>
       {/each}
@@ -59,11 +58,7 @@
           aria-label={destination.label}
           aria-current={active === destination.id ? 'page' : undefined}
         >
-          {#if destination.id === 'settings'}
-            <span class="svg-icon" data-icon="settings" style={`--icon: url("${destination.icon}")`} aria-hidden="true"></span>
-          {:else}
-            <span class="text-icon" aria-hidden="true">{destination.icon}</span>
-          {/if}
+          <span class="svg-icon" data-icon={destination.id} style={`--icon: url("${destination.icon}")`} aria-hidden="true"></span>
           <small>{destination.label}</small>
         </a>
       {/each}
@@ -89,7 +84,7 @@
   }
 
   .app-frame {
-    min-height: 100vh;
+    min-height: 100svh;
   }
 
   .sidebar {
@@ -97,17 +92,12 @@
   }
 
   .content-frame {
-    min-height: 100vh;
-    padding-bottom: calc(80px + var(--shell-safe-area-bottom));
+    min-height: 100svh;
+    padding-bottom: calc(92px + var(--shell-safe-area-bottom));
   }
 
   .mobile-header {
-    min-height: calc(68px + env(safe-area-inset-top));
-    padding: env(safe-area-inset-top) 16px 0;
-    border-bottom: 1px solid var(--border);
-    display: flex;
-    align-items: center;
-    background: color-mix(in srgb, var(--canvas) 94%, transparent);
+    display: none;
   }
 
   .svg-icon {
@@ -119,35 +109,32 @@
     mask: var(--icon) center / contain no-repeat;
   }
 
-  .text-icon {
-    min-width: 20px;
-    text-align: center;
-  }
-
   main {
-    width: min(100% - 32px, 720px);
+    width: min(100% - 24px, 720px);
     margin-inline: auto;
-    padding: 32px 0 48px;
+    padding: max(22px, env(safe-area-inset-top)) 0 28px;
   }
 
   .bottom-nav {
     position: fixed;
     z-index: 20;
-    right: 0;
-    bottom: 0;
-    left: 0;
-    height: calc(64px + var(--shell-safe-area-bottom));
-    padding: 4px max(12px, env(safe-area-inset-right)) var(--shell-safe-area-bottom)
-      max(12px, env(safe-area-inset-left));
-    border-top: 1px solid var(--border);
+    right: max(12px, env(safe-area-inset-right));
+    bottom: max(8px, var(--shell-safe-area-bottom));
+    left: max(12px, env(safe-area-inset-left));
+    height: 70px;
+    padding: 5px;
+    border: 1px solid var(--rim);
+    border-radius: 24px;
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    background: color-mix(in srgb, var(--surface) 96%, transparent);
+    background: var(--glass-strong);
+    box-shadow: var(--shadow);
+    backdrop-filter: blur(24px) saturate(135%);
   }
 
   nav a {
     min-height: 48px;
-    border-radius: 12px;
+    border-radius: 18px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -161,18 +148,18 @@
   }
 
   nav a.active {
-    color: var(--ink);
+    color: var(--primary);
     background: var(--primary-soft);
     font-weight: 700;
   }
 
   nav small {
-    font-size: 12px;
+    font-size: 11px;
   }
 
   @media (max-height: 500px) and (orientation: landscape) and (max-width: 959px) {
-    .content-frame { padding-bottom: 0; }
-    .bottom-nav { position: static; }
+    .content-frame { padding-bottom: 82px; }
+    .bottom-nav { bottom: 6px; }
   }
 
   @media (min-width: 960px) {
@@ -189,7 +176,8 @@
       border-right: 1px solid var(--border);
       display: flex;
       flex-direction: column;
-      background: var(--surface);
+      background: var(--glass-strong);
+      backdrop-filter: blur(24px) saturate(130%);
     }
 
     .sidebar nav {
@@ -213,7 +201,6 @@
       padding-bottom: 0;
     }
 
-    .mobile-header,
     .bottom-nav {
       display: none;
     }

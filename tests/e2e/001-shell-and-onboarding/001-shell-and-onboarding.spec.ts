@@ -102,13 +102,38 @@ test('application shell activates the local-first 30-day program', async ({ page
   await expect(page.getByRole('heading', { name: 'Check in less. Learn more.' })).toBeInViewport();
 
   await page.getByRole('link', { name: 'Begin the 30-day program' }).click();
+  await steps.step('appearance-choice', {
+    description: 'First-run setup begins with a deliberate, reversible appearance choice',
+    verifications: [
+      {
+        spec: 'Light and dark are live previews with one clear confirmation action',
+        check: async () => {
+          await expect(page).toHaveURL(/\/onboarding$/);
+          await expect(page.getByRole('heading', { level: 1 })).toHaveText('Choose your look');
+          await expect(page.getByRole('radio', { name: /Light/ })).toBeVisible();
+          await expect(page.getByRole('radio', { name: /Dark/ })).toBeVisible();
+          await page.getByRole('radio', { name: /Dark/ }).click();
+          await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+          await expect(page.getByRole('button', { name: 'Use dark mode' })).toBeVisible();
+        }
+      },
+      {
+        spec: 'The primary action is completely above the phone fold',
+        check: async () => {
+          const box = await page.getByRole('button', { name: 'Use dark mode' }).boundingBox();
+          expect(box).not.toBeNull();
+          expect((box?.y ?? 0) + (box?.height ?? 0)).toBeLessThanOrEqual(page.viewportSize()!.height);
+        }
+      }
+    ]
+  });
+  await page.getByRole('button', { name: 'Use dark mode' }).click();
   await steps.step('onboarding-promise', {
     description: 'Onboarding introduces one calm idea at a time',
     verifications: [
       {
         spec: 'The promise states the finite 30-day duration and lightweight effort',
         check: async () => {
-          await expect(page).toHaveURL(/\/onboarding$/);
           await expect(page.getByText('1 of 4')).toBeVisible();
           await expect(page.getByRole('heading', { level: 1 })).toHaveText('Learn your appetite');
           await expect(page.getByText('30 days. About 10 seconds at a time.')).toBeVisible();
@@ -118,7 +143,7 @@ test('application shell activates the local-first 30-day program', async ({ page
         spec: 'Activation asks for no account, weight, calorie target, or diet goal',
         check: async () => {
           await expect(page.getByRole('textbox')).toHaveCount(0);
-          await expect(page.getByText(/account|weight|calorie target|diet goal/i)).toHaveCount(0);
+          await expect(page.locator('main').getByText(/account|weight|calorie target|diet goal/i)).toHaveCount(0);
         }
       }
     ]
@@ -140,7 +165,7 @@ test('application shell activates the local-first 30-day program', async ({ page
         spec: 'The optional practice is explicitly not saved as a check-in',
         check: async () => {
           await expect(page.getByText('Practice only—not a check-in.')).toBeVisible();
-          await expect(page.getByText(/continue without choosing.*Nothing on this screen is saved/)).toBeVisible();
+          await expect(page.getByText('Nothing here is saved.')).toBeVisible();
           await expect(page.locator('input[type="radio"]:checked')).toHaveCount(0);
         }
       },
@@ -162,47 +187,54 @@ test('application shell activates the local-first 30-day program', async ({ page
           await expect(page.getByText('Check in before')).toBeVisible();
           await expect(page.getByText('Check in after')).toBeVisible();
           await expect(page.getByText('See what repeats')).toBeVisible();
-          await expect(
-            page.getByText(
-              'When there is enough evidence, you will see what the app noticed and which check-ins support it.'
-            )
-          ).toBeVisible();
+          await expect(page.getByText('When there is enough evidence, you will see what the app noticed.')).toBeVisible();
         }
       }
     ]
   });
 
   await page.getByRole('button', { name: 'Continue' }).click();
-  await page.getByRole('button', { name: 'Set up reminders' }).click();
-  await expect(page.getByRole('button', { name: 'Allow reminders and start' })).toBeDisabled();
-  await page.getByLabel('Morning').check();
   await steps.step('privacy-and-choice', {
-    description: 'Reminder setup reveals native-style windows before asking permission',
+    description: 'Privacy is concise and reminders remain optional',
     verifications: [
       {
-        spec: 'Records stay local and every context field remains optional',
+        spec: 'The three trust promises and recovery details are available without a policy scroll',
         check: async () => {
-          await expect(page.getByText('Records stay on this device.')).toBeVisible();
-          await expect(page.getByText('Only a sensation is required.')).toBeVisible();
-          await expect(page.getByRole('button', { name: 'Set up reminders' })).toHaveAttribute(
-            'aria-pressed',
-            'true'
-          );
+          await expect(page.getByText('Saved on this device')).toBeVisible();
+          await expect(page.getByText('Only a sensation is required')).toBeVisible();
+          await expect(page.getByText('Pause or delete anytime')).toBeVisible();
+          await expect(page.getByRole('button', { name: 'Your data' })).toBeVisible();
+          await expect(page.getByRole('button', { name: 'Support' })).toBeVisible();
         }
       },
+      {
+        spec: 'Reminder setup is optional and the activation action stays above the fold',
+        check: async () => {
+          await expect(page.getByRole('button', { name: 'Set up reminders' })).toBeVisible();
+          await expect(page.getByRole('button', { name: 'Not now' })).toBeVisible();
+        }
+      }
+    ]
+  });
+  await page.getByRole('button', { name: 'Set up reminders' }).click();
+  await expect(page.getByRole('dialog', { name: 'Choose reminder windows' })).toBeVisible();
+  await page.getByLabel('Morning').check();
+  await steps.step('reminder-sheet', {
+    description: 'Reminder setup reveals native-style windows before asking permission',
+    verifications: [
       {
         spec: 'Morning, Midday, and Evening switches appear and one window is selected',
         check: async () => {
           await expect(page.getByLabel('Morning')).toBeChecked();
           await expect(page.getByLabel('Midday')).not.toBeChecked();
           await expect(page.getByLabel('Evening')).not.toBeChecked();
-          await expect(page.getByRole('button', { name: 'Allow reminders and start' })).toBeEnabled();
+          await expect(page.getByRole('button', { name: 'Done' })).toBeEnabled();
         }
       },
       {
         spec: 'Permission timing is explained before the activation action',
         check: async () => {
-          await expect(page.getByText(/iOS will ask for notification permission/)).toBeVisible();
+          await expect(page.getByText(/iOS asks only when you choose Allow reminders and start/)).toBeVisible();
           const permissionCalls = await page.evaluate(() =>
             window.__onboardingReminderCalls?.filter(({ command }) =>
               command === 'notifications.requestAuthorization'
@@ -210,16 +242,13 @@ test('application shell activates the local-first 30-day program', async ({ page
           );
           expect(permissionCalls).toEqual([]);
         }
-      },
-      {
-        spec: 'The medical boundary and freedom to pause are stated without alarm',
-        check: async () => {
-          await expect(page.getByText(/learning tool, not medical care/)).toBeVisible();
-          await expect(page.getByText(/Pause or delete everything at any time/)).toBeVisible();
-        }
       }
     ]
   });
+
+  await page.getByRole('button', { name: 'Done' }).click();
+  await expect(page.getByRole('button', { name: 'Set up reminders' })).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByRole('button', { name: 'Allow reminders and start' })).toBeEnabled();
 
   await page.getByRole('button', { name: 'Allow reminders and start' }).click();
   await steps.step('today-day-one', {
@@ -282,6 +311,7 @@ test('application shell activates the local-first 30-day program', async ({ page
   await page.reload();
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Today');
   await expect(page.getByText('Day 1 · Week 1')).toBeVisible();
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
 
   await page.goto('/settings');
   await steps.step('settings-navigation-and-build', {
@@ -293,6 +323,7 @@ test('application shell activates the local-first 30-day program', async ({ page
           await expect(page.getByLabel('Morning')).toBeChecked();
           await expect(page.getByLabel('Midday')).not.toBeChecked();
           await expect(page.getByLabel('Evening')).not.toBeChecked();
+          await expect(page.getByRole('button', { name: 'Dark' })).toHaveAttribute('aria-pressed', 'true');
         }
       },
       {

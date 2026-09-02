@@ -59,15 +59,15 @@
 
   legend {
     width: 100%;
-    margin-bottom: 16px;
+    margin-bottom: 10px;
     color: var(--ink);
-    font-size: 22px;
+    font-size: 19px;
     font-weight: 700;
     line-height: 1.25;
   }
 
   .anchors {
-    margin: 0 0 14px;
+    margin: 0 0 9px;
     display: flex;
     justify-content: space-between;
     gap: 8px;
@@ -103,13 +103,13 @@
   label {
     position: relative;
     min-width: 52px;
-    min-height: 56px;
+    min-height: 50px;
     border: 1px solid var(--border-strong);
     border-radius: 12px;
     display: grid;
     place-items: center;
     color: var(--ink);
-    background: var(--surface);
+    background: var(--glass);
     cursor: pointer;
   }
 
@@ -142,10 +142,11 @@
   }
 
   .description {
-    min-height: 84px;
-    margin-top: 16px;
-    padding: 16px;
-    border-radius: 12px;
+    min-height: 62px;
+    margin-top: 10px;
+    padding: 11px 13px;
+    border: 1px solid var(--border);
+    border-radius: 14px;
     display: grid;
     align-content: center;
     gap: 3px;

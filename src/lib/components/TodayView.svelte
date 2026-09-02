@@ -96,17 +96,13 @@
   <header class="page-heading">
     <p class="eyebrow">Day {progress.day} · Week {progress.week}</p>
     <h1>Today</h1>
-    <p>Take a moment when it is useful. There is no daily target.</p>
   </header>
 
   {#if openEpisode}
     <section class="notice-card pending" aria-labelledby="notice-title">
       <p class="eyebrow">Started at {displayTime(openEpisode.startedAt)}</p>
       <h2 id="notice-title">Finish your check-in</h2>
-      <p>
-        You began at {openEpisode.beforeLevel} · {getSensationLevel(openEpisode.beforeLevel).phrase}.
-        {#if isOpenEpisodeStale(openEpisode, now)}This may be an earlier eating moment.{/if}
-      </p>
+      <p>You began at {openEpisode.beforeLevel} · {getSensationLevel(openEpisode.beforeLevel).phrase}.{#if isOpenEpisodeStale(openEpisode, now)} This may be an earlier moment.{/if}</p>
       <a class="primary-button" href={`${base}/check-in/after?episode=${openEpisode.id}`}>How do you feel now?</a>
       <button class="unfinished-button" onclick={markUnfinished}>Mark unfinished</button>
     </section>
@@ -114,24 +110,35 @@
     <section class="notice-card paused" aria-labelledby="notice-title">
       <p class="eyebrow">Check-ins paused</p>
       <h2 id="notice-title">Your history is still here.</h2>
-      <p>Resume whenever brief check-ins feel useful again. The program calendar continues without a streak.</p>
+      <p>Resume whenever check-ins feel useful again.</p>
       <a class="primary-button" href={`${base}/settings`}>Review program settings</a>
     </section>
   {:else}
     <section class="notice-card" aria-labelledby="notice-title">
-      <p class="eyebrow">What do you notice?</p>
-      <h2 id="notice-title">{program.status === 'complete' ? 'Continue in your own way.' : 'Begin with how your body feels.'}</h2>
+      <h2 id="notice-title">{program.status === 'complete' ? 'Continue in your own way' : 'What do you notice?'}</h2>
       <p>{progress.prompt}</p>
-      <a class="primary-button" href={`${base}/check-in/new`}>{program.status === 'complete' ? 'Start an occasional check-in' : 'Check in before eating'}</a>
+      <a class="primary-button" aria-label={program.status === 'complete' ? 'Start an occasional check-in' : 'Check in before eating'} href={`${base}/check-in/new`}>{program.status === 'complete' ? 'Check in' : 'Check in'}</a>
     </section>
   {/if}
+
+  <div class="today-grid">
+    <section class="plain-card" aria-labelledby="moments-title">
+      <span class="summary-icon" aria-hidden="true">{todayCount}</span>
+      <div><p>Today's moments</p><h2 id="moments-title">{todayCount === 0 ? 'No moments yet' : `${todayCount} ${todayCount === 1 ? 'moment' : 'moments'} noticed`}</h2></div>
+    </section>
+
+    <section class="plain-card" aria-labelledby="focus-title">
+      <span class="summary-icon focus" aria-hidden="true"></span>
+      <div><p>Week {progress.week} focus</p><h2 id="focus-title">{progress.focus}</h2></div>
+    </section>
+  </div>
 
   {#if currentExperiment}
     {@const remainingDays = experimentDaysRemaining(currentExperiment, now, program.timeZone)}
     <section class="experiment-summary" aria-labelledby="experiment-title">
-      <p class="eyebrow">Optional noticing experiment</p>
+      <p class="eyebrow">Current experiment</p>
       <h2 id="experiment-title">{currentExperiment.target.label}</h2>
-      <p>{remainingDays} local {remainingDays === 1 ? 'day' : 'days'} until the comparison is available.</p>
+      <p>{remainingDays} {remainingDays === 1 ? 'day' : 'days'} until comparison.</p>
       <div class="experiment-actions">
         <a href={`${base}/experiment?insight=${encodeURIComponent(currentExperiment.insightId)}`}>View experiment</a>
         {#if currentExperiment.status === 'paused'}<button onclick={() => setExperimentStatus('active')}>Resume</button>
@@ -147,22 +154,8 @@
     </section>
   {/if}
 
-  <div class="today-grid">
-    <section class="plain-card" aria-labelledby="moments-title">
-      <p class="eyebrow">Today's moments</p>
-      <h2 id="moments-title">{todayCount === 0 ? 'No moments yet' : `${todayCount} ${todayCount === 1 ? 'moment' : 'moments'} noticed`}</h2>
-      <p>Check-ins appear here without a quota or streak.</p>
-    </section>
-
-    <section class="plain-card" aria-labelledby="focus-title">
-      <p class="eyebrow">Week {progress.week} focus</p>
-      <h2 id="focus-title">{progress.focus}</h2>
-      <p>Notice what is present. A number is a description, not a grade.</p>
-    </section>
-  </div>
-
-  <section class="empty-history" aria-labelledby="recent-title">
-    <h2 id="recent-title">Recent check-ins</h2>
+  <details class="empty-history">
+    <summary id="recent-title">Recent check-ins <span>{episodes.length}</span></summary>
     {#if episodes.length === 0}
       <p>Your before-and-after moments will stay private on this device.</p>
     {:else}
@@ -181,14 +174,12 @@
         {/each}
       </ul>
     {/if}
-  </section>
+  </details>
 
 </div>
 
 <style>
-  .page-heading {
-    margin-bottom: 32px;
-  }
+  .page-heading { margin-bottom: 14px; }
 
   .eyebrow {
     margin: 0 0 8px;
@@ -207,8 +198,9 @@
 
   h1 {
     margin: 0;
-    font-size: clamp(34px, 8vw, 42px);
-    line-height: 1.1;
+    font-size: clamp(34px, 8vw, 40px);
+    line-height: 1;
+    letter-spacing: -.035em;
   }
 
   .page-heading > p:last-child,
@@ -221,24 +213,28 @@
   .empty-history,
   .experiment-summary {
     border: 1px solid var(--border);
-    border-radius: 16px;
-    background: var(--surface);
+    border-radius: 22px;
+    background: var(--glass);
+    box-shadow: var(--shadow);
+    backdrop-filter: blur(22px) saturate(130%);
   }
 
   .notice-card {
-    padding: 24px;
-    background: var(--primary-soft);
+    padding: 22px;
+    border-color: var(--border-strong);
+    background: linear-gradient(145deg, var(--primary-soft), var(--glass));
   }
 
   h2 {
     margin: 0;
-    font-size: 22px;
+    font-size: 21px;
     line-height: 1.25;
   }
 
   .notice-card > p:not(.eyebrow) {
-    margin: 12px 0 0;
-    line-height: 1.5;
+    margin: 8px 0 0;
+    color: var(--ink-muted);
+    line-height: 1.4;
   }
 
   .status-message {
@@ -254,13 +250,14 @@
 
   .primary-button {
     min-height: 52px;
-    margin-top: 24px;
+    width: 100%;
+    margin-top: 18px;
     padding: 0 20px;
     border-radius: 12px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    color: white;
+    color: var(--on-primary);
     background: var(--primary);
     font-weight: 700;
     text-decoration: none;
@@ -277,18 +274,24 @@
   }
 
   .today-grid {
-    margin-top: 20px;
+    margin-top: 12px;
     display: grid;
-    gap: 16px;
+    gap: 10px;
   }
 
   .plain-card,
   .empty-history,
   .experiment-summary {
-    padding: 20px;
+    padding: 16px;
   }
 
-  .experiment-summary { margin-top: 20px; border-color: var(--primary); }
+  .plain-card { min-height: 70px; display: grid; grid-template-columns: 42px 1fr; align-items: center; gap: 12px; box-shadow: none; }
+  .plain-card p { margin: 0; color: var(--ink-muted); font-size: 13px; }
+  .plain-card h2 { margin-top: 2px; font-size: 17px; }
+  .summary-icon { width: 38px; height: 38px; border-radius: 50%; display: grid; place-items: center; color: var(--on-primary); background: var(--primary); font-weight: 700; }
+  .summary-icon.focus { border: 8px solid var(--accent-soft); background: var(--accent); }
+
+  .experiment-summary { margin-top: 12px; border-color: var(--primary); }
   .experiment-summary > p:not(.eyebrow) { color: var(--ink-muted); }
   .experiment-actions { margin-top: 14px; display: flex; flex-wrap: wrap; gap: 8px; }
   .experiment-actions a, .experiment-actions button, .result-link { min-height: 46px; padding: 0 14px; border: 1px solid var(--border-strong); border-radius: 11px; display: inline-flex; align-items: center; color: var(--ink); background: var(--surface); font-weight: 700; }
@@ -299,6 +302,10 @@
     padding: 0;
     list-style: none;
   }
+
+  .empty-history { margin-top: 12px; }
+  .empty-history > summary { min-height: 44px; display: flex; align-items: center; justify-content: space-between; color: var(--ink); font-weight: 700; cursor: pointer; }
+  .empty-history > summary span { min-width: 28px; padding: 3px 8px; border-radius: 999px; color: var(--primary); background: var(--primary-soft); text-align: center; }
 
   li + li {
     border-top: 1px solid var(--border);
@@ -337,10 +344,7 @@
     line-height: 1.5;
   }
 
-  .empty-history {
-    margin-top: 32px;
-    border-style: dashed;
-  }
+  .empty-history { margin-top: 12px; box-shadow: none; }
 
   @media (min-width: 700px) {
     .today-grid {
