@@ -1132,6 +1132,15 @@
             native_build_hash="''${native_build_hash:0:8}"
             VITE_NATIVE_SHELL=ios VITE_GIT_HASH="$native_build_hash" bun run build
 
+            if rg -q 'Begin the 30-day program|See how it works' "$repo_root/build/index.html"; then
+              echo "Native entry point contains the website landing page." >&2
+              exit 1
+            fi
+            if ! rg -q 'Choose your look' "$repo_root/build/onboarding.html"; then
+              echo "Native bundle does not contain the direct onboarding destination." >&2
+              exit 1
+            fi
+
             rm -rf "$resource_root"
             mkdir -p "$resource_root"
             cp -R "$repo_root/build/." "$resource_root/"
