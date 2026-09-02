@@ -26,10 +26,11 @@ final class NativeExportUITests: XCTestCase {
         let closeShareSheet = app.buttons.matching(
             NSPredicate(format: "label == 'Close'")
         ).firstMatch
+        let dismissRegion = app.otherElements["PopoverDismissRegion"].firstMatch
         if closeShareSheet.waitForExistence(timeout: 2) {
             closeShareSheet.tap()
-        } else if app.otherElements["PopoverDismissRegion"].exists {
-            app.otherElements["PopoverDismissRegion"].tap()
+        } else if dismissRegion.exists {
+            dismissRegion.tap()
         } else {
             shareSheet.swipeDown()
         }
