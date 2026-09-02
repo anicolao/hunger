@@ -1,0 +1,1 @@
+function t(){return typeof matchMedia<"u"&&matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"}function n(e){typeof document>"u"||(document.documentElement.dataset.theme=e,document.documentElement.style.colorScheme=e)}export{n as a,t as p};
