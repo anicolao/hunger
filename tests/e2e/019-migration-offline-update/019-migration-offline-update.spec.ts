@@ -22,6 +22,7 @@ test('source events migrate, unsupported data recovers, and the versioned shell 
   await page.getByRole('link', { name: 'Check in before eating' }).click();
   await page.getByRole('radio', { name: /^4,/ }).check();
   await page.getByRole('button', { name: 'Save', exact: true }).click();
+  await expect(page.getByText('Before check-in saved')).toBeVisible();
 
   await page.evaluate(async () => {
     const database = await new Promise<IDBDatabase>((resolve, reject) => {
@@ -41,7 +42,7 @@ test('source events migrate, unsupported data recovers, and the versioned shell 
   await page.reload();
   // Rebuilding every disposable projection from the event log can exceed the
   // suite's two-second UI assertion budget on a contended CI runner.
-  await expect(page.getByRole('heading', { name: /Finish the check-in/ })).toBeVisible({ timeout: 10_000 });
+  await expect(page.getByRole('heading', { name: 'Finish your check-in' })).toBeVisible({ timeout: 10_000 });
 
   await page.evaluate(async () => {
     const database = await new Promise<IDBDatabase>((resolve, reject) => {
