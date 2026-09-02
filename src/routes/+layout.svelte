@@ -19,6 +19,7 @@
   import { completeNativeDelete } from '$lib/platform/native';
   import { cancelNativeReminders } from '$lib/platform/reminders';
   import ToggleSwitch from '$lib/components/ToggleSwitch.svelte';
+  import { applyAppearance } from '$lib/platform/appearance';
 
   let { children } = $props();
   let storageFailure = $state(false);
@@ -29,7 +30,14 @@
     installE2EFixtureBoundary();
     const showStorageRecovery = () => (storageFailure = true);
     addEventListener('hunger:storage-error', showStorageRecovery);
-    void getRepository().getSettings().catch(showStorageRecovery);
+    void (async () => {
+      const repository = getRepository();
+      const [program, settings] = await Promise.all([
+        repository.getProgram(),
+        repository.getSettings()
+      ]);
+      if (program) applyAppearance(settings.appearance);
+    })().catch(showStorageRecovery);
     if (import.meta.env.VITE_NATIVE_SHELL === 'ios') {
       installNativeLifecycleBoundary();
       void nativeCapabilities().then(() => signalNativeAppReady());

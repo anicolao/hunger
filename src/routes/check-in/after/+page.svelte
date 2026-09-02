@@ -92,7 +92,7 @@
   <header>
     <a href={`${base}/`}>← Back</a>
     <strong>After eating</strong>
-    <a href={`${base}/scale?returnTo=${encodeURIComponent(`/check-in/after?episode=${episode?.id ?? ''}`)}`}>Scale help</a>
+    <a aria-label="Scale help" href={`${base}/scale?returnTo=${encodeURIComponent(`/check-in/after?episode=${episode?.id ?? ''}`)}`}>Help</a>
   </header>
 
   <main>
@@ -138,17 +138,18 @@
 </div>
 
 <style>
-  .check-in-page { min-height: 100vh; padding: env(safe-area-inset-top) 16px calc(24px + env(safe-area-inset-bottom)); }
+  .check-in-page { min-height: 100svh; padding: env(safe-area-inset-top) 16px calc(14px + env(safe-area-inset-bottom)); }
   header { width: min(100%, 720px); min-height: 64px; margin-inline: auto; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; }
   header a { min-height: 48px; display: inline-flex; align-items: center; color: var(--primary); font-weight: 700; }
   header a:last-child { justify-self: end; }
-  main { width: min(100%, 620px); margin: 24px auto; }
-  form, .missing { padding: clamp(22px, 5vw, 36px); border: 1px solid var(--border); border-radius: 18px; background: var(--surface); }
-  .before-summary { margin: 0 0 18px; padding: 12px 14px; border-radius: 10px; color: var(--ink-muted); background: var(--canvas); }
+  main { width: min(100%, 620px); margin: 6px auto; }
+  form, .missing { min-height: min(700px, calc(100svh - 82px - env(safe-area-inset-top) - env(safe-area-inset-bottom))); padding: clamp(18px, 4vw, 30px); border: 1px solid var(--rim); border-radius: 24px; background: var(--glass); box-shadow: var(--shadow); backdrop-filter: blur(24px) saturate(130%); }
+  form { display: flex; flex-direction: column; }
+  .before-summary { margin: 0 0 12px; padding: 10px 12px; border-radius: 13px; color: var(--ink-muted); background: var(--primary-soft); }
   .before-summary strong { color: var(--ink); }
   h1 { margin: 0; font-size: clamp(30px, 7vw, 38px); line-height: 1.1; }
-  .intro { margin: 12px 0 24px; color: var(--ink-muted); }
-  .primary { width: 100%; min-height: 52px; margin-top: 20px; border: 0; border-radius: 12px; color: white; background: var(--primary); font-weight: 700; }
+  .intro { margin: 8px 0 14px; color: var(--ink-muted); }
+  .primary { width: 100%; min-height: 52px; margin-top: auto; border: 0; border-radius: 16px; color: var(--on-primary); background: var(--primary); font-weight: 700; }
   .primary:disabled { opacity: .5; }
   .error { color: var(--danger); }
   .missing a { min-height: 48px; display: inline-flex; align-items: center; color: var(--primary); font-weight: 700; }
@@ -156,6 +157,7 @@
     .check-in-page { padding-right: 0; padding-left: 0; }
     header { padding: 0 16px; }
     main { margin: 0 auto; }
-    form, .missing { border-right: 0; border-left: 0; border-radius: 0; }
+    main { width: 100%; padding: 0 10px; }
+    form, .missing { border-radius: 24px; }
   }
 </style>

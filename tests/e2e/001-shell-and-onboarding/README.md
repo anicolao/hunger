@@ -14,9 +14,18 @@ A new user can understand the promise and unified scale, choose private reminder
 - [x] The page explains the complete Notice, Understand, Experiment loop
 - [x] Privacy is visible without exposing implementation details
 
+## First-run setup begins with a deliberate, reversible appearance choice
+
+![First-run setup begins with a deliberate, reversible appearance choice](./screenshots/001-appearance-choice-phone-darwin.png)
+
+**Verifications:**
+
+- [x] Light and dark are live previews with one clear confirmation action
+- [x] The primary action is completely above the phone fold
+
 ## Onboarding introduces one calm idea at a time
 
-![Onboarding introduces one calm idea at a time](./screenshots/001-onboarding-promise-phone-darwin.png)
+![Onboarding introduces one calm idea at a time](./screenshots/002-onboarding-promise-phone-darwin.png)
 
 **Verifications:**
 
@@ -25,7 +34,7 @@ A new user can understand the promise and unified scale, choose private reminder
 
 ## Scale education is clearly separate from a real check-in
 
-![Scale education is clearly separate from a real check-in](./screenshots/002-one-unified-scale-phone-darwin.png)
+![Scale education is clearly separate from a real check-in](./screenshots/003-one-unified-scale-phone-darwin.png)
 
 **Verifications:**
 
@@ -35,26 +44,33 @@ A new user can understand the promise and unified scale, choose private reminder
 
 ## Paired moments lead to evidence-backed patterns
 
-![Paired moments lead to evidence-backed patterns](./screenshots/003-learning-loop-phone-darwin.png)
+![Paired moments lead to evidence-backed patterns](./screenshots/004-learning-loop-phone-darwin.png)
 
 **Verifications:**
 
 - [x] The complete check-in and learning sequence is explicit
 
-## Reminder setup reveals native-style windows before asking permission
+## Privacy is concise and reminders remain optional
 
-![Reminder setup reveals native-style windows before asking permission](./screenshots/004-privacy-and-choice-phone-darwin.png)
+![Privacy is concise and reminders remain optional](./screenshots/005-privacy-and-choice-phone-darwin.png)
 
 **Verifications:**
 
-- [x] Records stay local and every context field remains optional
+- [x] The three trust promises and recovery details are available without a policy scroll
+- [x] Reminder setup is optional and the activation action stays above the fold
+
+## Reminder setup reveals native-style windows before asking permission
+
+![Reminder setup reveals native-style windows before asking permission](./screenshots/006-reminder-sheet-phone-darwin.png)
+
+**Verifications:**
+
 - [x] Morning, Midday, and Evening switches appear and one window is selected
 - [x] Permission timing is explained before the activation action
-- [x] The medical boundary and freedom to pause are stated without alarm
 
 ## Activation opens a persisted Day 1 Today state
 
-![Activation opens a persisted Day 1 Today state](./screenshots/005-today-day-one-phone-darwin.png)
+![Activation opens a persisted Day 1 Today state](./screenshots/007-today-day-one-phone-darwin.png)
 
 **Verifications:**
 
@@ -64,7 +80,7 @@ A new user can understand the promise and unified scale, choose private reminder
 
 ## Settings owns the build identity and the fourth navigation tab
 
-![Settings owns the build identity and the fourth navigation tab](./screenshots/006-settings-navigation-and-build-phone-darwin.png)
+![Settings owns the build identity and the fourth navigation tab](./screenshots/008-settings-navigation-and-build-phone-darwin.png)
 
 **Verifications:**
 
@@ -74,7 +90,7 @@ A new user can understand the promise and unified scale, choose private reminder
 
 ## Completed onboarding supplies an honest first step toward an insight
 
-![Completed onboarding supplies an honest first step toward an insight](./screenshots/007-first-insight-progress-phone-darwin.png)
+![Completed onboarding supplies an honest first step toward an insight](./screenshots/009-first-insight-progress-phone-darwin.png)
 
 **Verifications:**
 

@@ -20,6 +20,8 @@ export async function activateProgram(page: Page) {
   await page.goto('/');
   await page.getByRole('link', { name: 'Begin the 30-day program' }).click();
   await expect(page.locator('[data-status]')).toHaveAttribute('data-status', 'ready');
+  await page.getByRole('radio', { name: /Light/ }).click();
+  await page.getByRole('button', { name: 'Use light mode' }).click();
   await page.getByRole('button', { name: 'Begin' }).click();
   await expect(page.getByRole('heading', { name: 'One scale, every time' })).toBeVisible();
   await page.getByRole('button', { name: 'Continue' }).click();

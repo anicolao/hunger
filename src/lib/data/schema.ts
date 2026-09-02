@@ -91,6 +91,7 @@ export interface PhotoRecord {
 
 export interface AppSettings {
   id: 'settings';
+  appearance: 'light' | 'dark';
   remindersPaused: boolean;
   reminderWindows: string[];
   permissionState: NotificationPermission | 'unsupported';
@@ -102,6 +103,7 @@ export interface AppSettings {
 
 export const initialSettings: AppSettings = {
   id: 'settings',
+  appearance: 'light',
   remindersPaused: false,
   reminderWindows: [],
   permissionState: 'default',
