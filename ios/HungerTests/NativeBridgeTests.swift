@@ -47,6 +47,31 @@ final class NativeBridgeTests: XCTestCase {
         }
     }
 
+    func testAcceptsOnlyAValidatedAppearance() throws {
+        var body = validBody()
+        body["command"] = "appearance.set"
+        body["payload"] = ["appearance": "dark"]
+        XCTAssertEqual(
+            try NativeBridgeValidator.decode(body: body, source: trusted),
+            NativeBridgeRequest(
+                id: "request-123",
+                command: .appearanceSet,
+                payload: .appearance(.dark)
+            )
+        )
+
+        for payload in [
+            ["appearance": "system"],
+            ["appearance": "dark", "extra": true],
+            [:]
+        ] as [[String: Any]] {
+            body["payload"] = payload
+            XCTAssertThrowsError(try NativeBridgeValidator.decode(body: body, source: trusted)) {
+                XCTAssertEqual($0 as? NativeBridgeValidationError, .invalidPayload)
+            }
+        }
+    }
+
     func testRejectsForeignAndSubframeSources() {
         let sources = [
             NativeBridgeSource(isMainFrame: false, scheme: "hunger-app", host: "app", port: 0),

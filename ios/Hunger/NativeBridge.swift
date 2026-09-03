@@ -13,6 +13,7 @@ enum NativeBridgeConstants {
 enum NativeBridgeCommand: String, CaseIterable {
     case capabilitiesGet = "capabilities.get"
     case appReady = "app.ready"
+    case appearanceSet = "appearance.set"
     case notificationStatus = "notifications.authorizationStatus"
     case notificationRequest = "notifications.requestAuthorization"
     case notificationReplace = "notifications.replaceSchedule"
@@ -21,6 +22,11 @@ enum NativeBridgeCommand: String, CaseIterable {
     case openNotificationSettings = "app.openNotificationSettings"
     case exportShare = "export.share"
     case privacyCompleteDelete = "privacy.completeDelete"
+}
+
+enum NativeAppearance: String, Equatable {
+    case light
+    case dark
 }
 
 struct NativeBridgeSource: Equatable {
@@ -45,6 +51,7 @@ struct NativeBridgeRequest: Equatable {
 
 enum NativeBridgePayload: Equatable {
     case empty
+    case appearance(NativeAppearance)
     case reminderSchedule(ReminderSchedule)
     case export(ValidatedExport)
 }
@@ -99,6 +106,14 @@ enum NativeBridgeValidator {
         }
         let decodedPayload: NativeBridgePayload
         switch command {
+        case .appearanceSet:
+            guard Set(payload.keys) == Set(["appearance"]),
+                  let value = payload["appearance"] as? String,
+                  let appearance = NativeAppearance(rawValue: value)
+            else {
+                throw NativeBridgeValidationError.invalidPayload
+            }
+            decodedPayload = .appearance(appearance)
         case .notificationReplace:
             guard Set(payload.keys) == Set(["schedule"]),
                   let schedule = payload["schedule"] as? [String: Any]
@@ -208,17 +223,20 @@ final class NativeBridge: NSObject, WKScriptMessageHandlerWithReply {
     private let notifications: NotificationCoordinating
     private let shareCoordinator: ShareCoordinating
     private let onAppReady: @MainActor () -> Void
+    private let onAppearanceChanged: @MainActor (NativeAppearance) -> Void
 
     init(
         notifications: NotificationCoordinating = NotificationCoordinator(),
         shareCoordinator: ShareCoordinating = ShareCoordinator(),
         uiTestEvidenceEnabled: Bool = false,
-        onAppReady: @escaping @MainActor () -> Void = {}
+        onAppReady: @escaping @MainActor () -> Void = {},
+        onAppearanceChanged: @escaping @MainActor (NativeAppearance) -> Void = { _ in }
     ) {
         self.notifications = notifications
         self.shareCoordinator = shareCoordinator
         self.uiTestEvidenceEnabled = uiTestEvidenceEnabled
         self.onAppReady = onAppReady
+        self.onAppearanceChanged = onAppearanceChanged
     }
 
     static var bootstrapScript: WKUserScript {
@@ -301,6 +319,12 @@ final class NativeBridge: NSObject, WKScriptMessageHandlerWithReply {
         case .appReady:
             onAppReady()
             return ["ready": true]
+        case .appearanceSet:
+            guard case let .appearance(appearance) = request.payload else {
+                throw NativeBridgeValidationError.invalidPayload
+            }
+            onAppearanceChanged(appearance)
+            return ["appearance": appearance.rawValue]
         case .notificationStatus:
             return ["status": await notifications.authorizationStatus().rawValue]
         case .notificationRequest:

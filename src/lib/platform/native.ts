@@ -85,6 +85,17 @@ export async function signalNativeAppReady(): Promise<boolean> {
   return true;
 }
 
+export async function syncNativeAppearance(appearance: 'light' | 'dark'): Promise<boolean> {
+  const capabilities = await nativeCapabilities();
+  if (!capabilities?.commands.includes('appearance.set')) return false;
+  try {
+    await nativeRequest('appearance.set', { appearance });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export function resetNativeCapabilityCacheForTests(): void {
   capabilitiesPromise = null;
 }

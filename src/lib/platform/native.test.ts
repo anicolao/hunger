@@ -5,7 +5,8 @@ import {
   nativeCapabilities,
   nativeRequest,
   resetNativeCapabilityCacheForTests,
-  signalNativeAppReady
+  signalNativeAppReady,
+  syncNativeAppearance
 } from './native';
 
 describe('native platform boundary', () => {
@@ -78,5 +79,32 @@ describe('native platform boundary', () => {
     vi.stubGlobal('window', { hungerNative: { request } });
     expect(await signalNativeAppReady()).toBe(true);
     expect(request).toHaveBeenLastCalledWith('app.ready', {});
+  });
+
+  it('synchronizes the selected appearance only when the native shell advertises support', async () => {
+    const request = vi.fn(async (command: string) => command === 'capabilities.get'
+      ? { version: 1, platform: 'ios', commands: ['appearance.set'] }
+      : { appearance: 'dark' });
+    vi.stubGlobal('window', { hungerNative: { request } });
+
+    expect(await syncNativeAppearance('dark')).toBe(true);
+    expect(request).toHaveBeenLastCalledWith('appearance.set', { appearance: 'dark' });
+
+    resetNativeCapabilityCacheForTests();
+    vi.stubGlobal('window', {});
+    expect(await syncNativeAppearance('light')).toBe(false);
+
+    resetNativeCapabilityCacheForTests();
+    vi.stubGlobal('window', {
+      hungerNative: {
+        request: async (command: string) => {
+          if (command === 'capabilities.get') {
+            return { version: 1, platform: 'ios', commands: ['appearance.set'] };
+          }
+          throw new Error('Native appearance update failed');
+        }
+      }
+    });
+    expect(await syncNativeAppearance('dark')).toBe(false);
   });
 });
