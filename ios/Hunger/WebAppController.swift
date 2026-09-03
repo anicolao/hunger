@@ -32,6 +32,7 @@ enum NativeViewport {
 final class WebAppController: NSObject, ObservableObject {
     @Published private(set) var webView: WKWebView?
     @Published private(set) var state: WebAppState = .idle
+    @Published private(set) var appearance: NativeAppearance?
 
     private var started = false
     private var bridge: NativeBridge?
@@ -67,6 +68,9 @@ final class WebAppController: NSObject, ObservableObject {
             let webView = WKWebView(frame: .zero, configuration: configuration)
             webView.navigationDelegate = self
             webView.allowsLinkPreview = false
+            if let appearance {
+                webView.overrideUserInterfaceStyle = appearance == .dark ? .dark : .light
+            }
 #if DEBUG
             webView.isInspectable = true
 #else
@@ -104,7 +108,10 @@ final class WebAppController: NSObject, ObservableObject {
         let bridge = NativeBridge(
             notifications: notifications,
             uiTestEvidenceEnabled: ProcessInfo.processInfo.arguments.contains("--bridge-ui-test"),
-            onAppReady: { [weak self] in self?.webApplicationBecameReady() }
+            onAppReady: { [weak self] in self?.webApplicationBecameReady() },
+            onAppearanceChanged: { [weak self] appearance in
+                self?.apply(appearance: appearance)
+            }
         )
         configuration.userContentController.addUserScript(NativeViewport.bootstrapScript)
         configuration.userContentController.addUserScript(NativeBridge.bootstrapScript)
@@ -124,6 +131,11 @@ final class WebAppController: NSObject, ObservableObject {
         let ruleList = try await compileRuleList(rules)
         configuration.userContentController.add(ruleList)
         return configuration
+    }
+
+    private func apply(appearance: NativeAppearance) {
+        self.appearance = appearance
+        webView?.overrideUserInterfaceStyle = appearance == .dark ? .dark : .light
     }
 
     func sendForegroundLifecycle() async {
