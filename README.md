@@ -82,8 +82,8 @@ preferred delivery contract. The implemented MVP follows it where it fits this
 product:
 
 - SvelteKit 5, strict TypeScript, Bun, and `@sveltejs/adapter-static`;
-- a static installable PWA with a thin native shell only if scheduled local
-  notifications are required for the pilot;
+- a static installable PWA plus thin iOS and Android shells for scheduled local
+  notifications and store distribution;
 - an append-only IndexedDB event sequence as the local source of truth;
 - disposable IndexedDB read-model caches rebuilt by deterministic playback;
 - local compressed photo blobs carried by corresponding source events, omitted
@@ -99,10 +99,11 @@ product:
 
 The browser build uses SvelteKit's generated, versioned service-worker manifest
 to precache every hashed asset and prerendered route, remove obsolete versions,
-and use network-first navigations with an offline fallback. The iOS build turns
-service-worker registration off and packages the same audited static assets in
-the signed application instead. If source events cannot be migrated safely,
-the app stops with Export Original Data and a deliberate Reset path.
+and use network-first navigations with an offline fallback. The iOS and Android
+builds turn service-worker registration off and package the same audited static
+assets in their native applications instead. If source events cannot be
+migrated safely, the app stops with Export Original Data and a deliberate Reset
+path.
 
 Unlike the two realtime reference apps, Learn Your Appetite does not need a
 cloud event stream for its first hypothesis. It does retain their core event
@@ -124,6 +125,9 @@ are materialized projections. Application code cannot write those caches.
 - [IOS_DESIGN.md](IOS_DESIGN.md) and
   [IOS_IMPLEMENTATION_PLAN.md](IOS_IMPLEMENTATION_PLAN.md) — offline native
   shell design, tracer bullets, and release gates
+- [ANDROID_PWA_DESIGN.md](ANDROID_PWA_DESIGN.md) and
+  [ANDROID_IMPLEMENTATION_PLAN.md](ANDROID_IMPLEMENTATION_PLAN.md) — bespoke
+  Play-distributed Android shell design, tracer bullets, and release gates
 - [TESTFLIGHT_SETUP.md](TESTFLIGHT_SETUP.md) — flake-managed Apple handoff,
   signed archive, internal distribution, Beta App Review, and public beta
 
@@ -161,6 +165,19 @@ bun run verify:change
 ```
 
 The development server runs at `http://127.0.0.1:5190`.
+
+The Android SDK, build tools, JDK, Gradle, and emulator are also supplied by
+the flake; Android Studio is optional:
+
+```sh
+nix develop .#android
+nix run .#android-verify
+nix run .#android-test-ui
+```
+
+The fast verifier produces an audited unsigned release APK and Play App Bundle
+under `.artifacts/android/`. The emulator command performs the offline cold
+launch and persistence tracer bullets and captures a phone screenshot there.
 
 ## Deployments
 
