@@ -38,7 +38,7 @@
       ]);
       if (program) applyAppearance(settings.appearance);
     })().catch(showStorageRecovery);
-    if (import.meta.env.VITE_NATIVE_SHELL === 'ios') {
+    if (import.meta.env.VITE_NATIVE_SHELL === 'ios' || import.meta.env.VITE_NATIVE_SHELL === 'android') {
       installNativeLifecycleBoundary();
       void nativeCapabilities().then(() => signalNativeAppReady());
       const reconcileOnForeground = (event: Event) => {

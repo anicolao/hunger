@@ -5,6 +5,9 @@ import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
 const config = {
   preprocess: vitePreprocess(),
   kit: {
+    // Android's asset packager drops directories whose names begin with an
+    // underscore, so its embedded bundle cannot use SvelteKit's `_app` default.
+    appDir: process.env.VITE_NATIVE_SHELL === 'android' ? 'app' : '_app',
     adapter: adapter({
       pages: 'build',
       assets: 'build',
@@ -15,7 +18,7 @@ const config = {
       base: process.env.PUBLIC_BASE_PATH ?? ''
     },
     serviceWorker: {
-      register: process.env.VITE_NATIVE_SHELL !== 'ios'
+      register: !['ios', 'android'].includes(process.env.VITE_NATIVE_SHELL ?? '')
     }
   }
 };

@@ -96,11 +96,11 @@ export async function shareExport(
   filename: 'appetite-profile.json' | 'appetite-profile.html',
   mediaType: 'application/json' | 'text/html',
   content: string
-): Promise<'native-ios' | 'browser-download'> {
+): Promise<'native-ios' | 'native-android' | 'browser-download'> {
   const capabilities = await nativeCapabilities();
   if (capabilities?.commands.includes('export.share')) {
     await nativeRequest('export.share', { filename, mimeType: mediaType, content });
-    return 'native-ios';
+    return capabilities.platform === 'android' ? 'native-android' : 'native-ios';
   }
   downloadText(filename, mediaType, content);
   return 'browser-download';

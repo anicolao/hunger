@@ -17,7 +17,7 @@ All repository commands run through `flake.nix`:
 - `nix run .#android-test-ui` starts the pinned API 36 emulator and runs instrumentation tracer bullets with radios disabled.
 - `nix run .#android-build-release` creates the unsigned release AAB.
 - `nix run .#android-audit-release` rejects remote URLs, network permission, fixture code, development assets, unexpected permissions, or an incomplete bundle.
-- `nix run .#android-verify` performs the local release gate. Set `ANDROID_RUN_UI_TESTS=1` to include the emulator suite.
+- `nix run .#android-verify` performs the fast local/CI release gate; run `nix run .#android-test-ui` for the separate emulator gate.
 
 Gradle resolves declared Android/Kotlin libraries and records dependency locks and verification metadata. Nix supplies every machine-level dependency; Android Studio is optional.
 

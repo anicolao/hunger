@@ -12,7 +12,7 @@ export interface BrowserReminderResult {
 }
 
 export interface NativeReminderResult {
-  capability: 'native-ios';
+  capability: 'native-ios' | 'native-android';
   status: string;
   permissionState: NotificationPermission;
   scheduled: number;
@@ -47,6 +47,8 @@ export async function reconcileReminders(
   requestPermission = false
 ): Promise<ReminderResult> {
   const capabilities = await nativeCapabilities();
+  const nativeCapability = capabilities?.platform === 'android' ? 'native-android' : 'native-ios';
+  const platformName = capabilities?.platform === 'android' ? 'Android' : 'iOS';
   const required = [
     'notifications.authorizationStatus',
     'notifications.requestAuthorization',
@@ -64,12 +66,12 @@ export async function reconcileReminders(
   if (!['authorized', 'provisional', 'ephemeral'].includes(status)) {
     await nativeRequest('notifications.cancelAll');
     return {
-      capability: 'native-ios',
+      capability: nativeCapability,
       status,
       permissionState: permissionState(status),
       scheduled: 0,
       explanation: status === 'denied'
-        ? 'iOS notifications are off. Open notification settings to enable them.'
+        ? `${platformName} notifications are off. Open notification settings to enable them.`
         : 'Choose a reminder window and allow notifications when you are ready.'
     };
   }
@@ -78,13 +80,13 @@ export async function reconcileReminders(
     { schedule }
   );
   return {
-    capability: 'native-ios',
+    capability: nativeCapability,
     status,
     permissionState: 'granted',
     scheduled,
     explanation: scheduled === 0
-      ? 'Private iOS reminders are off for the current program stage.'
-      : `Scheduled ${scheduled} private iOS reminder${scheduled === 1 ? '' : 's'}.`
+      ? `Private ${platformName} reminders are off for the current program stage.`
+      : `Scheduled ${scheduled} private ${platformName} reminder${scheduled === 1 ? '' : 's'}.`
   };
 }
 

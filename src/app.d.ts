@@ -2,7 +2,7 @@ declare global {
   namespace App {}
 
   interface ImportMetaEnv {
-    readonly VITE_NATIVE_SHELL?: 'ios';
+    readonly VITE_NATIVE_SHELL?: 'ios' | 'android';
   }
 
   interface Window {

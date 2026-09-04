@@ -232,7 +232,7 @@ The route mapping mirrors iOS:
 | `/assets/webapp/settings` | `settings.html` |
 | `/assets/webapp/check-in/new` | `check-in/new.html` |
 | `/assets/webapp/check-in/new/` | `check-in/new.html` |
-| `/assets/webapp/_app/immutable/...js` | Exact manifest-listed asset |
+| `/assets/webapp/app/immutable/...js` | Exact manifest-listed asset (the Android-safe SvelteKit app directory) |
 
 The loader/client normalizes percent encoding once, then rejects NUL bytes,
 backslashes, dot segments, repeated decoding that changes path meaning,
