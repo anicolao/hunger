@@ -9,8 +9,33 @@
   outputs = { nixpkgs, flake-utils, ... }:
     flake-utils.lib.eachDefaultSystem (system:
       let
-        pkgs = nixpkgs.legacyPackages.${system};
+        pkgs = import nixpkgs {
+          inherit system;
+          config = {
+            allowUnfree = true;
+            android_sdk.accept_license = true;
+          };
+        };
         lib = pkgs.lib;
+
+        androidAbi = if system == "aarch64-darwin" then "arm64-v8a" else "x86_64";
+        androidComposition = pkgs.androidenv.composeAndroidPackages {
+          platformVersions = [ "36" ];
+          buildToolsVersions = [ "36.0.0" ];
+          includeCmake = false;
+        };
+        androidEmulatorComposition = pkgs.androidenv.composeAndroidPackages {
+          platformVersions = [ "36" ];
+          buildToolsVersions = [ "36.0.0" ];
+          includeCmake = false;
+          includeEmulator = true;
+          includeSystemImages = true;
+          systemImageTypes = [ "google_apis" ];
+          abiVersions = [ androidAbi ];
+        };
+        androidSdk = androidComposition.androidsdk;
+        androidEmulatorSdk = androidEmulatorComposition.androidsdk;
+        androidJdk = pkgs.jdk17;
 
         commonInputs = with pkgs; [
           bash
@@ -26,6 +51,7 @@
           jq
           openssl
           ripgrep
+          unzip
         ];
 
         darwinInputs = lib.optionals pkgs.stdenv.hostPlatform.isDarwin (with pkgs; [
@@ -55,6 +81,15 @@
             echo "Run this command from the Hunger repository." >&2
             exit 1
           fi
+        '';
+
+        androidEnvironment = sdk: ''
+          export ANDROID_SDK_ROOT="${sdk}/libexec/android-sdk"
+          export ANDROID_HOME="$ANDROID_SDK_ROOT"
+          export JAVA_HOME="${androidJdk.home}"
+          export GRADLE_USER_HOME="''${HUNGER_GRADLE_USER_HOME:-$repo_root/.gradle-home}"
+          export LANG=C.UTF-8
+          export LC_ALL=C.UTF-8
         '';
 
         simulatorDestination = ''
@@ -1115,6 +1150,250 @@
           '';
         };
 
+        androidBuildWeb = pkgs.writeShellApplication {
+          name = "hunger-android-build-web";
+          runtimeInputs = commonInputs;
+          text = ''
+            ${repoGuard}
+            resource_root="$repo_root/android/app/src/main/assets/webapp"
+            expected_resource_root="$repo_root/android/app/src/main/assets/webapp"
+            if [[ "$resource_root" != "$expected_resource_root" ]]; then
+              echo "Refusing to replace unexpected resource path: $resource_root" >&2
+              exit 1
+            fi
+
+            bun install --frozen-lockfile
+            native_build_hash="''${VITE_GIT_HASH:-$(git rev-parse --short=8 HEAD)}"
+            native_build_hash="''${native_build_hash:0:8}"
+            PUBLIC_BASE_PATH=/assets/webapp VITE_NATIVE_SHELL=android VITE_GIT_HASH="$native_build_hash" bun run build
+
+            if rg -q 'Begin the 30-day program|See how it works' "$repo_root/build/index.html"; then
+              echo "Android entry point contains the website landing page." >&2
+              exit 1
+            fi
+            if ! rg -q 'Choose your look' "$repo_root/build/onboarding.html"; then
+              echo "Android bundle does not contain the direct onboarding destination." >&2
+              exit 1
+            fi
+
+            rm -rf "$resource_root"
+            mkdir -p "$resource_root"
+            cp -R "$repo_root/build/." "$resource_root/"
+            rm -f "$resource_root/service-worker.js" "$resource_root/manifest.webmanifest" "$resource_root/404.html"
+
+            if rg -q '__HUNGER_E2E__|data-e2e-fixture|serviceWorker\.register' "$resource_root"; then
+              echo "Development or service-worker code leaked into the Android bundle." >&2
+              exit 1
+            fi
+            if ! rg -q --fixed-strings "$native_build_hash" "$resource_root"; then
+              echo "Android bundle does not contain its source commit identifier." >&2
+              exit 1
+            fi
+            if rg -q 'Build (native|development)' "$resource_root"; then
+              echo "Android bundle contains a placeholder build identifier." >&2
+              exit 1
+            fi
+
+            manifest_tmp="$(mktemp)"
+            trap 'rm -f "$manifest_tmp"' EXIT
+            while IFS= read -r relative_path; do
+              file_path="$resource_root/$relative_path"
+              case "$relative_path" in
+                *.html) mime_type="text/html" ;;
+                *.css) mime_type="text/css" ;;
+                *.js) mime_type="text/javascript" ;;
+                *.json) mime_type="application/json" ;;
+                *.svg) mime_type="image/svg+xml" ;;
+                *.png) mime_type="image/png" ;;
+                *.webp) mime_type="image/webp" ;;
+                *.woff2) mime_type="font/woff2" ;;
+                *) mime_type="application/octet-stream" ;;
+              esac
+              jq -nc --arg path "$relative_path" --arg mimeType "$mime_type" \
+                --arg sha256 "$(sha256sum "$file_path" | cut -d ' ' -f 1)" \
+                --argjson bytes "$(wc -c < "$file_path" | tr -d ' ')" \
+                '{path: $path, mimeType: $mimeType, sha256: $sha256, bytes: $bytes}'
+            done < <(
+              cd "$resource_root"
+              find . -type f ! -name asset-manifest.json -print | sed 's#^\./##' | LC_ALL=C sort
+            ) | jq -s '{version: 1, files: .}' > "$manifest_tmp"
+            mv "$manifest_tmp" "$resource_root/asset-manifest.json"
+            trap - EXIT
+            echo "Packaged $(jq '.files | length' "$resource_root/asset-manifest.json") offline Android resources."
+          '';
+        };
+
+        androidGradle = name: tasks: sdk: pkgs.writeShellApplication {
+          inherit name;
+          runtimeInputs = commonInputs ++ [ pkgs.gradle androidJdk sdk ];
+          text = ''
+            ${repoGuard}
+            ${androidEnvironment sdk}
+            ${lib.getExe androidBuildWeb}
+            gradle --no-daemon --stacktrace -p "$repo_root/android" ${tasks}
+          '';
+        };
+
+        androidTestUnit = androidGradle "hunger-android-test-unit" "testDebugUnitTest" androidSdk;
+        androidBuildDebug = androidGradle "hunger-android-build-debug" "assembleDebug" androidSdk;
+        androidBuildRelease = androidGradle "hunger-android-build-release" "lintRelease assembleRelease bundleRelease" androidSdk;
+
+        androidTestUi = pkgs.writeShellApplication {
+          name = "hunger-android-test-ui";
+          runtimeInputs = commonInputs ++ [ pkgs.gradle androidJdk androidEmulatorSdk ];
+          text = ''
+            ${repoGuard}
+            ${androidEnvironment androidEmulatorSdk}
+            ${lib.getExe androidBuildWeb}
+            artifact_root="$repo_root/.artifacts/android"
+            avd_home="$artifact_root/avd"
+            mkdir -p "$artifact_root" "$avd_home"
+            export ANDROID_AVD_HOME="$avd_home"
+            avd_name="HungerApi36"
+            if [[ ! -f "$ANDROID_AVD_HOME/$avd_name.avd/config.ini" ]]; then
+              if ! printf 'no\n' | avdmanager create avd --force --name "$avd_name" \
+                --package "system-images;android-36;google_apis;${androidAbi}" --device pixel_6; then
+                if [[ ! -f "$ANDROID_AVD_HOME/$avd_name.avd/config.ini" ]]; then
+                  echo "AVD creation failed before producing a usable configuration." >&2
+                  exit 1
+                fi
+                echo "avdmanager reported a system-image metadata warning; using its completed AVD." >&2
+              fi
+              {
+                echo 'hw.keyboard=yes'
+                echo 'showDeviceFrame=no'
+              } >> "$ANDROID_AVD_HOME/$avd_name.avd/config.ini"
+            fi
+            emulator_log="$artifact_root/emulator.log"
+            emulator -avd "$avd_name" -no-window -no-audio -no-boot-anim -wipe-data >"$emulator_log" 2>&1 &
+            emulator_pid=$!
+            cleanup() {
+              adb logcat -d > "$artifact_root/logcat.txt" 2>/dev/null || true
+              adb emu kill >/dev/null 2>&1 || true
+              wait "$emulator_pid" 2>/dev/null || true
+            }
+            trap cleanup EXIT
+            adb wait-for-device
+            deadline=$((SECONDS + 360))
+            while [[ "$(adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" != "1" ]]; do
+              if (( SECONDS >= deadline )); then
+                echo "Android emulator did not finish booting." >&2
+                exit 1
+              fi
+              sleep 5
+            done
+            adb shell svc wifi disable
+            adb shell svc data disable
+            gradle --no-daemon --stacktrace -p "$repo_root/android" connectedDebugAndroidTest
+            adb install -r "$repo_root/android/app/build/outputs/apk/debug/app-debug.apk" >/dev/null
+            adb shell pm clear com.anicolao.hunger.debug >/dev/null
+            adb shell monkey -p com.anicolao.hunger.debug -c android.intent.category.LAUNCHER 1 >/dev/null
+            sleep 3
+            adb exec-out screencap -p > "$artifact_root/offline-onboarding.png"
+            if [[ ! -s "$artifact_root/offline-onboarding.png" ]]; then
+              echo "Android qualification screenshot was not captured." >&2
+              exit 1
+            fi
+          '';
+        };
+
+        androidAuditRelease = pkgs.writeShellApplication {
+          name = "hunger-android-audit-release";
+          runtimeInputs = commonInputs ++ [ pkgs.gradle androidJdk androidSdk ];
+          text = ''
+            ${repoGuard}
+            ${androidEnvironment androidSdk}
+            ${lib.getExe androidBuildRelease}
+            apk="$repo_root/android/app/build/outputs/apk/release/app-release-unsigned.apk"
+            bundle="$repo_root/android/app/build/outputs/bundle/release/app-release.aab"
+            web_root="$repo_root/android/app/src/main/assets/webapp"
+            artifact_root="$repo_root/.artifacts/android"
+            mkdir -p "$artifact_root"
+            if [[ ! -s "$apk" || ! -s "$bundle" || ! -f "$web_root/asset-manifest.json" ]]; then
+              echo "Android Release APK, AAB, or offline manifest is missing." >&2
+              exit 1
+            fi
+            permissions="$(apkanalyzer manifest permissions "$apk")"
+            if rg -q 'android.permission.INTERNET|ACCESS_NETWORK_STATE|SCHEDULE_EXACT_ALARM|USE_EXACT_ALARM|READ_MEDIA|READ_EXTERNAL_STORAGE|WRITE_EXTERNAL_STORAGE' <<< "$permissions"; then
+              echo "Release APK contains an unexpected network, exact-alarm, or storage permission." >&2
+              echo "$permissions" >&2
+              exit 1
+            fi
+            for required in android.permission.POST_NOTIFICATIONS android.permission.RECEIVE_BOOT_COMPLETED; do
+              if ! rg -q --fixed-strings "$required" <<< "$permissions"; then
+                echo "Release APK is missing $required." >&2
+                exit 1
+              fi
+            done
+            if unzip -l "$bundle" | rg 'base/assets/webapp/' | rg -q 'service-worker\.js|manifest\.webmanifest|404\.html|\.map$'; then
+              echo "A browser-only or development resource leaked into the Android bundle." >&2
+              exit 1
+            fi
+            if ! unzip -l "$apk" | rg -q 'assets/webapp/app/immutable/entry/start\.[A-Za-z0-9_-]+\.js'; then
+              echo "Release APK is missing the packaged Svelte client runtime." >&2
+              exit 1
+            fi
+            if ! unzip -l "$apk" | rg -q 'assets/webapp/app/immutable/assets/.+\.css'; then
+              echo "Release APK is missing the packaged application styles." >&2
+              exit 1
+            fi
+            expected_files="$(mktemp)"
+            source_files="$(mktemp)"
+            apk_files="$(mktemp)"
+            bundle_files="$(mktemp)"
+            remote_urls="$(mktemp)"
+            trap 'rm -f "$expected_files" "$source_files" "$apk_files" "$bundle_files" "$remote_urls"' EXIT
+            jq -r '.files[].path' "$web_root/asset-manifest.json" | LC_ALL=C sort > "$expected_files"
+            (
+              cd "$web_root"
+              find . -type f ! -name asset-manifest.json -print | sed 's#^\./##' | LC_ALL=C sort
+            ) > "$source_files"
+            unzip -Z1 "$apk" | sed -n 's#^assets/webapp/##p' | rg -v '^asset-manifest\.json$' | LC_ALL=C sort > "$apk_files"
+            unzip -Z1 "$bundle" | sed -n 's#^base/assets/webapp/##p' | rg -v '^asset-manifest\.json$' | LC_ALL=C sort > "$bundle_files"
+            for packaged_files in "$source_files" "$apk_files" "$bundle_files"; do
+              if ! diff -u "$expected_files" "$packaged_files"; then
+                echo "Android release resources do not match their integrity manifest." >&2
+                exit 1
+              fi
+            done
+            while IFS=$'\t' read -r expected_hash relative_path; do
+              actual_hash="$(sha256sum "$web_root/$relative_path" | cut -d ' ' -f 1)"
+              if [[ "$actual_hash" != "$expected_hash" ]]; then
+                echo "Android source asset failed its integrity manifest: $relative_path" >&2
+                exit 1
+              fi
+            done < <(jq -r '.files[] | [.sha256, .path] | @tsv' "$web_root/asset-manifest.json")
+            rg -o --no-filename 'https?://[^"[:space:]<>]+' "$web_root" | LC_ALL=C sort -u > "$remote_urls" || true
+            while IFS= read -r url; do
+              case "$url" in
+                http://www.w3.org/1999/xhtml|http://www.w3.org/2000/svg|https://svelte.dev/e/*) ;;
+                *) echo "Unexpected remote URL in Android payload: $url" >&2; exit 1 ;;
+              esac
+            done < "$remote_urls"
+            cp "$bundle" "$artifact_root/Hunger-release-unsigned.aab"
+            cp "$apk" "$artifact_root/Hunger-release-unsigned.apk"
+            cp "$web_root/asset-manifest.json" "$artifact_root/release-asset-manifest.json"
+            apkanalyzer apk summary "$apk" > "$artifact_root/release-apk-summary.txt"
+            printf '%s\n' "$permissions" > "$artifact_root/release-permissions.txt"
+            echo "Audited offline Android Release bundle at $bundle"
+          '';
+        };
+
+        androidVerify = pkgs.writeShellApplication {
+          name = "hunger-android-verify";
+          runtimeInputs = commonInputs ++ [ pkgs.gradle androidJdk androidSdk ];
+          text = ''
+            ${repoGuard}
+            ${androidEnvironment androidSdk}
+            bun install --frozen-lockfile
+            bun run check
+            bun run test:unit
+            ${lib.getExe androidTestUnit}
+            ${lib.getExe androidAuditRelease}
+            git diff --check
+          '';
+        };
+
         iosBuildWeb = pkgs.writeShellApplication {
           name = "hunger-ios-build-web";
           runtimeInputs = commonInputs;
@@ -1355,6 +1634,13 @@
         };
       in {
         apps = {
+          android-build-web = flake-utils.lib.mkApp { drv = androidBuildWeb; };
+          android-test-unit = flake-utils.lib.mkApp { drv = androidTestUnit; };
+          android-build-debug = flake-utils.lib.mkApp { drv = androidBuildDebug; };
+          android-test-ui = flake-utils.lib.mkApp { drv = androidTestUi; };
+          android-build-release = flake-utils.lib.mkApp { drv = androidBuildRelease; };
+          android-audit-release = flake-utils.lib.mkApp { drv = androidAuditRelease; };
+          android-verify = flake-utils.lib.mkApp { drv = androidVerify; };
           ios-build-web = flake-utils.lib.mkApp { drv = iosBuildWeb; };
           ios-generate-app-icon = flake-utils.lib.mkApp { drv = iosGenerateAppIcon; };
           ios-generate = flake-utils.lib.mkApp { drv = iosGenerate; };
@@ -1403,6 +1689,21 @@
               export PATH="/usr/bin:/bin:/usr/sbin:/sbin:$PATH"
             fi
             echo "Learn Your Appetite environment ready: Bun, Playwright, PDF/OCR, and iOS tools"
+          '';
+        };
+
+        devShells.android = pkgs.mkShell {
+          packages = commonInputs ++ [
+            androidSdk
+            androidJdk
+            pkgs.gradle
+          ];
+          JAVA_HOME = androidJdk.home;
+          ANDROID_SDK_ROOT = "${androidSdk}/libexec/android-sdk";
+          ANDROID_HOME = "${androidSdk}/libexec/android-sdk";
+          shellHook = ''
+            export GRADLE_USER_HOME="''${HUNGER_GRADLE_USER_HOME:-$PWD/.gradle-home}"
+            echo "Learn Your Appetite Android environment ready: API 36 SDK, JDK 17, Gradle, ADB, and Bun"
           '';
         };
       });

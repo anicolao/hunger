@@ -55,7 +55,7 @@
       const destination = format === 'json'
         ? await shareExport('appetite-profile.json', 'application/json', exportJson(data))
         : await shareExport('appetite-profile.html', 'text/html', exportHtml(data));
-      exportMessage = destination === 'native-ios'
+      exportMessage = destination !== 'browser-download'
         ? 'Private export closed and temporary file removed.'
         : `Private export downloaded${data.photoPolicy.omittedCount ? `; ${data.photoPolicy.omittedCount} photo${data.photoPolicy.omittedCount === 1 ? '' : 's'} omitted by the selected policy or size limit` : ''}.`;
     } catch {

@@ -1,0 +1,11 @@
+<resources>
+    <style name="Theme.Hunger" parent="android:style/Theme.Material.Light.NoActionBar">
+        <item name="android:fontFamily">sans</item>
+        <item name="android:colorAccent">#356859</item>
+        <item name="android:windowActionModeOverlay">true</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:statusBarColor">@color/hunger_light</item>
+        <item name="android:navigationBarColor">@color/hunger_light</item>
+        <item name="android:windowNoTitle">true</item>
+    </style>
+</resources>

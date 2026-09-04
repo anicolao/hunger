@@ -112,6 +112,34 @@ jobs:
           if-no-files-found: warn
           retention-days: 7
 
+  verify-android:
+    name: Verify Android shell
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      CI: "true"
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31
+
+      - name: Verify packaged offline Android shell
+        run: nix run .#android-verify
+
+      - name: Upload Android tests and release audit
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: android-verification-${{ github.run_id }}
+          path: |
+            .artifacts/android/
+            android/app/build/reports/tests/
+            android/app/build/reports/lint-results-release.html
+          if-no-files-found: warn
+          retention-days: 7
+
   deploy:
     name: Deploy preview
     needs: verify

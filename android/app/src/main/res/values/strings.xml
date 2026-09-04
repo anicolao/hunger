@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">Learn Your Appetite</string>
+    <string name="notification_channel_name">Reminders</string>
+    <string name="notification_channel_description">Private prompts for the reminder windows you choose</string>
+</resources>

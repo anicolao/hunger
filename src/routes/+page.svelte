@@ -11,7 +11,7 @@
 
   let program = $state<Program | null>(null);
   let loaded = $state(false);
-  const nativeShell = import.meta.env.VITE_NATIVE_SHELL === 'ios';
+  const nativeShell = import.meta.env.VITE_NATIVE_SHELL === 'ios' || import.meta.env.VITE_NATIVE_SHELL === 'android';
 
   onMount(async () => {
     program = await reconcileProgramLifecycle(runtime.now());

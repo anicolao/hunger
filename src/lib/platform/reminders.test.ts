@@ -77,4 +77,24 @@ describe('native reminder adapter', () => {
     vi.stubGlobal('window', { hungerNative: { request } });
     expect((await reconcileReminders(emptyReminderSchedule())).scheduled).toBe(0);
   });
+
+  it('reports Android local scheduling without changing the schedule contract', async () => {
+    const commands = ['capabilities.get', 'notifications.authorizationStatus', 'notifications.requestAuthorization', 'notifications.replaceSchedule', 'notifications.cancelAll'];
+    vi.stubGlobal('window', {
+      hungerNative: {
+        request: async (command: string) => {
+          if (command === 'capabilities.get') return { version: 1, platform: 'android', commands };
+          if (command === 'notifications.authorizationStatus') return { status: 'authorized' };
+          if (command === 'notifications.replaceSchedule') return { scheduled: 1 };
+        }
+      }
+    });
+    expect(await reconcileReminders(schedule)).toEqual({
+      capability: 'native-android',
+      status: 'authorized',
+      permissionState: 'granted',
+      scheduled: 1,
+      explanation: 'Scheduled 1 private Android reminder.'
+    });
+  });
 });

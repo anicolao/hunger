@@ -87,8 +87,8 @@
     settings = await getRepository().getSettings();
     reminderDiagnostics = await getNativeReminderDiagnostics();
     reminderMessage = pausing
-      ? result.capability === 'native-ios'
-        ? 'Private iOS reminders are paused.'
+      ? result.capability !== 'browser-unavailable'
+        ? `Private ${result.capability === 'native-android' ? 'Android' : 'iOS'} reminders are paused.`
         : 'Reminder preferences are paused.'
       : result.explanation;
   }

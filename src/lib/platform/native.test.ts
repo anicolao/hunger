@@ -44,6 +44,19 @@ describe('native platform boundary', () => {
     expect(await nativeCapabilities()).toBeNull();
   });
 
+  it('accepts the same versioned boundary from the Android shell', async () => {
+    vi.stubGlobal('window', {
+      hungerNative: {
+        request: async () => ({ version: 1, platform: 'android', commands: ['capabilities.get'] })
+      }
+    });
+    expect(await nativeCapabilities()).toEqual({
+      version: 1,
+      platform: 'android',
+      commands: ['capabilities.get']
+    });
+  });
+
   it('installs one fixed lifecycle event adapter', () => {
     const dispatchEvent = vi.fn();
     const fakeWindow: Record<string, unknown> = { dispatchEvent };

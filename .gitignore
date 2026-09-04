@@ -7,6 +7,10 @@
 build/
 .derived-data/
 .artifacts/
+.gradle-home/
+android/.gradle/
+android/app/build/
+android/app/src/main/assets/webapp/
 ios/Hunger/Resources/WebApp/
 coverage/
 node_modules/

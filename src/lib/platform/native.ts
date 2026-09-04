@@ -2,7 +2,7 @@ export const NATIVE_BRIDGE_VERSION = 1 as const;
 
 export interface NativeCapabilities {
   version: 1;
-  platform: 'ios';
+  platform: 'ios' | 'android';
   commands: readonly string[];
 }
 
@@ -31,7 +31,7 @@ function isCapabilities(value: unknown): value is NativeCapabilities {
   const candidate = value as Partial<NativeCapabilities>;
   return (
     candidate.version === NATIVE_BRIDGE_VERSION &&
-    candidate.platform === 'ios' &&
+    (candidate.platform === 'ios' || candidate.platform === 'android') &&
     Array.isArray(candidate.commands) &&
     candidate.commands.every((command) => typeof command === 'string')
   );

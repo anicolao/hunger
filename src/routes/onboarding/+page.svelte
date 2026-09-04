@@ -97,7 +97,7 @@
           experiments: [],
           now: program.startedAt
         }), true);
-        scheduledNativeReminders = result.capability === 'native-ios' && result.scheduled > 0;
+        scheduledNativeReminders = result.capability !== 'browser-unavailable' && result.scheduled > 0;
         activatedSettings = {
           ...activatedSettings,
           remindersPaused: false,
